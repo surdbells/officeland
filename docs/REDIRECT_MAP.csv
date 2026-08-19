@@ -1,0 +1,183 @@
+from_path,to_path,status,notes
+/product-category/all-products/,/c/,301,Legacy catch-all; new /c/ is the all-departments hub
+/product-category/trending/,/,301,Merchandising pseudo-category; no equivalent
+/product-category/uncategorized/,,410,Never a real category
+/product-category/hp/,/brands/hp/,301,Brand-as-category -> brand hub
+/product-category/hp/all-in-one-desktop/,/brands/hp/desktops/,301,Curated brand x category hub
+/product-category/hp/inks-and-toners/,/brands/hp/ink-toner/,301,Curated brand x category hub; highest-intent HP URL
+/product-category/hp/laptops-hp/,/brands/hp/laptops/,301,Curated brand x category hub
+/product-category/hp/monitors/,/brands/hp/monitors/,301,Curated brand x category hub
+/product-category/hp/printers/,/brands/hp/printers/,301,Curated brand x category hub
+/product-category/lenovo/,/brands/lenovo/,301,Brand-as-category -> brand hub
+/product-category/fellowes/,/brands/fellowes/,301,Brand-as-category -> brand hub
+/product-category/lexar/,/brands/lexar/,301,Brand-as-category -> brand hub
+/product-category/mercury/,/brands/mercury/,301,Brand-as-category -> brand hub
+/product-category/it-products/iris/,/brands/iris/,301,Brand nested under a type branch
+/product-category/mg-stationery/,/brands/mg/,301,Brand-as-category -> brand hub
+/product-category/mg-stationery/desktop-supplies/,/c/office-supplies/desk-accessories/,301,Type is the useful signal
+/product-category/ugreen/,/brands/ugreen/,301,Brand-as-category -> brand hub
+/product-category/ugreen/cables-ugreen/,/c/it-products/computer-accessories/cables-adapters/,301,
+/product-category/ugreen/chargers-ugreen/,/c/it-products/computer-accessories/chargers-power-banks/,301,
+/product-category/ugreen/hubs-docks/,/c/it-products/computer-accessories/hubs-docking-stations/,301,
+/product-category/ugreen/stands-ugreen/,/c/it-products/computer-accessories/stands-mounts/,301,
+/product-category/wiwu-accessories/,/brands/wiwu/,301,18-term brand branch collapses to one hub
+/product-category/wiwu-accessories/audio/,/c/it-products/computer-accessories/headsets-audio/,301,
+/product-category/wiwu-accessories/bags/,/c/it-products/computer-accessories/laptop-bags-cases/,301,
+/product-category/wiwu-accessories/bags/organize-cases/,/c/it-products/computer-accessories/laptop-bags-cases/,301,
+/product-category/wiwu-accessories/bags/shoulder-bags/,/c/it-products/computer-accessories/laptop-bags-cases/,301,
+/product-category/wiwu-accessories/bags/sleeves/,/c/it-products/computer-accessories/laptop-bags-cases/,301,
+/product-category/wiwu-accessories/cables/,/c/it-products/computer-accessories/cables-adapters/,301,
+/product-category/wiwu-accessories/cases/,/c/it-products/computer-accessories/laptop-bags-cases/,301,
+/product-category/wiwu-accessories/cases/airpods-cases/,/c/it-products/computer-accessories/laptop-bags-cases/,301,
+/product-category/wiwu-accessories/cases/ipad-cases/,/c/it-products/computer-accessories/laptop-bags-cases/,301,
+/product-category/wiwu-accessories/cases/macbook-shell/,/c/it-products/computer-accessories/laptop-bags-cases/,301,
+/product-category/wiwu-accessories/chargers/,/c/it-products/computer-accessories/chargers-power-banks/,301,
+/product-category/wiwu-accessories/keyboard-wiwu-accessories/,/c/it-products/computer-accessories/keyboards-mice/,301,
+/product-category/wiwu-accessories/mouse-wiwu-accessories/,/c/it-products/computer-accessories/keyboards-mice/,301,
+/product-category/wiwu-accessories/power-bank/,/c/it-products/computer-accessories/chargers-power-banks/,301,
+/product-category/wiwu-accessories/protector/,/c/it-products/computer-accessories/laptop-bags-cases/,301,
+/product-category/wiwu-accessories/stands/,/c/it-products/computer-accessories/stands-mounts/,301,
+/product-category/wiwu-accessories/stylus-pen/,/c/it-products/computer-accessories/,301,No leaf; parent is closest match
+/product-category/wiwu-accessories/usb-c-hubs/,/c/it-products/computer-accessories/hubs-docking-stations/,301,
+/product-category/office-furniture/,/c/office-furniture/,301,
+/product-category/office-chairs/,/c/office-furniture/seating/,301,Root-level duplicate of a furniture child
+/product-category/office-chairs/conference-chairs/,/c/office-furniture/seating/conference-chairs/,301,
+/product-category/office-chairs/ergonomic-chairs/,/c/office-furniture/seating/ergonomic-task-chairs/,301,
+/product-category/office-chairs/executive-chairs/,/c/office-furniture/seating/executive-chairs/,301,
+/product-category/office-chairs/recliner-chairs/,/c/office-furniture/seating/recliner-lounge-chairs/,301,
+/product-category/office-chairs/task-chairs/,/c/office-furniture/seating/ergonomic-task-chairs/,301,Merged with ergonomic
+/product-category/office-tables/,/c/office-furniture/desks-tables/,301,
+/product-category/office-tables/ergonomic-desks/,/c/office-furniture/desks-tables/height-adjustable-desks/,301,
+/product-category/office-tables/executive-desks/,/c/office-furniture/desks-tables/executive-desks/,301,
+/product-category/office-tables/reception-desks/,/c/office-furniture/desks-tables/reception-desks/,301,
+/product-category/office-tables/workstations/,/c/office-furniture/desks-tables/workstations/,301,
+/product-category/workstation/,/c/office-furniture/desks-tables/workstations/,301,Root duplicate of office-tables/workstations
+/product-category/storage/,/c/filing-storage/,301,Ambiguous legacy term; see TAXONOMY.md section 4
+/product-category/it-products/,/c/it-products/,301,
+/product-category/laptop/,/c/it-products/computers/laptops/,301,Root duplicate competing with hp/laptops-hp
+/product-category/it-products/desktop/,/c/it-products/computers/desktops-all-in-ones/,301,
+/product-category/it-products/monitor/,/c/it-products/monitors-displays/monitors/,301,
+/product-category/tv-monitor/,/c/it-products/monitors-displays/tvs-digital-signage/,301,Root duplicate competing with it-products/monitor
+/product-category/it-products/computer-accessories/,/c/it-products/computer-accessories/,301,
+/product-category/it-products/computer-accessories/cables-connectors/,/c/it-products/computer-accessories/cables-adapters/,301,
+/product-category/it-products/computer-accessories/headset-earphones/,/c/it-products/computer-accessories/headsets-audio/,301,
+/product-category/it-products/computer-accessories/keyboard/,/c/it-products/computer-accessories/keyboards-mice/,301,
+/product-category/it-products/computer-accessories/laptop-bags/,/c/it-products/computer-accessories/laptop-bags-cases/,301,
+/product-category/it-products/computer-accessories/mouse/,/c/it-products/computer-accessories/keyboards-mice/,301,Merged with keyboards
+/product-category/it-products/computer-accessories/mouse-pad/,/c/it-products/computer-accessories/keyboards-mice/,301,
+/product-category/it-products/computer-accessories/other-accessories-computer-accessories/,/c/it-products/computer-accessories/,301,
+/product-category/it-products/computer-accessories/speaker/,/c/it-products/computer-accessories/headsets-audio/,301,
+/product-category/it-products/inks-toners/,/c/printers-consumables/ink-toner/,301,Moves department
+/product-category/it-products/inks-toners/ink/,/c/printers-consumables/ink-toner/ink-cartridges/,301,
+/product-category/it-products/inks-toners/toners/,/c/printers-consumables/ink-toner/toner-cartridges/,301,High-intent URL
+/product-category/it-products/printers-scanners/,/c/printers-consumables/printers/,301,
+/product-category/it-products/printers-scanners/all-in-one-printers/,/c/printers-consumables/printers/all-in-one-printers/,301,
+/product-category/it-products/printers-scanners/inkjet-officejet/,/c/printers-consumables/printers/inkjet-printers/,301,
+/product-category/it-products/printers-scanners/laserjet/,/c/printers-consumables/printers/laser-printers/,301,
+/product-category/it-products/scanners/,/c/printers-consumables/scanners/,301,
+/product-category/it-products/networking-products/,/c/it-products/networking/,301,
+/product-category/it-products/networking-products/adapter/,/c/it-products/networking/switches-adapters/,301,
+/product-category/it-products/networking-products/router/,/c/it-products/networking/routers-access-points/,301,
+/product-category/it-products/software/,/c/it-products/software/,301,
+/product-category/it-products/software/antivirus/,/c/it-products/software/antivirus-security/,301,
+/product-category/it-products/software/ms-office/,/c/it-products/software/office-productivity/,301,
+/product-category/it-products/storage-devices/,/c/it-products/storage-memory/,301,
+/product-category/it-products/storage-devices/cd-dvd/,/c/it-products/storage-memory/,301,No leaf; parent is closest match
+/product-category/it-products/storage-devices/external-hard-drives/,/c/it-products/storage-memory/external-hard-drives/,301,
+/product-category/it-products/storage-devices/flash-drives/,/c/it-products/storage-memory/flash-drives/,301,
+/product-category/it-products/storage-devices/memory-card/,/c/it-products/storage-memory/memory-cards/,301,
+/product-category/office-supplies/,/c/office-supplies/,301,
+/product-category/stationery/,/c/office-supplies/,301,Overlapping department merged
+/product-category/office-supplies/writing-tools/,/c/office-supplies/writing/,301,
+/product-category/office-supplies/writing-tools/pen/,/c/office-supplies/writing/pens/,301,
+/product-category/office-supplies/writing-tools/pencil/,/c/office-supplies/writing/pencils/,301,
+/product-category/office-supplies/writing-tools/markers-highlighter/,/c/office-supplies/writing/markers-highlighters/,301,
+/product-category/office-supplies/writing-tools/fine-liner-pen/,/c/office-supplies/writing/pens/,301,
+/product-category/office-supplies/writing-tools/correction-pen-fluid/,/c/office-supplies/writing/correction-erasers/,301,
+/product-category/office-supplies/writing-tools/sharpener-eraser/,/c/office-supplies/writing/correction-erasers/,301,
+/product-category/office-supplies/writing-tools/crayons/,/c/school-supplies/art-craft/crayons-colour-pencils/,301,Moves department to school
+/product-category/office-supplies/writing-tools/color-peps/,/c/school-supplies/art-craft/crayons-colour-pencils/,301,Maped sub-brand line
+/product-category/office-supplies/arts-crafts/,/c/school-supplies/art-craft/,301,Moves department to school
+/product-category/office-supplies/arts-crafts/drawing-coloring/,/c/school-supplies/art-craft/drawing-colouring/,301,
+/product-category/office-supplies/boards-easels/,/c/office-supplies/boards-presentation/,301,
+/product-category/office-supplies/boards-easels/board-accessories/,/c/office-supplies/boards-presentation/board-accessories/,301,
+/product-category/office-supplies/boards-easels/bulletin-board/,/c/office-supplies/boards-presentation/bulletin-boards/,301,
+/product-category/office-supplies/boards-easels/glass-boards/,/c/office-supplies/boards-presentation/glass-boards/,301,
+/product-category/office-supplies/boards-easels/whiteboard/,/c/office-supplies/boards-presentation/whiteboards/,301,
+/product-category/office-supplies/office-tools/,/c/office-supplies/office-machines/,301,
+/product-category/office-supplies/office-tools/air-purifiers/,/c/office-supplies/office-machines/air-purifiers/,301,
+/product-category/office-supplies/office-tools/binding-machines-accessories/,/c/office-supplies/office-machines/binding-machines/,301,
+/product-category/office-supplies/office-tools/calculator/,/c/office-supplies/office-machines/calculators/,301,
+/product-category/office-supplies/office-tools/laminators-accessories/,/c/office-supplies/office-machines/laminators/,301,
+/product-category/office-supplies/office-tools/paper-cutter-trimmer/,/c/office-supplies/office-machines/paper-trimmers/,301,
+/product-category/office-supplies/office-tools/shredders/,/c/office-supplies/office-machines/shredders/,301,
+/product-category/office-supplies/office-tools/magazine-holder/,/c/filing-storage/desk-filing/magazine-holders/,301,Moves department
+/product-category/office-supplies/tapes-adhesives/,/c/office-supplies/adhesives-tapes/,301,
+/product-category/office-supplies/tapes-adhesives/adhesive/,/c/office-supplies/adhesives-tapes/adhesives/,301,
+/product-category/office-supplies/tapes-adhesives/glue/,/c/office-supplies/adhesives-tapes/glue/,301,
+/product-category/office-supplies/tapes-adhesives/tapes/,/c/office-supplies/adhesives-tapes/tapes/,301,
+/product-category/office-supplies/general-products/,/c/office-supplies/desk-accessories/,301,
+/product-category/office-supplies/general-products/badge-id-lanyard/,/c/office-supplies/labelling-identification/badges-lanyards/,301,
+/product-category/office-supplies/general-products/cash-box/,/c/office-supplies/desk-accessories/organisers-holders/,301,
+/product-category/office-supplies/general-products/clips-pins/,/c/office-supplies/desk-accessories/clips-pins/,301,
+/product-category/office-supplies/general-products/cutting-tools/,/c/office-supplies/desk-accessories/cutting-tools/,301,
+/product-category/office-supplies/general-products/holder-stands-general-products/,/c/office-supplies/desk-accessories/organisers-holders/,301,
+/product-category/office-supplies/general-products/keybox-accessories/,/c/office-supplies/desk-accessories/organisers-holders/,301,
+/product-category/office-supplies/general-products/labelling-labels/,/c/office-supplies/labelling-identification/labels/,301,
+/product-category/office-supplies/general-products/measuring-tools/,/c/school-supplies/maths-geometry/rulers-stencils/,301,
+/product-category/office-supplies/general-products/paper-punches/,/c/office-supplies/desk-accessories/staplers-punches/,301,
+/product-category/office-supplies/general-products/rubber-bands/,/c/office-supplies/desk-accessories/fasteners/,301,
+/product-category/office-supplies/general-products/sign-display/,/c/office-supplies/labelling-identification/signs-displays/,301,
+/product-category/office-supplies/general-products/stamp-accessories/,/c/office-supplies/labelling-identification/stamps/,301,
+/product-category/office-supplies/general-products/stapler-staple-pins-remover/,/c/office-supplies/desk-accessories/staplers-punches/,301,
+/product-category/office-supplies/files-folders/,/c/filing-storage/files-folders/,301,Moves department
+/product-category/office-supplies/files-folders/clear-file/,/c/filing-storage/files-folders/display-books-clear-files/,301,
+/product-category/office-supplies/files-folders/clip-board/,/c/filing-storage/files-folders/report-clip-files/,301,
+/product-category/office-supplies/files-folders/clip-file/,/c/filing-storage/files-folders/report-clip-files/,301,
+/product-category/office-supplies/files-folders/display-book/,/c/filing-storage/files-folders/display-books-clear-files/,301,
+/product-category/office-supplies/files-folders/dividers-index/,/c/filing-storage/files-folders/dividers-index/,301,
+/product-category/office-supplies/files-folders/document-box/,/c/filing-storage/files-folders/document-files-boxes/,301,
+/product-category/office-supplies/files-folders/document-files/,/c/filing-storage/files-folders/document-files-boxes/,301,
+/product-category/office-supplies/files-folders/expanding-files/,/c/filing-storage/files-folders/document-files-boxes/,301,
+/product-category/office-supplies/files-folders/lever-arch-files/,/c/filing-storage/files-folders/lever-arch-files/,301,
+/product-category/office-supplies/files-folders/manila-folders/,/c/filing-storage/files-folders/manila-folders/,301,
+/product-category/office-supplies/files-folders/report-file/,/c/filing-storage/files-folders/report-clip-files/,301,
+/product-category/office-supplies/files-folders/ring-binders/,/c/filing-storage/files-folders/ring-binders/,301,
+/product-category/office-supplies/files-folders/suspension-hanging-files/,/c/filing-storage/files-folders/suspension-files/,301,
+/product-category/office-supplies/files-folders/zip-bag/,/c/filing-storage/files-folders/document-files-boxes/,301,
+/product-category/paper-products/,/c/paper-notebooks/,301,
+/product-category/paper-products/printing-paper/,/c/paper-notebooks/printing-paper/,301,
+/product-category/paper-products/color-papers/,/c/paper-notebooks/specialty-paper/colour-paper/,301,
+/product-category/paper-products/photo-paper/,/c/paper-notebooks/specialty-paper/photo-paper/,301,
+/product-category/paper-products/paper-rolls/,/c/paper-notebooks/specialty-paper/paper-rolls/,301,
+/product-category/paper-products/receipts/,/c/paper-notebooks/specialty-paper/receipt-rolls/,301,
+/product-category/paper-products/envelopes/,/c/paper-notebooks/envelopes-mailing/,301,
+/product-category/paper-products/notebooks/,/c/paper-notebooks/notebooks-pads/,301,
+/product-category/paper-products/notepad-legal-pad/,/c/paper-notebooks/notebooks-pads/,301,
+/product-category/paper-products/sticky-notes/,/c/paper-notebooks/sticky-notes/,301,
+/product-category/paper-products/labelling-labels-paper-products/,/c/office-supplies/labelling-identification/labels/,301,
+/product-category/school-supplies/,/c/school-supplies/,301,
+/product-category/school-supplies/general/,/c/school-supplies/classroom-essentials/,301,
+/product-category/school-supplies/math-set/,/c/school-supplies/maths-geometry/math-sets/,301,
+/product-category/school-supplies/ruler-stencils/,/c/school-supplies/maths-geometry/rulers-stencils/,301,
+/shop/,/c/,301,WooCommerce shop root
+/shop-2/,/c/,301,Duplicate-slug page artefact
+/cart/,,410,No cart in a quote-first model
+/cart-2/,,410,Duplicate-slug page artefact
+/checkout/,,410,No checkout
+/my-account/,,410,No customer accounts in v1
+/my-account-2/,,410,Duplicate-slug page artefact; source of 120+ crawlable wishlist URLs
+/wishlist/,/quote/,301,Nearest equivalent is the quote basket
+/compare/,/c/,301,Compare is client-side and noindex in the new site
+/add-to-quote-product-list/,/quote/,301,Legacy ELEX quote basket
+/quote-received-page/,/quote/submitted/,301,Legacy ELEX confirmation
+/track-you-order/,/contact/,301,Typo slug in legacy; no order tracking in a quote model
+/blog-2/,/guides/,301,
+/news/,/guides/,301,
+/faqs/,/contact/,301,Pending a dedicated FAQ page in Phase 12
+/our-partners/,/about/,301,
+/work-with-us/,/about/,301,
+/feed/,,410,WordPress RSS
+/wp-login.php,,410,WordPress infrastructure
+/wp-admin/,,410,WordPress infrastructure
+/wp-sitemap.xml,/sitemap.xml,301,Sitemap index moves
