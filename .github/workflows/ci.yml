@@ -1,0 +1,206 @@
+# OfficeLand CI
+#
+# Stage order follows MASTER BUILD PROMPT section 19.3:
+#   lint + static analysis -> unit -> integration -> build -> (Lighthouse,
+#   SEO regression, a11y, security audit added in Phases 8, 13)
+#
+# Cheap, fast-failing stages run first so a formatting mistake does not wait
+# behind a container build.
+
+name: CI
+
+on:
+  push:
+    branches: [main, "phase-*"]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PHP_VERSION: "8.3"
+  # Angular CLI 22 requires >= 24.15.0.
+  NODE_VERSION: "24.19.0"
+
+jobs:
+  api-static:
+    name: API · lint + static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: pdo_pgsql, redis, intl, zip, bcmath, gd, exif
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ hashFiles('apps/api/composer.lock') }}
+          restore-keys: composer-
+
+      - run: composer install --no-interaction --prefer-dist --no-progress
+        working-directory: apps/api
+
+      - name: Lint (Pint)
+        run: vendor/bin/pint --test
+        working-directory: apps/api
+
+      - name: Static analysis (PHPStan level 8)
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+        working-directory: apps/api
+
+      # A dependency with a known advisory must not reach production. This is
+      # not advisory-only: Laravel 11 was rejected at Phase 1 on exactly this
+      # basis (docs/DECISIONS.md D-019).
+      - name: Security audit
+        run: composer audit --no-interaction
+        working-directory: apps/api
+
+  api-tests:
+    name: API · tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: officeland
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: officeland
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U officeland"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: pdo_pgsql, redis, intl, zip, bcmath, gd, exif
+          coverage: xdebug
+
+      - run: composer install --no-interaction --prefer-dist --no-progress
+        working-directory: apps/api
+
+      - run: cp .env.example .env && php artisan key:generate
+        working-directory: apps/api
+
+      - name: Test suite
+        run: php artisan test
+        working-directory: apps/api
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DIRECT_HOST: 127.0.0.1
+          DB_DIRECT_PORT: 5432
+          REDIS_HOST: 127.0.0.1
+
+  web-static:
+    name: Web · lint + typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - run: npm ci --no-audit --fund=false
+        working-directory: apps/web
+
+      # strict + strictTemplates, per MASTER BUILD PROMPT section 19.3.
+      - name: Typecheck
+        run: npx tsc --noEmit -p tsconfig.app.json
+        working-directory: apps/web
+
+      - run: npm audit --audit-level=high
+        working-directory: apps/web
+        continue-on-error: false
+
+  web-build:
+    name: Web · build + prerender
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - run: npm ci --no-audit --fund=false
+        working-directory: apps/web
+
+      - run: npm run build
+        working-directory: apps/web
+
+      # The storefront is served as static files (docs/DECISIONS.md D-009).
+      # If the build stops emitting prerendered HTML, every SEO gate downstream
+      # is meaningless, so assert it here rather than discovering it at Phase 8.
+      - name: Assert prerendered output exists
+        working-directory: apps/web
+        run: |
+          test -f dist/web/browser/index.html || { echo "::error::no prerendered index.html"; exit 1; }
+          grep -q 'ng-server-context' dist/web/browser/index.html \
+            || { echo "::error::index.html is not server-rendered"; exit 1; }
+          echo "prerendered $(find dist/web/browser -name '*.html' | wc -l) HTML file(s)"
+
+  stack:
+    name: Stack · compose smoke test
+    runs-on: ubuntu-latest
+    needs: [api-static, web-static]
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: cp .env.example .env
+
+      - name: Build and start
+        run: docker compose up -d --build
+
+      - name: Wait for readiness
+        run: |
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /tmp/ready.json -w '%{http_code}' http://127.0.0.1:8090/health/ready || true)
+            if [ "$code" = "200" ]; then echo "ready"; cat /tmp/ready.json; exit 0; fi
+            sleep 5
+          done
+          echo "::error::stack did not become ready"
+          docker compose logs
+          exit 1
+
+      # Guards the requirement that staging must never be indexable
+      # (MASTER BUILD PROMPT section 14.8). A leak here is slow to undo.
+      - name: Assert non-production is not indexable
+        run: |
+          curl -sI http://127.0.0.1:8090/ | grep -qi 'x-robots-tag: noindex' \
+            || { echo "::error::missing X-Robots-Tag on non-production"; exit 1; }
+          curl -s http://127.0.0.1:8090/robots.txt | grep -q 'Disallow: /' \
+            || { echo "::error::robots.txt is not blocking on non-production"; exit 1; }
+
+      - name: Assert storefront is served as prerendered static HTML
+        run: |
+          curl -sf http://127.0.0.1:8090/ | grep -q 'ng-server-context' \
+            || { echo "::error::storefront is not prerendered"; exit 1; }
+
+      - if: failure()
+        run: docker compose logs
+
+      - if: always()
+        run: docker compose down -v

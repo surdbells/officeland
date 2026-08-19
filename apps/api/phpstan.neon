@@ -1,0 +1,19 @@
+# Static analysis at level 8, per MASTER BUILD PROMPT section 19.3.
+#
+# Level 8 adds null-safety checks on top of level 7's union handling. It is the
+# highest level that is practical against Laravel's facade-heavy API without
+# blanket ignores, and it catches the class of bug that reaches production as a
+# "Call to a member function on null".
+
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 8
+
+    paths:
+        - app
+        - config
+        - database
+        - routes
+

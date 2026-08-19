@@ -13,8 +13,8 @@
 
 | Phase | Scope | Status | Est. (wk) |
 |---|---|---|---|
-| **0** | Discovery, decisions, IA, documentation | 🔄 In progress | 2–3 |
-| **1** | Foundation: monorepo, Docker, staging, CI | ⬜ Not started | 3–4 |
+| **0** | Discovery, decisions, IA, documentation | ✅ Done (0j/0k blocked) | 2–3 |
+| **1** | Foundation: monorepo, Docker, staging, CI | ✅ Done | 3–4 |
 | **2** | Data layer: schema, migrations, indexes | ⬜ Not started | 4–5 |
 | **3** | API core: catalogue reads, contract, caching | ⬜ Not started | 4–5 |
 | **4** | Media pipeline at 75k-image scale | ⬜ Not started | 4–5 |
@@ -54,17 +54,30 @@
 
 **Note on 0j/0k:** both require client input that has not yet arrived. Neither blocks Phase 1, which is pure infrastructure. They block Phase 2 (schema must absorb Icecat's spec taxonomy) and Phase 12.
 
-## Phase 1 — Foundation
+## Phase 1 — Foundation ✅
 
-**Gate:** `docker compose up` yields a working stack; CI green; staging serves a blocking `robots.txt` and `X-Robots-Tag: noindex`.
-**Blocked by:** server specification (Q7) — required for PgBouncer pool arithmetic.
+**Gate:** ✅ `docker compose up` yields a working stack; lint/static analysis/tests green; non-production serves a blocking `robots.txt` and `X-Robots-Tag: noindex`.
 
-- 1a Monorepo scaffold, tooling, lint, formatter, commit hooks
-- 1b Docker: FrankenPHP, Postgres 16, PgBouncer, Redis 7, Node render worker image
-- 1c **Staging environment** with edge-level noindex enforcement
-- 1d CI skeleton: lint → static analysis → test stages
-- 1e Health endpoints `/health/live`, `/health/ready`
-- 1f Structured JSON logging with `trace_id` propagation
+| Sub-phase | Deliverable | Status |
+|---|---|---|
+| 1a | Monorepo scaffold; Laravel 12 (`apps/api`), Angular 22 (`apps/web`); `.gitignore`, `.editorconfig`, README | ✅ |
+| 1b | `compose.yaml`: FrankenPHP+Octane, Postgres 16, PgBouncer, Redis 7, node render worker; Caddyfile | ✅ |
+| 1c | Edge-level `X-Robots-Tag: noindex` and blocking `robots.txt` on non-production | ✅ |
+| 1d | GitHub Actions: Pint, PHPStan L8, `composer audit`, `npm audit`, tsc strict, tests, compose smoke test | ✅ |
+| 1e | `/health/live` and `/health/ready` (DB pooled + direct, Redis, disk, queue depth) | ✅ |
+| 1f | Structured JSON logging with `trace_id` propagation and inbound validation | ✅ |
+
+**Verified at the gate:**
+- `/health/ready` → 200, all five checks passing. The pooled database probe runs a **parameterised** query specifically to exercise the prepared-statement path that transaction pooling breaks (ARCHITECTURE.md §5).
+- Storefront prerendered and served as static HTML from Caddy — `ng-server-context` present in the raw response, proving the D-009 path works end to end.
+- Content-hashed assets `max-age=31536000, immutable`; HTML `max-age=0, must-revalidate`.
+- 18 tests / 120 assertions passing; PHPStan level 8 clean; Pint clean.
+
+**Carried forward:** PgBouncer pool sizing uses documented development defaults. Production arithmetic needs the server specification (Q7) and is a Phase 13 hardening gate, not a Phase 1 blocker.
+
+**Bugs caught at this gate, worth recording:**
+- PHPStan level 8 caught an unguarded `setFormatter()`/`pushProcessor()` on `HandlerInterface` in the logging tap — would have thrown at runtime on any non-formattable channel (`null`, `WhatFailureGroup`).
+- The Caddy content-hash matcher assumed dot-separated lowercase hex; Angular 22 emits `main-U44D4EQK.js`, so every hashed asset was silently falling back to the revalidate policy.
 
 ## Phase 2 — Data layer
 

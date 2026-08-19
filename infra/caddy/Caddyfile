@@ -1,0 +1,117 @@
+# OfficeLand edge — FrankenPHP (Caddy) serving three distinct surfaces.
+# See docs/ARCHITECTURE.md section 1.
+#
+#   /api/**     -> PHP (Laravel 12 + Octane worker mode)
+#   /media/**   -> immutable content-addressed image derivatives
+#   everything  -> prerendered static HTML (docs/DECISIONS.md D-009)
+
+{
+	frankenphp {
+		worker {
+			file /app/vendor/laravel/octane/bin/frankenphp-worker.php
+			num {$OCTANE_WORKERS:4}
+			# Octane's bootstrap resolves the application root from
+			# APP_BASE_PATH in $_SERVER. Without it the worker exits 11
+			# ("Cannot find application base path") before ever reaching
+			# frankenphp_handle_request(), and FrankenPHP reports only a
+			# generic worker-startup failure.
+			env APP_BASE_PATH /app
+		}
+	}
+
+	auto_https off
+	admin off
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+:80 {
+	log {
+		output stdout
+		format json
+	}
+
+	encode zstd br gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+		-Server
+	}
+
+	# ---------------------------------------------------------------------
+	# Staging guard (docs/SEO_SPEC.md section 8).
+	# A staging leak into the index is self-inflicted and slow to undo, so
+	# noindex is enforced at the edge, not left to application templates.
+	# ---------------------------------------------------------------------
+	@staging expression "{$APP_ENV:local}" != "production"
+	header @staging X-Robots-Tag "noindex, nofollow, noarchive"
+
+	handle /robots.txt {
+		@nonprod expression "{$APP_ENV:local}" != "production"
+		respond @nonprod "User-agent: *
+Disallow: /
+" 200
+
+		root * /app/static
+		file_server
+	}
+
+	# ---------------------------------------------------------------------
+	# API — the only surface that executes PHP.
+	# ---------------------------------------------------------------------
+	handle /api/* {
+		root * /app/public
+		php_server
+	}
+
+	handle /health/* {
+		root * /app/public
+		php_server
+	}
+
+	# Admin panel (Filament, Phase 5).
+	handle /admin* {
+		root * /app/public
+		php_server
+	}
+
+	# ---------------------------------------------------------------------
+	# Media — content-addressed, therefore immutable (docs/ARCHITECTURE.md 8).
+	# ---------------------------------------------------------------------
+	handle /media/* {
+		root * /app/storage-media
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+
+	# ---------------------------------------------------------------------
+	# Prerendered storefront. No PHP, no Node — disk reads only.
+	# Content-hashed assets get a far-future cache; HTML must revalidate so
+	# an incremental rebuild is visible immediately (docs/ARCHITECTURE.md 4).
+	# ---------------------------------------------------------------------
+	handle {
+		root * /app/static
+
+		# Angular emits `name-U44D4EQK.js` (dash, uppercase base32), while the
+		# media pipeline emits lowercase hex. Match both, or content-hashed
+		# assets silently fall back to the must-revalidate HTML policy below.
+		@hashed path_regexp [.-]([A-Z0-9]{8,}|[a-f0-9]{8,})\.(js|css|woff2|png|jpg|jpeg|webp|avif|svg|ico)$
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+
+		@html path *.html /
+		header @html Cache-Control "public, max-age=0, must-revalidate"
+
+		try_files {path} {path}/index.html {path}.html /index.html
+		file_server
+	}
+
+	handle_errors {
+		root * /app/static
+		rewrite * /index.html
+		file_server
+	}
+}

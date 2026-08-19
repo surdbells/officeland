@@ -115,6 +115,28 @@ Format: **ID · Decision · Rationale · Source · Date**
 **Rationale:** D-009 collapses request-path database load — crawlers and users hitting 15,000 prerendered pages touch flat files, not Postgres. The database serves only search, typeahead, facets and quote submission. This position moved twice as the rendering decision moved; it is now locked. If the replica is wanted at launch for DR, it returns to Phase 1.
 **Status:** Architect decision, awaiting objection.
 
+### D-019 — Laravel 12, not Laravel 11
+**Decision:** the API is built on Laravel 12 (installed: v12.67.0). §6.3 fixes Laravel 11 as a client stack choice.
+**This is forced, not preference.** Every Laravel 11 release — v11.31.0 through v11.55.1 — is blocked by Composer's security-advisory policy. Verbatim from the resolver:
+
+> `laravel/framework[v11.31.0, ..., v11.55.1] ... these were not loaded, because they are affected by security advisories`
+
+Six advisories apply across the 11.x line, including reflected XSS via route and request parameters on the debug-mode error page. Installing would require `policy.advisories.block: false` or explicitly ignoring advisory IDs.
+
+**Why substitution was chosen over suppression:** §18 requires OWASP Top 10 to be addressed and evidenced, and §19.3 requires dependency scanning in CI. Shipping a framework with known unpatched advisories to a B2B/B2G site handling customer contact data fails both, and `composer audit` would fail the pipeline on the first run. Laravel 12 resolves cleanly and audits clean.
+**Verified:** `composer audit` → *No security vulnerability advisories found.*
+**Status:** taken under §2.1's escalation rule. **Client notification required** — this changes a stack choice §6.3 marked as fixed.
+
+### D-020 — Angular 22 and Filament v5
+**Decision:** Angular 22 (installed: 22.1.0, `@angular/ssr` 22.1.5, TypeScript 6.0.2) and Filament v5, replacing §6.3's Angular 21 / Filament v4.
+**Rationale:** both specified versions are now the previous major. Filament v5 shipped January 2026; Angular 22 is current with incremental hydration enabled by default under `provideClientHydration()`. D-005 removed the Kanban dependency, so the §6.3 plugin-availability fallback to v3.3 is not needed.
+**Source:** client, 2026-08-20. Closes Q-C.
+
+### D-021 — Node 24.19+ required; frontend toolchain runs in Docker
+**Decision:** the Angular toolchain runs inside the `node:24-alpine` container rather than on the host.
+**Rationale:** Angular CLI 22 requires Node ≥24.15.0 and the development host runs 24.14.0. Rather than modify the developer's system Node, the containerised toolchain is authoritative — which also makes local builds identical to CI and production. `node_modules` lives in a named volume so Linux-native binaries never land in the Windows bind mount.
+**Consequence:** CI pins Node 24.19.0. Developers wanting to run `ng` directly on the host must upgrade to ≥24.15.0; nothing requires them to.
+
 ---
 
 ## Open
@@ -126,9 +148,11 @@ Open Icecat (free) covers **600+ sponsoring brands**, verified to include HP, AS
 ### Q-B — Who is rewriting 15,000 descriptions, and at what throughput?
 Determines whether Phase 12 is a scheduling constraint or a launch blocker. If AI-assisted, the review queue needs the similarity gate described in SEO_SPEC.md §7.
 
-### Q-C — Framework versions (gap G11, verified 2026-08-19)
-- **Angular:** §6.3 fixes Angular 21. Angular 22 is now stable, and incremental hydration — developer preview in v19, stable since v20 — is enabled by default with `provideClientHydration()` from v22. Angular 21 is viable; v22 is current. **Confirm which.**
-- **Filament:** §6.3 fixes Filament v4 with a v3.3 fallback. **Filament v5 shipped January 2026 and is the current stable release**; v4 is now the previous version. Building new on v4 starts on a legacy major. D-005 removed the Kanban dependency, so plugin risk is low. **Recommend v5. Confirm.**
+### ~~Q-C — Framework versions~~ — CLOSED 2026-08-20
+Resolved by D-020 (Angular 22, Filament v5) and D-019 (Laravel 12, forced by security advisories).
+
+### Q-E — Client sign-off required on D-019
+Laravel 12 replaces Laravel 11, which §6.3 marked as fixed by the client. The substitution is forced — Laravel 11 cannot be installed without disabling Composer's security-advisory policy — but §6.3's "do not substitute" instruction means this needs explicit acknowledgement rather than silent adoption.
 
 ### Q-D — Remaining §22 items unaffected by the above
 Q13 (WoodTek), Q14 (Dubai/hreflang), Q15 (first-party reviews), Q16 (captcha provider), Q17 (brand assets, social URLs), Q18 (ZeptoMail region, and what `hostinger-reach` currently sends), Q20 (delivery model), Q21 (RPO/RTO, offsite backup destination), Q22 (compliance scope), Q23 (merchandising taxonomy approval — see TAXONOMY.md §7).

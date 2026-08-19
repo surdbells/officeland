@@ -1,0 +1,138 @@
+# OfficeLand — local development stack.
+# See docs/ARCHITECTURE.md section 1 for the production topology this mirrors.
+#
+#   docker compose up --build
+#   -> http://localhost:8090        prerendered storefront (static)
+#   -> http://localhost:8090/health/ready   API readiness probe
+#
+# The read replica is deliberately absent: docs/DECISIONS.md D-018 defers it to
+# Phase 13 on disaster-recovery grounds, because static prerendering collapses
+# request-path database load.
+
+name: officeland
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-officeland}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+      POSTGRES_DB: ${DB_DATABASE:-officeland}
+      # md5 so the PgBouncer userlist format matches. Production uses
+      # scram-sha-256 with auth_query; see docs/RUNBOOK.md.
+      POSTGRES_INITDB_ARGS: "--auth-host=md5"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      # Exposed for migrations, which connect DIRECT and never via PgBouncer
+      # (docs/ARCHITECTURE.md section 5).
+      - "${DB_DIRECT_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-officeland} -d ${DB_DATABASE:-officeland}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./infra/pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini:ro
+      - ./infra/pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt:ro
+    ports:
+      - "${DB_POOLED_PORT:-6432}:6432"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 6432 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - redisdata:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/frankenphp/Dockerfile
+      target: ${BUILD_TARGET:-dev}
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_URL: ${APP_URL:-http://localhost:8090}
+      OCTANE_WORKERS: ${OCTANE_WORKERS:-4}
+      # Application traffic goes through the pooler.
+      DB_CONNECTION: pgsql
+      DB_HOST: pgbouncer
+      DB_PORT: 6432
+      DB_DATABASE: ${DB_DATABASE:-officeland}
+      DB_USERNAME: ${DB_USERNAME:-officeland}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      # Migrations bypass PgBouncer entirely.
+      DB_DIRECT_HOST: postgres
+      DB_DIRECT_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CACHE_STORE: redis
+      QUEUE_CONNECTION: redis
+      SESSION_DRIVER: redis
+    volumes:
+      - ./apps/api:/app
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - static:/app/static
+      - media:/app/storage-media
+    ports:
+      - "${HTTP_PORT:-8090}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    restart: unless-stopped
+
+  render:
+    build:
+      context: .
+      dockerfile: infra/docker/node-render/Dockerfile
+      target: ${BUILD_TARGET:-dev}
+    environment:
+      STATIC_ROOT: /static
+      BUILD_OUTPUT: /app/dist/web/browser
+      RENDER_WATCH: ${RENDER_WATCH:-0}
+    volumes:
+      - ./apps/web:/app
+      # Named volume keeps Linux-native node_modules out of the host bind
+      # mount; the host runs Node 24.14 which is below Angular CLI 22's floor.
+      - web_node_modules:/app/node_modules
+      - static:/static
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  web_node_modules:
+  # Prerendered HTML: written by `render`, served by `api` (Caddy).
+  static:
+  # Content-addressed image derivatives (Phase 4).
+  media:
