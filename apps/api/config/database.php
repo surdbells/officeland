@@ -90,10 +90,20 @@ return [
          *
          * Two settings here are load-bearing and must not be "tidied up":
          *
-         *   1. ATTR_EMULATE_PREPARES => true
-         *      Server-side prepared statements do not survive across
-         *      transactions under transaction pooling. Without emulation,
-         *      parameterised queries fail intermittently and only under load.
+         *   1. ATTR_EMULATE_PREPARES => false
+         *      Section 10.1 offers two ways to survive transaction pooling:
+         *      PDO emulation, or PgBouncer's own prepared-statement tracking
+         *      (max_prepared_statements > 0, PgBouncer >= 1.21).
+         *
+         *      We use PgBouncer's, and emulation must stay OFF.
+         *
+         *      Emulation interpolates bindings into the SQL string, which
+         *      turns a PHP boolean into a bare integer `1`. PostgreSQL will
+         *      not coerce integer to boolean, so EVERY insert or update
+         *      touching a boolean column fails with SQLSTATE[42804]. Enabling
+         *      both strategies looks like belt-and-braces and is in fact
+         *      broken. Running PgBouncer 1.25.2 with max_prepared_statements
+         *      = 200 (infra/pgbouncer/pgbouncer.ini).
          *
          *   2. 'search_path' => null
          *      Laravel issues `SET search_path` on connect. Session-level SET
@@ -127,7 +137,7 @@ return [
             'search_path' => null,
             'sslmode' => env('DB_SSLMODE', 'prefer'),
             'options' => [
-                PDO::ATTR_EMULATE_PREPARES => true,
+                PDO::ATTR_EMULATE_PREPARES => false,
             ],
         ],
 

@@ -217,7 +217,7 @@
 **Gate:** no indexable page below the content minimums of SEO_SPEC.md §7.
 **Blocked by:** Q-B (who writes, at what throughput).
 
-- 12a Category intros — 150–300 words × 108 categories
+- 12a Category intros — 150–300 words × 124 categories
 - 12b Product descriptions — the D-010 workload; attribute-driven generation plus review, with the family-scoped similarity gate
 - 12c Buying guides with real named authors
 - 12d Locations pages with genuine local content

@@ -71,7 +71,7 @@ docs/              Plan, architecture, SEO spec, decisions, taxonomy
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Topology, prerender pipeline, pooling, Icecat ingestion |
 | [SEO_SPEC.md](docs/SEO_SPEC.md) | URL architecture, metadata, structured data, CI gates |
 | [DECISIONS.md](docs/DECISIONS.md) | Every decision and departure, with rationale |
-| [TAXONOMY.md](docs/TAXONOMY.md) | The 108-category tree and its design rules |
+| [TAXONOMY.md](docs/TAXONOMY.md) | The 124-category tree and its design rules |
 | [REDIRECT_MAP.csv](docs/REDIRECT_MAP.csv) | Legacy URL mapping — 161/161 categories covered |
 
 ## Development

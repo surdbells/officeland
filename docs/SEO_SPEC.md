@@ -116,7 +116,7 @@ Pages 2..N carry a **self-referencing canonical** and **`index,follow`**.
 
 §14.5 as written required self-canonicals (justified by discovery) *and* `noindex` from page 2 — internally inconsistent, and long-lived `noindex` pages lose crawl scheduling over time, producing exactly the deep-discovery loss the rule existed to prevent.
 
-This matters more at current scale than it would have at the legacy site's: **~200 products per leaf category, roughly 9 pages at 24 per page.** A large share of the catalogue lives on page 2+.
+This matters more at current scale than it would have at the legacy site's: **~175 products per leaf category, roughly 8 pages at 24 per page.** A large share of the catalogue lives on page 2+.
 
 Every product must be reachable within **3 clicks** of the homepage. Delivered by **D-011**: category pages render their full child-category list as crawlable anchors, giving home → department → leaf → product. A crawl-depth report is a Phase 8 gate.
 
@@ -134,7 +134,7 @@ The differentiator, and under D-010 the largest risk.
    **Correction to §17.4:** the original rule — *no two products may share >70% description similarity, fail the import* — is unworkable. Toner variants (CE320A / CE321A / CE322A) legitimately share ~90% of their description. The gate therefore (a) measures only the non-boilerplate prose segment, excluding the spec table, (b) scopes the threshold **within** a product family rather than globally, and (c) flags for review rather than failing the import.
 4. **Page value does not rest on prose alone.** Grouped spec tables, images, breadcrumbs, related-product rails and category cross-links carry substantial weight.
 
-**Category intros:** 150–300 words of genuine buying context. Required before a category may be marked indexable. 108 categories — tractable.
+**Category intros:** 150–300 words of genuine buying context. Required before a category may be marked indexable. 124 categories — tractable.
 
 **Buying guides** at `/guides/`, each with a real named author, linking down into categories and products.
 

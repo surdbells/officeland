@@ -6,6 +6,10 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    // DDL must bypass PgBouncer: transaction pooling aborts the
+    // transaction mid-migration (docs/ARCHITECTURE.md section 5).
+    protected $connection = 'pgsql_direct';
+
     /**
      * Run the migrations.
      */

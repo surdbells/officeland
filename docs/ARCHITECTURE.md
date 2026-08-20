@@ -96,7 +96,7 @@ TypeScript types are generated from the OpenAPI spec. A contract change not refl
 | Whole subtree in one query | `WHERE path LIKE '/office-furniture/%'` — index-backed prefix scan |
 | Depth ≤ 3 | `depth` column with a CHECK constraint, maintained alongside `path` |
 
-**Why not `ltree`:** ltree labels permit only `[A-Za-z0-9_]`. Every slug in this taxonomy is hyphenated (`office-furniture`, `ergonomic-task-chairs`), so ltree would require storing a transliterated second representation and translating on every read and write — permanent friction for a lookup table of **108 rows**. At that size the performance advantage of GiST-indexed ltree operators is unmeasurable, and materialized path avoids a further extension dependency.
+**Why not `ltree`:** ltree labels permit only `[A-Za-z0-9_]`. Every slug in this taxonomy is hyphenated (`office-furniture`, `ergonomic-task-chairs`), so ltree would require storing a transliterated second representation and translating on every read and write — permanent friction for a lookup table of **124 rows**. At that size the performance advantage of GiST-indexed ltree operators is unmeasurable, and materialized path avoids a further extension dependency.
 
 Revisit only if the taxonomy exceeds ~10,000 nodes or depth 3 is lifted.
 

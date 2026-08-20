@@ -88,7 +88,9 @@ Seven departments. `~` marks a leaf that exists mainly to absorb legacy terms an
     classroom-essentials/
 ```
 
-**Totals:** 7 departments · 27 subcategories · 74 leaves = **108 categories** (down from 161).
+**Totals:** 7 departments · 31 subcategories · 86 leaves = **124 categories** (down from 161).
+
+Counts are asserted by `TaxonomySeeder`, which warns if this document and the seeded tree diverge.
 
 ## 4. Resolving the `storage` ambiguity
 
@@ -113,11 +115,11 @@ Brands identified from the legacy catalogue and taxonomy, promoted to `/brands/{
 
 ## 6. Crawl-depth arithmetic (§14.5)
 
-At 15,000 products across 74 leaves, mean occupancy is **~200 products per leaf** — roughly 9 pages at 24 per page.
+At 15,000 products across 86 leaves, mean occupancy is **~175 products per leaf** — roughly 8 pages at 24 per page.
 
 Reaching the 3-click requirement depends on the fix recorded in `DECISIONS.md` as **D-011**: every category page renders its full child-category list as real crawlable anchors, so the path is home → department (1) → leaf (2) → product (3). The megamenu itself stays at levels 1–2 to protect header weight per §23.1 rule 2.
 
-**Watch item:** 200 products per leaf is high, and deep pagination is where discovery degrades. If a leaf exceeds ~300 products, split it. Reviewed at Phase 8.
+**Watch item:** 175 products per leaf is high, and deep pagination is where discovery degrades. If a leaf exceeds ~300 products, split it. Reviewed at Phase 8.
 
 ## 7. Merchandising taxonomy ("Best for") — proposed, needs approval
 
