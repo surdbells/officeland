@@ -18,6 +18,12 @@
     "isolatedModules": true,
     "experimentalDecorators": true,
     "importHelpers": true,
+    /* The API contract is generated from the OpenAPI spec and lives outside
+       this app, so it is imported by alias rather than copied. A copy would
+       drift, and the CI contract gate only checks packages/contracts. */
+    "paths": {
+      "@contracts/api": ["../../packages/contracts/api.d.ts"]
+    },
     "target": "ES2022",
     "module": "preserve"
   },

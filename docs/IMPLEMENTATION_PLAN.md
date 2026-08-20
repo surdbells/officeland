@@ -1,6 +1,6 @@
 # Implementation Plan
 
-**Status:** Phases 0-6 complete. Phase 7 next. See docs/HANDOVER-phase-2.md.
+**Status:** Phases 0-7 complete. Phase 5b or 8 next. See docs/HANDOVER-phase-2.md.
 **Re-read this document before starting any phase** (§2.3). If reality has diverged, amend the plan — do not drift silently.
 
 **Staffing assumption:** ~2 backend, ~1.5 frontend, ~0.5 devops FTE, plus a content resource outside the engineering team.
@@ -21,7 +21,7 @@
 | **5** | Filament admin + CSV importer | ✅ Done | 4–5 |
 | **5b** | Icecat ingestion framework | ⬜ Not started | 5–7 |
 | **6** | Search: FTS, trigram, synonyms, facets | ✅ Done | 3–4 |
-| **7** | Storefront foundation + UX_SPEC | ⬜ Not started | 5–6 |
+| **7** | Storefront foundation + UX_SPEC | ✅ Done | 5–6 |
 | **8** | Storefront catalogue + **static prerender pipeline** | ⬜ Not started | 7–9 |
 | **9** | Quote engine (basket, 3-field form, anti-abuse) | ⬜ Not started | 3–4 |
 | **10** | ZeptoMail transport, templates, queue, webhooks | ⬜ Not started | 3 |
@@ -194,18 +194,33 @@
 
 **Image reproducibility (D-026):** fixing a media-test failure revealed that the Phase 4 image never contained libvips — it had been installed by hand into the running container for the driver benchmark. Also surfaced that `docker compose build` was reporting success without replacing the image (buildx needed `--load`), and that `libvips42` can read AVIF but not write it. All three fixed and verified against the image.
 
-## Phase 7 — Storefront foundation
+## Phase 7 — Storefront foundation ✅
 
-**Gate:** raw-HTML verification gate (SEO_SPEC.md §10.1) passes; `UX_SPEC.md` delivered.
-**Blocked by:** Q-C (Angular version), Q17 (brand assets, exact hex, fonts).
+**Gate:** ✅ raw-HTML verification gate (SEO_SPEC.md §10.1) passes — 20 URLs spanning all four templates, drawn from 136 prerendered pages; `UX_SPEC.md` delivered.
+**Q17 (brand assets, exact hex, fonts) remains open.** Built against clearly-marked placeholder tokens in `styles.css`. It blocks visual identity, `Organization.sameAs` and the colour-contrast commitment — not structure.
 
-- 7a Angular standalone + signals + OnPush; feature-folder structure
-- 7b Design system and Tailwind v4 `@theme` tokens
-- 7c **SEO service** — sole owner of title, meta, canonical, OG/Twitter, JSON-LD. No component sets meta tags directly.
-- 7d Layout: header, utility bar, megamenu (levels 1–2 SSR anchors, level 3 on intent), fat footer
-- 7e **Category pages render full child anchors** (D-011)
-- 7f Generated API client from the OpenAPI contract — hand-written HTTP calls are a review rejection
-- 7g `UX_SPEC.md`: annotated wireframes, component inventory, facet groups per category family
+| Sub-phase | Deliverable | Status |
+|---|---|---|
+| 7a | Angular standalone + signals + OnPush; feature folders | ✅ Done |
+| 7b | Design system and Tailwind v4 `@theme` tokens | ✅ Done — values provisional pending Q17 |
+| 7c | SEO service, sole owner of title/meta/canonical/OG/JSON-LD | ✅ Done — 22 unit tests |
+| 7d | Header, utility bar, megamenu, fat footer | ✅ Done |
+| 7e | Category pages render full child anchors (D-011) | ✅ Done |
+| 7f | Typed API client over the OpenAPI contract | ✅ Done |
+| 7g | `UX_SPEC.md` | ✅ Done |
+
+**Also delivered, because the gate could not pass without it:**
+
+- **The prerender pipeline, working end to end for the first time.** `/api/v1/render/manifest` supplies the route list and `app.routes.server.ts` renders all of it: 136 routes, zero failures. Phase 8 still owns the *incremental* half; the full rebuild works now.
+- **`ServerApiBackend`** (D-027) — before this the prerender could not reach the API at all.
+- **`TrailingSlashUrlSerializer`** (D-028) — every internal link on the site was a redirect hop.
+- **Two-scope JSON-LD** (D-029) — every product page was shipping without `Organization`.
+- **Candidate titles** (D-030) — the real title data does not fit the template.
+- **`DemoCatalogueSeeder`** — ten hand-written products with real copy and grouped specifications, so the gate asserts against content rather than faker output.
+- **D-024 corrected, and `PgBouncerConcurrencyTest` added.** The prerender was the first genuinely concurrent load the API had ever seen, and it failed 64 of 136 pages. A production-severity database bug that four phases of tests had not surfaced; see D-024 for the corrected diagnosis and why the suite missed it.
+- **CI**: `web-build` now stands up PostgreSQL and the API, seeds a catalogue, prerenders against it, and runs the raw-HTML gate. Previously it built with no API and asserted only that some HTML existed.
+
+**Deferred to Phase 8 as planned:** product grid, facet rail, pagination, gallery, mobile drawer, typeahead, related rails.
 
 ## Phase 8 — Storefront catalogue + prerender pipeline
 

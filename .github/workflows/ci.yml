@@ -134,10 +134,34 @@ jobs:
         continue-on-error: false
 
   web-build:
-    name: Web · build + prerender
+    name: Web · build + prerender + raw-HTML gate
     runs-on: ubuntu-latest
+
+    # The prerender fetches its route list and its page data from the API
+    # (D-009). Without one it renders only the static routes, and the raw-HTML
+    # gate has no product or category page to inspect — which is exactly the
+    # blind spot that let a broken catalogue build succeed in Phase 7.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: officeland
+          POSTGRES_PASSWORD: officeland
+          POSTGRES_DB: officeland
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U officeland"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: pdo_pgsql, redis, intl, bcmath
 
       - uses: actions/setup-node@v4
         with:
@@ -145,11 +169,60 @@ jobs:
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
 
+      - run: composer install --no-interaction --prefer-dist --no-progress
+        working-directory: apps/api
+
+      # CI talks to PostgreSQL directly. PgBouncer is not in the loop here, so
+      # this job cannot catch D-024-class pooling bugs — PgBouncerConcurrencyTest
+      # in the api-test job is what covers those.
+      - name: Prepare the catalogue the prerender will read
+        working-directory: apps/api
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: '5432'
+          DB_DIRECT_HOST: 127.0.0.1
+          DB_DIRECT_PORT: '5432'
+          DB_DATABASE: officeland
+          DB_USERNAME: officeland
+          DB_PASSWORD: officeland
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan migrate --force --database=pgsql_direct
+          php artisan db:seed --class=TaxonomySeeder --force
+          php artisan db:seed --class=DemoCatalogueSeeder --force
+
+      - name: Serve the API for the prerender
+        working-directory: apps/api
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: '5432'
+          DB_DIRECT_HOST: 127.0.0.1
+          DB_DIRECT_PORT: '5432'
+          DB_DATABASE: officeland
+          DB_USERNAME: officeland
+          DB_PASSWORD: officeland
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8095 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8095/api/v1/render/manifest >/dev/null && break
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:8095/api/v1/render/manifest >/dev/null \
+            || { echo "::error::API did not come up"; exit 1; }
+
       - run: npm ci --no-audit --fund=false
+        working-directory: apps/web
+
+      - run: npm test -- --no-watch
         working-directory: apps/web
 
       - run: npm run build
         working-directory: apps/web
+        env:
+          PRERENDER_API_ORIGIN: http://127.0.0.1:8095
 
       # The storefront is served as static files (docs/DECISIONS.md D-009).
       # If the build stops emitting prerendered HTML, every SEO gate downstream
@@ -161,6 +234,16 @@ jobs:
           grep -q 'ng-server-context' dist/web/browser/index.html \
             || { echo "::error::index.html is not server-rendered"; exit 1; }
           echo "prerendered $(find dist/web/browser -name '*.html' | wc -l) HTML file(s)"
+
+      # SEO_SPEC.md section 10.1. Reads the built files with no browser and no
+      # JavaScript, which is what a crawler does. Section 10.1 requires this to
+      # run even though D-009 reduces it to reading files, "because a
+      # regression in the render pipeline is otherwise silent" — in Phase 7 it
+      # caught a placeholder <title> on every catalogue page, and 64 of 136
+      # pages rendering "not found".
+      - name: Raw-HTML gate
+        working-directory: apps/web
+        run: npm run gate:raw-html
 
   contract:
     name: Contract · spec and types in sync

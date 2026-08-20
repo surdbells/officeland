@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\BrandController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\NavigationController;
 use App\Http\Controllers\Api\V1\ProductController;
+use App\Http\Controllers\Api\V1\RenderManifestController;
 use App\Http\Controllers\Api\V1\SearchController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,6 +34,10 @@ Route::prefix('v1')->name('api.')->group(function (): void {
     Route::get('brands/{brand}/products', [BrandController::class, 'products'])->name('brands.products');
 
     Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
+
+    // The prerender route list (D-009). Declared before the category catch-all
+    // so 'render/manifest' is not swallowed as a category path.
+    Route::get('render/manifest', RenderManifestController::class)->name('render.manifest');
 
     Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
 

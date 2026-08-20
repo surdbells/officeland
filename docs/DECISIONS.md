@@ -151,15 +151,36 @@ Six advisories apply across the 11.x line, including reflected XSS via route and
 §12.3 asked for libvips and for the choice to be justified — it is, on evidence rather than assumption.
 **Status:** architect decision, measured.
 
-### D-024 — PgBouncer tracks no prepared statements, PDO emulates none
-**Decision:** `max_prepared_statements = 0` **and** `PDO::ATTR_EMULATE_PREPARES => false`.
-**§10.1 offers two strategies and NEITHER works as written:**
-- *PgBouncer prepared-statement support* (`max_prepared_statements > 0`) **breaks transactions.** Inside a transaction a plain `SELECT` succeeds and the next prepared statement reports `SQLSTATE[25P02] current transaction is aborted`. Every `DB::transaction()` containing a model write failed. Found in Phase 4.
-- *PDO emulation* **breaks boolean binding.** Emulation interpolates bindings, rendering a PHP `true` as bare `1`, which PostgreSQL refuses to coerce to boolean. Every insert touching a boolean column failed. Found in Phase 2.
+### D-024 — Neither §10.1 pooling strategy works; the fix is `PDO::PGSQL_ATTR_DISABLE_PREPARES`
+**Decision:** `max_prepared_statements = 0`, `PDO::ATTR_EMULATE_PREPARES => false`, **and `PDO::PGSQL_ATTR_DISABLE_PREPARES => true`**.
 
-**What works is neither:** PgBouncer does not track prepared statements, PDO does not emulate them, and the server connection stays pinned for the life of each transaction — which is all that was ever required.
-**Cost of the diagnosis:** the read/write split and `preventSilentlyDiscardingAttributes` were both suspected and both exonerated; each is restored. Guarded by `PgBouncerTransactionTest`.
-**Status:** architect decision, reproduced by toggling one value with everything else held constant.
+**Supersedes the Phase 4 version of this decision**, which named the right two settings and drew the wrong conclusion from them. See *Correction* below.
+
+**The actual root cause.** `pdo_pgsql` gives every server-side prepared statement a NAME (`pdo_stmt_00000001`, …) and caches it on the PHP-side connection. Under transaction pooling the `Parse` can land on one server connection and a later `Execute` on another, which never saw it:
+
+```
+ERROR: prepared statement "pdo_stmt_00000001" does not exist
+```
+
+`PGSQL_ATTR_DISABLE_PREPARES` routes each statement through `PQexecParams`: parameters are still bound **by the server** — so types, booleans and escaping stay correct — but nothing is named, so there is nothing to be missing. It is a third option §10.1 does not mention, and the only one that holds.
+
+**Why the two documented strategies still do not work:**
+- *PgBouncer prepared-statement support* (`max_prepared_statements > 0`) breaks transactions. Re-verified against PgBouncer 1.25.2 in Phase 7: four `PgBouncerTransactionTest` cases fail with it raised and pass with it at 0.
+- *PDO emulation* breaks boolean binding — emulation interpolates client-side and renders a PHP `true` as a bare `1`, which PostgreSQL will not coerce to boolean (42804). Found in Phase 2.
+
+**Correction to the Phase 4 conclusion.** That version claimed the working configuration was "neither", and that a pinned server connection "is all that was ever required". Both halves were wrong:
+
+- The `prepared statement does not exist` error is present in **both** configurations. Raising `max_prepared_statements` did not introduce it; it made it visible *inside* transactions, where one failed statement poisons every statement after it as `25P02`. The `25P02` was a downstream symptom and was mistaken for the cause. PostgreSQL's own log carried the real first error the whole time.
+- Pinning holds only for the duration of a transaction. It says nothing about a `PDOStatement` re-executed across requests — which is exactly what an Octane worker does with a persistent PDO connection.
+
+**How it escaped for four phases.** Every existing test drove one client connection and executed each statement once. `pdo_pgsql` defers the parse until the first execute, so a statement executed once has its parse, bind and execute inside a single implicit transaction on a single server connection and cannot fail this way. The failure needs **re-execution across a reassignment**, which nothing exercised. The suite was not weak on assertions; it was testing a shape the bug does not live in.
+
+**How it was found.** The Phase 7 prerender ran twenty concurrent workers against the API. 64 of 136 pages rendered "not found"; the API had returned 134 500s, every one of them this error. It was the first genuinely concurrent load the API had ever seen — which is worth noting on its own, because the production render pipeline is the only component that generates load like this.
+
+**Guarded by:** `PgBouncerConcurrencyTest`, which reproduces it deterministically in one process — prepare, execute once, churn the pool with other clients, re-execute. Both re-execution cases were confirmed to **fail** with `PGSQL_ATTR_DISABLE_PREPARES` set to `false`. An earlier draft that executed each statement only once passed against the broken configuration and was replaced; it had reproduced the original blind spot exactly.
+
+**Status:** architect decision, reproduced by toggling one value with everything else held constant, and verified end-to-end by a full 136-route prerender with zero page failures and zero non-200 responses.
+
 
 ### D-025 — Initial media build is a scheduled operation, not a background trickle
 **Decision:** the first full derivative build is planned and timed work.
@@ -183,6 +204,50 @@ docker run --rm --entrypoint sh <image> -c 'php -m | grep -c ffi'
 
 A container that works proves nothing about the image when anything has been installed into it by hand. The container healthcheck does not catch this either, because the application boots fine without libvips — only media work fails.
 **Status:** architect finding; the rebuild is verified in Phase 6.
+
+### D-027 — Prerender reaches the API through a server-only `HttpBackend`, not an interceptor
+**Decision:** during prerendering, `/api/**` requests are redirected to `PRERENDER_API_ORIGIN` by `ServerApiBackend`, provided as `HttpBackend` in `app.config.server.ts` only.
+
+**The problem.** Application code requests `/api/v1/navigation`. In the browser that is same-origin and correct. During prerendering, `platform-server`'s `relativeUrlsTransformerInterceptorFn` resolves relative URLs against the current document origin — which, in a prerender, is the throwaway HTTP server the Angular builder starts on a random port to invoke `server.ts`. The request comes back to the app's own Express handler, which has no `/api` route: `Error: Unable to handle request: '/api/v1/navigation'.`
+
+So this is not a missing base URL. It is a base URL that is present and wrong, applied by a root interceptor that runs before any backend — which is why the redirect matches on the **path**, not on the absence of an origin.
+
+**Why a backend and not an interceptor.** §14.1 requires hydration not to re-fetch what the render already fetched, and counts duplicate hydration requests as a gate failure. The transfer cache interceptor keys entries on the request URL as it sees it, and it is registered ahead of `platform-server`'s transformer, so on the server it keys on the **relative** URL, exactly as the browser will. Rewriting anywhere in the interceptor chain risks keying the server's entries on a random localhost port the browser can never reproduce — every entry misses, and all 15,000 pages re-fetch on hydration. A backend sits below every interceptor, so the keys stay untouched.
+
+**Why not `HTTP_TRANSFER_CACHE_ORIGIN_MAP`.** It is the framework's tool for the neighbouring problem, but it maps one absolute origin onto another and cannot map onto a relative path (`if (!mappedOrigin) return url` treats `''` as absent). Committing the browser to an absolute origin would bake the deployment hostname into the bundle, so a staging build would call production.
+
+**Verified:** the prerendered HTML carries an `ng-state` script containing the navigation and product payloads, keyed relatively.
+**Status:** architect decision, found by a failing prerender and fixed against the framework's actual interceptor ordering.
+
+### D-028 — A custom `UrlSerializer` keeps the trailing slash on every internal link
+**Decision:** `TrailingSlashUrlSerializer` replaces Angular's `DefaultUrlSerializer`.
+
+Angular drops trailing slashes when serialising, so `routerLink="/c/office-furniture/"` renders `href="/c/office-furniture"`. Under D-009 the page is a file at `/c/office-furniture/index.html`, so Caddy serves the slashless form by redirecting to the canonical one. Every internal link on the site would be a redirect hop: a crawler following the megamenu across 15,000 products pays for 15,000 avoidable redirects, the redirect gate's "zero chains" rule is broken by the site's own navigation, and the link graph splits against the canonicals `SeoService` emits — which always carry the slash.
+
+The root is left alone, and any last segment containing a dot is left alone so `/favicon.ico` and `/sitemap.xml` do not gain a directory slash. Query strings and fragments are preserved: the slash belongs to the path.
+
+**Guarded by:** the raw-HTML gate, which fails on any internal `href` lacking a trailing slash.
+**Status:** architect decision, found by inspecting prerendered output rather than by a test — which is why the gate now asserts it.
+
+### D-029 — Page-level and site-level JSON-LD are separate scopes
+**Decision:** `SeoService` keeps two structured-data scopes. The shell writes `Organization` and `WebSite` once via `setSiteStructuredData()`; each route writes its own nodes via `setStructuredData()`, which replaces only the page scope.
+
+With a single scope the route's call wiped the shell's, because the shell runs first. Every product page shipped a `Product` and a `BreadcrumbList` with no `Organization` for them to attach to, and §14.4 requires all of them. Nothing failed, nothing logged, and the page looked correct — the loss was visible only in the raw HTML.
+
+**Guarded by:** `seo.service.spec.ts`, and by the raw-HTML gate, which requires `Organization` and `WebSite` on every sampled page.
+**Status:** architect decision.
+
+### D-030 — Metadata callers may offer several candidate titles
+**Decision:** `PageSeo.title` accepts a string or an ordered list of candidates. The service uses the first that fits the 60-character budget whole, and only truncates if none do. Where even the bare name will not fit alongside the site name, the **site name** is dropped rather than the name truncated.
+
+Two measured cases forced this:
+- The category template `{name} in Nigeria — Prices & Bulk Supply` overflows for most category names. Blunt truncation produced `Laser Printers in Nigeria — Prices… | OfficeLand Nigeria`, discarding "Bulk Supply" — a phrase chosen for query intent — and ending the snippet on a dangling word. A shorter whole phrase is strictly better than a longer mangled one.
+- Product titles use the agreed `[code] [brand] [name]` format and run 40–55 characters routinely. `CE320A HP 128A Black LaserJet Toner Cartridge` is 45; with ` | OfficeLand Nigeria` it is 66. Truncating would have cut the model name — the part that matches the search — on essentially the whole catalogue, to keep branding Google frequently appends by itself.
+
+This refines §14.3's sacrifice order (drop the brand segment, then shorten the name) with a step it does not cover: prefer a different whole phrasing before sacrificing anything.
+**Guarded by:** `seo.service.spec.ts`, and by the raw-HTML gate's title-budget assertion.
+**Status:** architect decision, driven by the real title data.
+
 
 ---
 

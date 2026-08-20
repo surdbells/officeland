@@ -1,1 +1,138 @@
-/* You can add global styles to this file, and also import other style files */
+@import "tailwindcss";
+
+/*
+ * OfficeLand design tokens (MASTER BUILD PROMPT section 15.3).
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * PROVISIONAL BRAND VALUES — open question Q17.
+ *
+ * Section 15.3 gives primary blue #0053E2 and adds: "Verify the primary
+ * against the current logo files before committing tokens." Those files have
+ * not been supplied, so every value below marked (Q17) is a placeholder that
+ * renders correctly and is expected to change. They are defined once, here,
+ * so that change is a token edit rather than a search across components.
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * Dark mode is deliberately absent (section 15.3: "out of scope unless
+ * requested; don't spend budget there").
+ */
+@theme {
+  /* --- Brand (Q17) ------------------------------------------------------ */
+  --color-brand-50: #eef4ff;
+  --color-brand-100: #d9e6ff;
+  --color-brand-200: #bcd3ff;
+  --color-brand-300: #8eb6ff;
+  --color-brand-400: #588eff;
+  --color-brand-500: #2f66f5;
+  --color-brand-600: #0053e2;
+  --color-brand-700: #0043b8;
+  --color-brand-800: #063a95;
+  --color-brand-900: #0b3475;
+
+  /* Warm accent reserved for calls to action, so the primary blue never has
+     to compete with itself for attention (section 15.3). */
+  --color-accent-400: #ffa733;
+  --color-accent-500: #f7900d;
+  --color-accent-600: #d97406;
+
+  /* Neutral charcoal rather than pure black: full black on white is harsher
+     than it needs to be at body sizes. */
+  --color-ink-50: #f7f8f9;
+  --color-ink-100: #eceef1;
+  --color-ink-200: #d5d9df;
+  --color-ink-400: #8b95a3;
+  --color-ink-600: #4d5661;
+  --color-ink-800: #262c34;
+  --color-ink-900: #161a1f;
+
+  /* Availability, used consistently across cards, PDP and quote basket. */
+  --color-stock-in: #15803d;
+  --color-stock-limited: #b45309;
+  --color-stock-lead: #4d5661;
+
+  /* --- Type ------------------------------------------------------------- */
+  /* Section 15.3 pairs Montserrat headings with a legible UI sans for body.
+     Self-hosted with font-display: swap, subset to Latin, and only the
+     weights actually used are preloaded (section 15.6). The families are
+     declared here; the @font-face rules land with the licensed files (Q17). */
+  --font-heading: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* --- Layout ----------------------------------------------------------- */
+  --spacing-gutter: 1rem;
+  --container-page: 80rem;
+
+  /* Section 15.3: mobile-first, 320px upward. Most Nigerian traffic is mobile
+     on constrained data, so the small end is the design target, not an
+     afterthought. */
+  --breakpoint-xs: 22.5rem;
+}
+
+/*
+ * Base layer
+ */
+@layer base {
+  html {
+    /* Anchors land below the sticky header rather than under it. */
+    scroll-padding-top: 6rem;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-ink-800);
+    background: #fff;
+    /* Section 14.9 budgets CLS at < 0.05. A scrollbar appearing between a
+       short page and a long one shifts the whole layout horizontally. */
+    scrollbar-gutter: stable;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-heading);
+    color: var(--color-ink-900);
+    text-wrap: balance;
+  }
+
+  /* WCAG 2.2 AA requires a visible focus indicator (section 14.8). Browsers
+     give one by default; this makes it meet contrast on every background
+     rather than only on white. */
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 3px solid var(--color-brand-600);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Images always declare width and height in markup; this stops a missing
+     one from collapsing the layout (section 12.5). */
+  img, picture, svg {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+@layer components {
+  /* The skip link is the first focusable element on every page
+     (section 23.5). Visually hidden until focused. */
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 100;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-brand-600);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .skip-link:focus {
+    left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

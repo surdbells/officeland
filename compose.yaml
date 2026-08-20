@@ -121,13 +121,20 @@ services:
       target: ${BUILD_TARGET:-dev}
     environment:
       STATIC_ROOT: /static
-      BUILD_OUTPUT: /app/dist/web/browser
+      APP_ROOT: /repo/apps/web
+      BUILD_OUTPUT: /repo/apps/web/dist/web/browser
       RENDER_WATCH: ${RENDER_WATCH:-0}
+      # The prerender route list (D-009). Over the compose network, not
+      # localhost: the API is a sibling container.
+      PRERENDER_API_ORIGIN: ${PRERENDER_API_ORIGIN:-http://api}
     volumes:
-      - ./apps/web:/app
+      # The monorepo layout is mirrored, not flattened: apps/web resolves
+      # @contracts/api at ../../packages, so packages/ must sit two levels up.
+      - ./apps/web:/repo/apps/web
+      - ./packages:/repo/packages:ro
       # Named volume keeps Linux-native node_modules out of the host bind
       # mount; the host runs Node 24.14 which is below Angular CLI 22's floor.
-      - web_node_modules:/app/node_modules
+      - web_node_modules:/repo/apps/web/node_modules
       - static:/static
     restart: unless-stopped
 

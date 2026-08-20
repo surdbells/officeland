@@ -7,6 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "gate:raw-html": "node tools/raw-html-gate.mjs",
     "serve:ssr:web": "node dist/web/server/server.mjs"
   },
   "private": true,
@@ -20,8 +21,11 @@
     "@angular/platform-server": "^22.1.0",
     "@angular/router": "^22.1.0",
     "@angular/ssr": "^22.1.5",
+    "@tailwindcss/postcss": "^4.3.3",
     "express": "^5.1.0",
+    "postcss": "^8.5.26",
     "rxjs": "~7.8.0",
+    "tailwindcss": "^4.3.3",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
@@ -31,6 +35,7 @@
     "@types/express": "^5.0.1",
     "@types/node": "^20.17.19",
     "jsdom": "^28.0.0",
+    "openapi-fetch": "^0.17.0",
     "prettier": "^3.8.1",
     "typescript": "~6.0.2",
     "vitest": "^4.0.8"

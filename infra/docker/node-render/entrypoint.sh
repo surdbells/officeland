@@ -10,9 +10,10 @@ set -eu
 log() { printf '{"level":"info","service":"render-worker","message":"%s"}\n' "$1"; }
 
 STATIC_ROOT="${STATIC_ROOT:-/static}"
-BUILD_OUTPUT="${BUILD_OUTPUT:-/app/dist/web/browser}"
+APP_ROOT="${APP_ROOT:-/repo/apps/web}"
+BUILD_OUTPUT="${BUILD_OUTPUT:-$APP_ROOT/dist/web/browser}"
 
-if [ ! -d /app/node_modules ] || [ -z "$(ls -A /app/node_modules 2>/dev/null)" ]; then
+if [ ! -d "$APP_ROOT/node_modules" ] || [ -z "$(ls -A "$APP_ROOT/node_modules" 2>/dev/null)" ]; then
     log "installing dependencies"
     npm ci --no-audit --fund=false
 fi
@@ -22,7 +23,7 @@ npm run build
 
 if [ ! -d "$BUILD_OUTPUT" ]; then
     printf '{"level":"error","service":"render-worker","message":"build output missing at %s"}\n' "$BUILD_OUTPUT" >&2
-    ls -R /app/dist 2>/dev/null || true
+    ls -R "$APP_ROOT/dist" 2>/dev/null || true
     exit 1
 fi
 

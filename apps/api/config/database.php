@@ -135,8 +135,34 @@ return [
             'prefix_indexes' => true,
             'search_path' => null,
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            /*
+             * ── The one combination that survives transaction pooling (D-024) ──
+             *
+             * DISABLE_PREPARES makes pdo_pgsql send each statement through
+             * PQexecParams: parameters are still bound by the server, but NO
+             * named prepared statement is created. That name is the whole
+             * problem. With it, pdo_pgsql issues Parse('pdo_stmt_00000001')
+             * on one server connection and Bind/Execute on whichever
+             * connection PgBouncer hands out next, which produces
+             *
+             *     ERROR: prepared statement "pdo_stmt_00000001" does not exist
+             *
+             * under concurrency, and 25P02 for the rest of a transaction once
+             * one statement inside it has failed that way.
+             *
+             * EMULATE_PREPARES stays FALSE. Emulation would also remove the
+             * named statement, but it interpolates bindings client-side and
+             * renders a PHP boolean as a bare 1, which PostgreSQL refuses to
+             * coerce to boolean (42804) on every insert touching a boolean
+             * column. DISABLE_PREPARES keeps binding server-side, so booleans,
+             * types and escaping all stay correct.
+             *
+             * Guarded by PgBouncerTransactionTest and PgBouncerConcurrencyTest.
+             * Changing either flag fails those tests.
+             */
             'options' => [
                 PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::PGSQL_ATTR_DISABLE_PREPARES => true,
             ],
         ],
 
