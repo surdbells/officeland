@@ -35,8 +35,21 @@ RUN install-php-extensions \
         exif \
         ffi \
     && apt-get update \
-    && apt-get install -y --no-install-recommends git unzip libvips42 \
+    && apt-get install -y --no-install-recommends \
+        git \
+        unzip \
+        libvips42 \
+        libheif1 \
+        libheif-plugin-aomenc \
+        libaom3 \
     && rm -rf /var/lib/apt/lists/*
+
+# libvips42 alone can READ avif but not WRITE it: heifsave fails with
+# "Unsupported compression" unless an AV1 encoder is present. AVIF is the first
+# entry in the <picture> fallback chain and roughly 3.5x smaller than JPEG at
+# equivalent quality, so losing it silently costs most of the 800 KB PDP
+# page-weight budget while every test that only checks "a file was written"
+# still passes. Hence libheif-plugin-aomenc.
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 

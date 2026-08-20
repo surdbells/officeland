@@ -11,6 +11,8 @@ use App\Models\Product;
 use App\Models\User;
 use App\Observers\InvalidatesRenderedRoutes;
 use App\Observers\WritesAuditLog;
+use App\Search\PostgresSearchEngine;
+use App\Search\SearchEngine;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -21,7 +23,15 @@ final class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        /*
+         * Section 16 requires search to sit behind an interface so
+         * Meilisearch or Typesense can replace it without touching callers.
+         * Binding it here is what makes that swap a one-line change.
+         */
+        $this->app->bind(
+            SearchEngine::class,
+            PostgresSearchEngine::class,
+        );
     }
 
     public function boot(): void

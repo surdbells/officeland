@@ -167,6 +167,23 @@ Six advisories apply across the 11.x line, including reflected XSS via route and
 Extrapolated to the 75,000-original target: **~75 hours single-worker, ~9.4 hours at 8 workers, ~42 GB**.
 **Consequence:** Phase 5b must schedule this rather than assume it happens quietly. It also sets the floor for any full re-encode (a quality change, a new format), which is the same 9.4 hours.
 
+### D-026 — Image builds must be verified, not assumed
+**Discovered:** Phase 6, 2026-08-20.
+**What happened:** the Phase 4 media pipeline was developed and its gate measured against a container into which libvips and ext-ffi had been installed **ad hoc** for the driver benchmark. The `docker compose build` that was supposed to bake them into the image timed out, and php-vips continued working — so the build was assumed to have succeeded. It had not. The image on disk predated the Dockerfile change, and every `--force-recreate` afterwards reverted to an image with no libvips.
+
+**What was and was not affected:**
+- The Phase 4 code is correct and its measurements were real — they ran against real libvips.
+- The **image was not reproducible**, so a fresh checkout, a new machine or CI would have failed at the first media test with `FFI extension not loaded`.
+
+**Rule adopted:** after any Dockerfile change, assert the change is present **in the image**, not in a running container:
+
+```
+docker run --rm --entrypoint sh <image> -c 'php -m | grep -c ffi'
+```
+
+A container that works proves nothing about the image when anything has been installed into it by hand. The container healthcheck does not catch this either, because the application boots fine without libvips — only media work fails.
+**Status:** architect finding; the rebuild is verified in Phase 6.
+
 ---
 
 ## Open

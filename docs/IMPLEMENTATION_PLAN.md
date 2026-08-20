@@ -1,6 +1,6 @@
 # Implementation Plan
 
-**Status:** Phases 0-5 complete. Phase 6 next. See docs/HANDOVER-phase-2.md.
+**Status:** Phases 0-6 complete. Phase 7 next. See docs/HANDOVER-phase-2.md.
 **Re-read this document before starting any phase** (§2.3). If reality has diverged, amend the plan — do not drift silently.
 
 **Staffing assumption:** ~2 backend, ~1.5 frontend, ~0.5 devops FTE, plus a content resource outside the engineering team.
@@ -20,7 +20,7 @@
 | **4** | Media pipeline at 75k-image scale | ✅ Done | 4–5 |
 | **5** | Filament admin + CSV importer | ✅ Done | 4–5 |
 | **5b** | Icecat ingestion framework | ⬜ Not started | 5–7 |
-| **6** | Search: FTS, trigram, synonyms, facets | ⬜ Not started | 3–4 |
+| **6** | Search: FTS, trigram, synonyms, facets | ✅ Done | 3–4 |
 | **7** | Storefront foundation + UX_SPEC | ⬜ Not started | 5–6 |
 | **8** | Storefront catalogue + **static prerender pipeline** | ⬜ Not started | 7–9 |
 | **9** | Quote engine (basket, 3-field form, anti-abuse) | ⬜ Not started | 3–4 |
@@ -176,9 +176,9 @@
 - 5b-6 Review queue with diff preview; nothing publishes unreviewed
 - 5b-7 Incremental sync from index `Updated` timestamps
 
-## Phase 6 — Search
+## Phase 6 — Search ✅
 
-**Gate:** typeahead p95 ≤ 50 ms; facets never offer a zero-result combination.
+**Gate (met):** typeahead p95 ≤ 50 ms; facets never offer a zero-result combination.
 
 - 6a `SearchEngine` interface + `PostgresSearchEngine`
 - 6b Weighted `search_vector` (name A, brand/mpn/model_code B, spec C, description D)
@@ -187,6 +187,12 @@
 - 6e **Synonym table**, admin-editable, applied at query time — `toner ↔ cartridge`, `flash drive ↔ USB ↔ pendrive`, `biro ↔ pen`, `CE320A ↔ 128A ↔ HP 128A`. Nigerian-English usage is a first-class requirement.
 - 6f Faceted filtering with accurate counts
 - 6g Query logging; zero-result surfacing in Filament
+
+**Verified at the gate:** 189 tests (28 new) · typeahead p95 under the 50ms budget against 300 products · facets proven never to offer a zero-result value AND to keep siblings selectable after one is chosen · exact-identifier short-circuit proven to beat decoys and to DECLINE on an ambiguous MPN rather than silently pick one · PHPStan L8, Pint and `composer audit` clean.
+
+**Four defects caught here:** PostgreSQL inferring a `then ?` type from `else 0` and rejecting the 0.30 relevance boost as an integer; multi-word synonyms producing invalid tsquery; `similarity()` being too diluted for a single mistyped word (switched to `word_similarity`); and `SearchTest` not resetting `search_synonyms`, so an assertion passed for the wrong reason.
+
+**Image reproducibility (D-026):** fixing a media-test failure revealed that the Phase 4 image never contained libvips — it had been installed by hand into the running container for the driver benchmark. Also surfaced that `docker compose build` was reporting success without replacing the image (buildx needed `--load`), and that `libvips42` can read AVIF but not write it. All three fixed and verified against the image.
 
 ## Phase 7 — Storefront foundation
 

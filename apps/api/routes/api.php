@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\BrandController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\NavigationController;
 use App\Http\Controllers\Api\V1\ProductController;
+use App\Http\Controllers\Api\V1\SearchController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -34,6 +35,12 @@ Route::prefix('v1')->name('api.')->group(function (): void {
     Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
 
     Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
+
+    // Search results are noindex (SEO_SPEC.md section 2) and client-rendered,
+    // so these are the one catalogue surface consumed at request time rather
+    // than at build time.
+    Route::get('search', SearchController::class)->name('search');
+    Route::get('search/suggest', [SearchController::class, 'suggest'])->name('search.suggest');
 
     // Catch-all paths must come last, and the more specific /products suffix
     // must be declared before the bare path — otherwise 'a/b/products' is
