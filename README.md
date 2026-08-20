@@ -15,9 +15,9 @@ docker compose up --build
 
 | URL | What |
 |---|---|
-| http://localhost:8090/ | Storefront (prerendered static HTML) |
-| http://localhost:8090/health/live | Liveness probe |
-| http://localhost:8090/health/ready | Readiness probe — DB, Redis, disk, queue |
+| http://localhost:8095/ | Storefront (prerendered static HTML) |
+| http://localhost:8095/health/live | Liveness probe |
+| http://localhost:8095/health/ready | Readiness probe — DB, Redis, disk, queue |
 
 Non-production environments serve a blocking `robots.txt` and
 `X-Robots-Tag: noindex` at the edge. This is enforced in Caddy, not in

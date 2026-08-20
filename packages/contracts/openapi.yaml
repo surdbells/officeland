@@ -1,0 +1,323 @@
+openapi: 3.1.0
+info:
+  title: 'OfficeLand Catalogue API'
+  description: "Public catalogue endpoints for the OfficeLand storefront.\n\nThe storefront is prerendered to static HTML, so these endpoints are\nconsumed mainly by the build-time render worker and by client-side\nfacet filtering — not on the critical path of a page view.\n\nNo prices are returned anywhere: OfficeLand is quote-first, and\n`pricing_mode` drives the call to action from data rather than from a\nhardcoded rule."
+  version: 1.0.0
+servers:
+  -
+    url: 'https://officelandng.com'
+    description: Production
+  -
+    url: 'http://localhost:8090'
+    description: 'Local development'
+paths:
+  /api/v1/navigation:
+    get:
+      tags:
+        - Navigation
+      summary: 'Navigation tree'
+      description: 'Full category tree plus featured brands. Feeds the megamenu; heavily cached.'
+      operationId: getNavigation
+      responses:
+        '200':
+          description: OK
+  '/api/v1/products/{slug}':
+    get:
+      tags:
+        - Products
+      summary: 'Product detail'
+      description: 'Full PDP payload: brand, primary category, breadcrumb, grouped specifications, variants and typed relations.'
+      operationId: getProduct
+      parameters:
+        -
+          name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: 'Not found'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Error:
+      title: 'Error envelope'
+      description: 'Consistent error shape (section 8.3). trace_id correlates to the structured logs.'
+      required:
+        - error
+      properties:
+        error:
+          required:
+            - code
+            - message
+          properties:
+            code:
+              description: "OpenAPI 3.1 document root.\n\nThe spec is generated from these attributes, committed to\npackages/contracts, and the storefront's TypeScript types are generated\nfrom it. Hand-written HTTP calls in the Angular app are a review rejection\n(MASTER BUILD PROMPT section 15.1), and a contract change not reflected in\npackages/contracts is a failed gate (section 6.2)."
+              type: string
+              example: NotFoundHttpException
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: string
+            trace_id:
+              type:
+                - string
+                - 'null'
+              format: uuid
+          type: object
+      type: object
+    Brand:
+      required:
+        - uuid
+        - name
+        - slug
+        - url
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: HP
+        slug:
+          type: string
+          example: hp
+        url:
+          type: string
+          example: /brands/hp/
+        description_html:
+          type:
+            - string
+            - 'null'
+        is_featured:
+          type: boolean
+        product_count:
+          type: integer
+        seo:
+          $ref: '#/components/schemas/Seo'
+      type: object
+    Seo:
+      properties:
+        meta_title:
+          type:
+            - string
+            - 'null'
+        meta_description:
+          type:
+            - string
+            - 'null'
+        canonical_override:
+          type:
+            - string
+            - 'null'
+        is_indexable:
+          type: boolean
+      type: object
+    BreadcrumbItem:
+      required:
+        - name
+        - url
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+      type: object
+    Category:
+      required:
+        - uuid
+        - name
+        - slug
+        - path
+        - url
+        - depth
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: 'Executive Chairs'
+        slug:
+          type: string
+          example: executive-chairs
+        path:
+          type: string
+          example: /office-furniture/seating/executive-chairs/
+        url:
+          type: string
+          example: /c/office-furniture/seating/executive-chairs/
+        depth:
+          type: integer
+          maximum: 3
+          minimum: 1
+        intro_copy:
+          type:
+            - string
+            - 'null'
+        description_html:
+          type:
+            - string
+            - 'null'
+        product_count:
+          type: integer
+        children:
+          description: 'Rendered as real crawlable anchors on every category page (D-011).'
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+        breadcrumb:
+          type: array
+          items:
+            $ref: '#/components/schemas/BreadcrumbItem'
+        seo:
+          $ref: '#/components/schemas/Seo'
+      type: object
+    ProductCard:
+      description: 'Listing payload. One shape shared by PLP, search, related rails and collections.'
+      required:
+        - uuid
+        - name
+        - slug
+        - url
+        - availability
+        - pricing_mode
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        url:
+          type: string
+          example: /p/hp-128a-black-laserjet-toner-ce320a/
+        sku:
+          type:
+            - string
+            - 'null'
+        mpn:
+          type:
+            - string
+            - 'null'
+        model_code:
+          type:
+            - string
+            - 'null'
+        brand:
+          oneOf:
+            -
+              $ref: '#/components/schemas/Brand'
+            -
+              type: 'null'
+        availability:
+          type: string
+          enum:
+            - in_stock
+            - limited
+            - made_to_order
+            - lead_time
+            - discontinued
+        lead_time_days:
+          type:
+            - integer
+            - 'null'
+        pricing_mode:
+          description: 'No prices are returned (D-002). This drives the call to action from data.'
+          type: string
+          enum:
+            - public
+            - quote_only
+        min_order_qty:
+          type: integer
+          minimum: 1
+        qty_step:
+          type: integer
+          minimum: 1
+      type: object
+    SpecificationGroup:
+      description: 'Specifications arrive already grouped from the source (Icecat CategoryFeatureGroup).'
+      required:
+        - group
+        - items
+      properties:
+        group:
+          type: string
+          example: PERFORMANCE
+        items:
+          type: array
+          items:
+            properties:
+              label:
+                type: string
+                example: 'Page yield'
+              value:
+                description: 'Formatted for display.'
+                type: string
+                example: '2,000 pages'
+              value_raw:
+                description: 'For search and compare.'
+                type: string
+                example: '2000'
+              unit:
+                type:
+                  - string
+                  - 'null'
+            type: object
+      type: object
+    Product:
+      type: object
+      allOf:
+        -
+          $ref: '#/components/schemas/ProductCard'
+        -
+          properties:
+            ean:
+              type:
+                - string
+                - 'null'
+            primary_category:
+              oneOf:
+                -
+                  $ref: '#/components/schemas/Category'
+                -
+                  type: 'null'
+            breadcrumb:
+              type: array
+              items:
+                $ref: '#/components/schemas/BreadcrumbItem'
+            short_description:
+              type:
+                - string
+                - 'null'
+            description_html:
+              type:
+                - string
+                - 'null'
+            warranty_text:
+              type:
+                - string
+                - 'null'
+            specifications:
+              type: array
+              items:
+                $ref: '#/components/schemas/SpecificationGroup'
+            seo:
+              $ref: '#/components/schemas/Seo'
+          type: object
+tags:
+  -
+    name: Navigation
+    description: 'Category tree and featured brands'
+  -
+    name: Products
+    description: 'Product detail'

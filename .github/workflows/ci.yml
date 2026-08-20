@@ -162,6 +162,44 @@ jobs:
             || { echo "::error::index.html is not server-rendered"; exit 1; }
           echo "prerendered $(find dist/web/browser -name '*.html' | wc -l) HTML file(s)"
 
+  contract:
+    name: Contract · spec and types in sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: pdo_pgsql, redis, intl, zip, bcmath, gd, exif
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.19.0"
+
+      - run: composer install --no-interaction --prefer-dist --no-progress
+        working-directory: apps/api
+
+      # Section 6.2: a contract change that is not reflected in
+      # packages/contracts is a failed gate. Regenerate and diff rather than
+      # trusting anyone to remember.
+      - name: Regenerate spec and types
+        run: |
+          cd apps/api
+          vendor/bin/openapi app --output ../../packages/contracts/openapi.yaml --format yaml --version 3.1.0
+          cd ../../packages/contracts
+          npx -y openapi-typescript@latest openapi.yaml -o api.d.ts
+
+      - name: Fail if the committed contract has drifted
+        run: |
+          if ! git diff --quiet -- packages/contracts; then
+            echo "::error::packages/contracts is out of date. Regenerate and commit — see packages/contracts/README.md"
+            git diff -- packages/contracts
+            exit 1
+          fi
+          echo "contract is in sync"
+
   stack:
     name: Stack · compose smoke test
     runs-on: ubuntu-latest
@@ -177,7 +215,7 @@ jobs:
       - name: Wait for readiness
         run: |
           for i in $(seq 1 60); do
-            code=$(curl -s -o /tmp/ready.json -w '%{http_code}' http://127.0.0.1:8090/health/ready || true)
+            code=$(curl -s -o /tmp/ready.json -w '%{http_code}' http://127.0.0.1:8095/health/ready || true)
             if [ "$code" = "200" ]; then echo "ready"; cat /tmp/ready.json; exit 0; fi
             sleep 5
           done
@@ -189,14 +227,14 @@ jobs:
       # (MASTER BUILD PROMPT section 14.8). A leak here is slow to undo.
       - name: Assert non-production is not indexable
         run: |
-          curl -sI http://127.0.0.1:8090/ | grep -qi 'x-robots-tag: noindex' \
+          curl -sI http://127.0.0.1:8095/ | grep -qi 'x-robots-tag: noindex' \
             || { echo "::error::missing X-Robots-Tag on non-production"; exit 1; }
-          curl -s http://127.0.0.1:8090/robots.txt | grep -q 'Disallow: /' \
+          curl -s http://127.0.0.1:8095/robots.txt | grep -q 'Disallow: /' \
             || { echo "::error::robots.txt is not blocking on non-production"; exit 1; }
 
       - name: Assert storefront is served as prerendered static HTML
         run: |
-          curl -sf http://127.0.0.1:8090/ | grep -q 'ng-server-context' \
+          curl -sf http://127.0.0.1:8095/ | grep -q 'ng-server-context' \
             || { echo "::error::storefront is not prerendered"; exit 1; }
 
       - if: failure()

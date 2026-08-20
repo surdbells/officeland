@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\SetCachePolicy;
 use App\Http\Middleware\TraceId;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -29,6 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // logs (MASTER BUILD PROMPT section 19.1).
         $middleware->append(TraceId::class);
         $middleware->api(prepend: [TraceId::class]);
+
+        // Strong ETags and cache headers on catalogue reads (section 8.3).
+        $middleware->api(append: [SetCachePolicy::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         /*

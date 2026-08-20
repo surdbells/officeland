@@ -30,12 +30,12 @@ docker compose up -d --build
 Then verify:
 
 ```bash
-curl -s http://127.0.0.1:8090/health/ready     # expect 200, five checks passing
-curl -s http://127.0.0.1:8090/ | grep ng-server-context   # prerendered storefront
+curl -s http://127.0.0.1:8095/health/ready     # expect 200, five checks passing
+curl -s http://127.0.0.1:8095/ | grep ng-server-context   # prerendered storefront
 docker compose exec api php artisan test        # expect 54 passed
 ```
 
-**Port is 8090, not 8080** — 8080 was already occupied on this machine.
+**Port is 8095, not 8080** — 8080 was already occupied on this machine.
 
 ## 3. Things that will bite you
 

@@ -1,6 +1,6 @@
 # Implementation Plan
 
-**Status:** Phases 0, 1 and 2 complete. Phase 3 next. See docs/HANDOVER-phase-2.md.
+**Status:** Phases 0-3 complete. Phase 4 next. See docs/HANDOVER-phase-2.md.
 **Re-read this document before starting any phase** (§2.3). If reality has diverged, amend the plan — do not drift silently.
 
 **Staffing assumption:** ~2 backend, ~1.5 frontend, ~0.5 devops FTE, plus a content resource outside the engineering team.
@@ -16,7 +16,7 @@
 | **0** | Discovery, decisions, IA, documentation | ✅ Done (0j/0k blocked) | 2–3 |
 | **1** | Foundation: monorepo, Docker, staging, CI | ✅ Done | 3–4 |
 | **2** | Data layer: schema, migrations, indexes | ✅ Done | 4–5 |
-| **3** | API core: catalogue reads, contract, caching | ⬜ Not started | 4–5 |
+| **3** | API core: catalogue reads, contract, caching | ✅ Done | 4–5 |
 | **4** | Media pipeline at 75k-image scale | ⬜ Not started | 4–5 |
 | **5** | Filament admin + CSV importer | ⬜ Not started | 4–5 |
 | **5b** | Icecat ingestion framework | ⬜ Not started | 5–7 |
@@ -98,9 +98,9 @@
 
 **Correction:** the taxonomy is **124** categories, not 108 — the tree was right, the arithmetic in TAXONOMY.md was not. Caught by the seeder drift guard.
 
-## Phase 3 — API core
+## Phase 3 — API core ✅
 
-**Gate:** OpenAPI contract published and TS types generated; feature tests green on every endpoint including auth, validation and error paths; **route-invalidation resolver proven end-to-end**.
+**Gate (all met):** OpenAPI contract published and TS types generated; feature tests green on every endpoint including auth, validation and error paths; **route-invalidation resolver proven end-to-end**.
 
 - 3a Catalogue read endpoints (§8.1)
 - 3b ETag / `If-None-Match` / 304, cache headers per ARCHITECTURE.md §10
@@ -108,6 +108,10 @@
 - 3d Cursor pagination on any list exceeding 1,000 rows
 - 3e Error envelope `{ error: { code, message, details[], trace_id } }`
 - 3f `swagger-php` attributes → OpenAPI 3.1 → generated TS types
+
+**Verified at the gate:** 90 tests / 314 assertions · OpenAPI 3.1 spec and TypeScript types generated into `packages/contracts`, with a CI job that regenerates and fails on drift · ETag/304 including RFC 9110 list and wildcard handling · cursor pagination · error envelope carrying `trace_id` · no internal integer IDs in any payload (asserted across six endpoints) · **G7 invalidation resolver proven end to end** (16 tests) · PHPStan L8, Pint and `composer audit` clean.
+
+**Two defects caught here:** the Redis `ZADD NX` argument form differs between phpredis and predis and silently no-ops, so the render queue accepted routes and stored nothing; and `CategoryFactory` built `path` from the definition-s random slug because state closures run before `create()` overrides, producing rows whose path and slug disagreed.
 
 ## Phase 4 — Media pipeline
 
