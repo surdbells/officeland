@@ -21,7 +21,7 @@ final class BrandFactory extends Factory
         return [
             'uuid' => (string) Str::uuid(),
             'name' => $name,
-            'slug' => Str::slug($name).'-'.Str::random(5),
+            'slug' => Str::slug($name).'-'.Str::lower(Str::random(5)),
             'is_featured' => false,
             'is_indexable' => true,
         ];

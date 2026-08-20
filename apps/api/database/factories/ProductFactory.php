@@ -18,7 +18,7 @@ final class ProductFactory extends Factory
     public function definition(): array
     {
         $name = Str::headline(implode(' ', (array) $this->faker->unique()->words(3)));
-        $slug = Str::slug($name).'-'.Str::random(5);
+        $slug = Str::slug($name).'-'.Str::lower(Str::random(5));
 
         return [
             'uuid' => (string) Str::uuid(),

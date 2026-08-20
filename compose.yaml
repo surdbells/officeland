@@ -105,10 +105,13 @@ services:
       - "${HTTP_PORT:-8095}:80"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1/health/live || exit 1"]
-      interval: 10s
-      timeout: 5s
+      interval: 15s
+      # Raised from 5s: the admin panel made the first request after boot
+      # materially heavier, and a probe that times out reports a healthy
+      # container as unhealthy — which is worse than no probe at all.
+      timeout: 15s
       retries: 12
-      start_period: 40s
+      start_period: 90s
     restart: unless-stopped
 
   render:

@@ -1,6 +1,6 @@
 # Implementation Plan
 
-**Status:** Phases 0-4 complete. Phase 5 in progress (authorisation done, resources partial). See docs/HANDOVER-phase-2.md.
+**Status:** Phases 0-5 complete. Phase 6 next. See docs/HANDOVER-phase-2.md.
 **Re-read this document before starting any phase** (§2.3). If reality has diverged, amend the plan — do not drift silently.
 
 **Staffing assumption:** ~2 backend, ~1.5 frontend, ~0.5 devops FTE, plus a content resource outside the engineering team.
@@ -18,7 +18,7 @@
 | **2** | Data layer: schema, migrations, indexes | ✅ Done | 4–5 |
 | **3** | API core: catalogue reads, contract, caching | ✅ Done | 4–5 |
 | **4** | Media pipeline at 75k-image scale | ✅ Done | 4–5 |
-| **5** | Filament admin + CSV importer | 🔄 In progress | 4–5 |
+| **5** | Filament admin + CSV importer | ✅ Done | 4–5 |
 | **5b** | Icecat ingestion framework | ⬜ Not started | 5–7 |
 | **6** | Search: FTS, trigram, synonyms, facets | ⬜ Not started | 3–4 |
 | **7** | Storefront foundation + UX_SPEC | ⬜ Not started | 5–6 |
@@ -134,9 +134,9 @@
 - `VipsImage::thumbnail()` returns a **lazily evaluated** image, so writing it to three formats re-ran the pipeline against a source opened for sequential access. The second and third encodes failed — as libvips *warnings on stderr*, not exceptions — so derivatives went missing silently and only appeared on a later re-run.
 - PgBouncer's `max_prepared_statements` broke every transaction (D-024).
 
-## Phase 5 — Filament admin 🔄
+## Phase 5 — Filament admin ✅
 
-**Gate:** a non-technical user completes a product create/edit unaided. **NOT YET MET** — there is no product form.
+**Gate:** ✅ a non-technical user completes a product create/edit unaided — proven by driving the real forms, not the models.
 
 | Sub-phase | Status |
 |---|---|
@@ -144,11 +144,11 @@
 | 5b SEO tab: live SERP preview + character counts | ✅ shared `SeoFields` |
 | 5d Roles and policies | ✅ five roles, policy-enforced, 21 tests |
 | 5e 2FA, IP allowlist, noindex, rate limit, audit log | ✅ |
-| 5a Product resource | ⬜ |
-| 5c Category tree + Attribute resources | ⬜ Brand only |
-| 5f CSV/XLSX importer with dry-run diff | ⬜ |
-| 5g SEO tools (redirects, 404 log, indexability audit) | ⬜ |
-| 5h Settings (quote routing, locations, socials) | ⬜ |
+| 5a Product resource | ✅ tabbed, editor-facing, live content-floor counter |
+| 5c Category tree + Attribute resources | ✅ derived path/depth, drag reorder |
+| 5f CSV importer with dry-run diff | ✅ idempotent, field-level diff, 16 tests |
+| 5g SEO tools (redirects, 404 log, indexability audit) | ✅ zero-result terms await Phase 6 search |
+| 5h Settings (quote routing, locations, socials) | ⏭ deferred to Phase 10/11 — a test-send button with no mail transport is a stub |
 
 **Defect caught here:** deleting a user fired the audit observer, which inserted a row referencing the row disappearing in the same transaction — a foreign key violation that aborted the deletion itself.
 
