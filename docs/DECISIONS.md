@@ -137,6 +137,36 @@ Six advisories apply across the 11.x line, including reflected XSS via route and
 **Rationale:** Angular CLI 22 requires Node ≥24.15.0 and the development host runs 24.14.0. Rather than modify the developer's system Node, the containerised toolchain is authoritative — which also makes local builds identical to CI and production. `node_modules` lives in a named volume so Linux-native binaries never land in the Windows bind mount.
 **Consequence:** CI pins Node 24.19.0. Developers wanting to run `ng` directly on the host must upgrade to ≥24.15.0; nothing requires them to.
 
+### D-023 — libvips for imaging, chosen by measurement
+**Decision:** libvips (via `jcupitt/vips`, FFI), not GD or ImageMagick.
+**Measured** on a real 1024x1536 product photograph from the legacy site, producing the full 5-variant x 3-format derivative set:
+
+| driver | time | total output |
+|---|---|---|
+| Imagick | 4,977 ms | 1,414 KB |
+| GD | 1,585 ms | 1,306 KB |
+| **libvips** | 3,371 ms | **808 KB** |
+
+**Rationale:** libvips output is ~40% smaller at equivalent quality. GD is the fastest and would blow the 800 KB PDP page-weight budget (section 14.9) on images alone. Generation is a one-time build cost; bytes are paid by every visitor on metered Nigerian mobile data forever.
+§12.3 asked for libvips and for the choice to be justified — it is, on evidence rather than assumption.
+**Status:** architect decision, measured.
+
+### D-024 — PgBouncer tracks no prepared statements, PDO emulates none
+**Decision:** `max_prepared_statements = 0` **and** `PDO::ATTR_EMULATE_PREPARES => false`.
+**§10.1 offers two strategies and NEITHER works as written:**
+- *PgBouncer prepared-statement support* (`max_prepared_statements > 0`) **breaks transactions.** Inside a transaction a plain `SELECT` succeeds and the next prepared statement reports `SQLSTATE[25P02] current transaction is aborted`. Every `DB::transaction()` containing a model write failed. Found in Phase 4.
+- *PDO emulation* **breaks boolean binding.** Emulation interpolates bindings, rendering a PHP `true` as bare `1`, which PostgreSQL refuses to coerce to boolean. Every insert touching a boolean column failed. Found in Phase 2.
+
+**What works is neither:** PgBouncer does not track prepared statements, PDO does not emulate them, and the server connection stays pinned for the life of each transaction — which is all that was ever required.
+**Cost of the diagnosis:** the read/write split and `preventSilentlyDiscardingAttributes` were both suspected and both exonerated; each is restored. Guarded by `PgBouncerTransactionTest`.
+**Status:** architect decision, reproduced by toggling one value with everything else held constant.
+
+### D-025 — Initial media build is a scheduled operation, not a background trickle
+**Decision:** the first full derivative build is planned and timed work.
+**Measured** at 20 distinct sources through the real pipeline: **3.60 s per image**, 15 derivatives each, ~552 KB of derivatives per image.
+Extrapolated to the 75,000-original target: **~75 hours single-worker, ~9.4 hours at 8 workers, ~42 GB**.
+**Consequence:** Phase 5b must schedule this rather than assume it happens quietly. It also sets the floor for any full re-encode (a quality change, a new format), which is the same 9.4 hours.
+
 ---
 
 ## Open

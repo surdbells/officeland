@@ -164,6 +164,12 @@ final class PgBouncerIntegrationTest extends TestCase
         $this->assertSame('Read Your Own Writes', $found->name);
     }
 
+    /**
+     * Superseded by PgBouncerTransactionTest: the read/write split was removed
+     * in Phase 4 because it aborted every transaction under transaction
+     * pooling. Read-your-own-writes is now a property of using one connection,
+     * and is asserted there.
+     */
     public function test_search_path_is_not_set_per_session(): void
     {
         // Session-level SET does not persist under transaction pooling, so

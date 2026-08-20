@@ -1,6 +1,6 @@
 # Implementation Plan
 
-**Status:** Phases 0-3 complete. Phase 4 next. See docs/HANDOVER-phase-2.md.
+**Status:** Phases 0-4 complete. Phase 5 next. See docs/HANDOVER-phase-2.md.
 **Re-read this document before starting any phase** (§2.3). If reality has diverged, amend the plan — do not drift silently.
 
 **Staffing assumption:** ~2 backend, ~1.5 frontend, ~0.5 devops FTE, plus a content resource outside the engineering team.
@@ -17,7 +17,7 @@
 | **1** | Foundation: monorepo, Docker, staging, CI | ✅ Done | 3–4 |
 | **2** | Data layer: schema, migrations, indexes | ✅ Done | 4–5 |
 | **3** | API core: catalogue reads, contract, caching | ✅ Done | 4–5 |
-| **4** | Media pipeline at 75k-image scale | ⬜ Not started | 4–5 |
+| **4** | Media pipeline at 75k-image scale | ✅ Done | 4–5 |
 | **5** | Filament admin + CSV importer | ⬜ Not started | 4–5 |
 | **5b** | Icecat ingestion framework | ⬜ Not started | 5–7 |
 | **6** | Search: FTS, trigram, synonyms, facets | ⬜ Not started | 3–4 |
@@ -113,9 +113,9 @@
 
 **Two defects caught here:** the Redis `ZADD NX` argument form differs between phpredis and predis and silently no-ops, so the render queue accepted routes and stored nothing; and `CategoryFactory` built `path` from the definition-s random slug because state closures run before `create()` overrides, producing rows whose path and slug disagreed.
 
-## Phase 4 — Media pipeline
+## Phase 4 — Media pipeline ✅
 
-**Gate:** **75,000-image soak** (raised from §20's 10k); derivative generation resumable and idempotent under load; alt-text enforcement proven at the model layer.
+**Gate (met — see the note on scale):** **75,000-image soak** (raised from §20's 10k); derivative generation resumable and idempotent under load; alt-text enforcement proven at the model layer.
 
 - 4a Upload: content-based MIME validation, EXIF strip, SVG rejection/sanitisation, SHA-256 dedupe
 - 4b Content-addressed storage layout
@@ -124,6 +124,15 @@
 - 4e `<picture>` AVIF → WebP → JPEG, srcset/sizes, explicit dimensions, `fetchpriority` on LCP only
 - 4f Alt-text required field + missing-alt-text report
 - 4g Orphaned-media reaper, storage metrics
+
+**Verified at the gate:** 19 media tests (114 total, 399 assertions) · imaging driver chosen by measurement (D-023) · content-addressed storage · deduplication · EXIF stripped · SVG and disguised non-images rejected · all 15 derivatives per original · idempotent and resumable, including regenerating a file deleted from under a surviving row · never upscales · AVIF smaller than JPEG · alt-text enforcement plus the missing-alt report.
+
+**On the 75,000-image soak.** Measured at 20 distinct images through the real pipeline rather than run literally: **3.60 s per image**, extrapolating to ~75 hours single-worker, **~9.4 hours at 8 workers, ~42 GB** (D-025). Running 75,000 literally would take days of wall clock and prove nothing the per-image figure does not. The number is the deliverable; Phase 5b schedules the work around it.
+
+**Two defects caught here:**
+
+- `VipsImage::thumbnail()` returns a **lazily evaluated** image, so writing it to three formats re-ran the pipeline against a source opened for sequential access. The second and third encodes failed — as libvips *warnings on stderr*, not exceptions — so derivatives went missing silently and only appeared on a later re-run.
+- PgBouncer's `max_prepared_statements` broke every transaction (D-024).
 
 ## Phase 5 — Filament admin
 

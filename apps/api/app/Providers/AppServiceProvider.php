@@ -38,6 +38,9 @@ final class AppServiceProvider extends ServiceProvider
          * 15,000 products.
          */
         Model::preventLazyLoading(! $this->app->isProduction());
+
+        // Assigning an attribute that is not fillable is a mistake, not a
+        // silent no-op.
         Model::preventSilentlyDiscardingAttributes(! $this->app->isProduction());
     }
 }

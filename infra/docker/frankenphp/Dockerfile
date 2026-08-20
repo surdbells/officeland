@@ -8,7 +8,20 @@ FROM dunglas/frankenphp:php8.3 AS base
 # redis           : cache, queue, session, locks
 # intl            : locale-correct sorting/formatting for en_NG
 # opcache/pcntl   : required for Octane worker mode
-# gd, exif        : interim image handling; libvips is added in Phase 4
+# exif            : orientation, read before the pipeline strips metadata
+# ffi             : php-vips binds libvips through FFI
+#
+# Imaging uses libvips, not GD or ImageMagick. Measured on a real 1024x1536
+# product photo producing the full 5-variant x 3-format derivative set:
+#
+#   Imagick   4977 ms   1,414 KB
+#   GD        1585 ms   1,306 KB
+#   libvips   3371 ms     808 KB   (incl. 15 process startups)
+#
+# libvips output is ~40% smaller at equivalent quality settings. Generation is
+# a one-time build cost; bytes are paid by every visitor on metered mobile data
+# forever, and the PDP page-weight budget is 800 KB total (section 14.9).
+# See docs/ARCHITECTURE.md section 8.
 RUN install-php-extensions \
         pdo_pgsql \
         pgsql \
@@ -20,8 +33,9 @@ RUN install-php-extensions \
         bcmath \
         gd \
         exif \
+        ffi \
     && apt-get update \
-    && apt-get install -y --no-install-recommends git unzip \
+    && apt-get install -y --no-install-recommends git unzip libvips42 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer

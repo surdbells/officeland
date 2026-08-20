@@ -113,7 +113,7 @@ return [
          *
          * The read/write split is declared now so introducing the Phase 13
          * read replica (docs/DECISIONS.md D-018) is configuration rather than
-         * refactoring. Until then both point at the same host.
+         * refactoring. Until then both sides point at the same host.
          */
         'pgsql' => [
             'driver' => 'pgsql',
@@ -125,7 +125,6 @@ return [
                 'host' => [env('DB_HOST', '127.0.0.1')],
             ],
             // A request that has written must read its own writes.
-            // Gate G8: proven by an integration test THROUGH the pooler.
             'sticky' => true,
             'port' => env('DB_PORT', '6432'),
             'database' => env('DB_DATABASE', 'officeland'),
