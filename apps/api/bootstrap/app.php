@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\NoIndexAdmin;
 use App\Http\Middleware\SetCachePolicy;
 use App\Http\Middleware\TraceId;
 use Illuminate\Foundation\Application;
@@ -33,6 +34,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Strong ETags and cache headers on catalogue reads (section 8.3).
         $middleware->api(append: [SetCachePolicy::class]);
+
+        // The admin panel must never be indexed, in any environment.
+        $middleware->alias(['admin.noindex' => NoIndexAdmin::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         /*

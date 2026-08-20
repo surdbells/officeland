@@ -1,6 +1,6 @@
 # Implementation Plan
 
-**Status:** Phases 0-4 complete. Phase 5 next. See docs/HANDOVER-phase-2.md.
+**Status:** Phases 0-4 complete. Phase 5 in progress (authorisation done, resources partial). See docs/HANDOVER-phase-2.md.
 **Re-read this document before starting any phase** (§2.3). If reality has diverged, amend the plan — do not drift silently.
 
 **Staffing assumption:** ~2 backend, ~1.5 frontend, ~0.5 devops FTE, plus a content resource outside the engineering team.
@@ -18,7 +18,7 @@
 | **2** | Data layer: schema, migrations, indexes | ✅ Done | 4–5 |
 | **3** | API core: catalogue reads, contract, caching | ✅ Done | 4–5 |
 | **4** | Media pipeline at 75k-image scale | ✅ Done | 4–5 |
-| **5** | Filament admin + CSV importer | ⬜ Not started | 4–5 |
+| **5** | Filament admin + CSV importer | 🔄 In progress | 4–5 |
 | **5b** | Icecat ingestion framework | ⬜ Not started | 5–7 |
 | **6** | Search: FTS, trigram, synonyms, facets | ⬜ Not started | 3–4 |
 | **7** | Storefront foundation + UX_SPEC | ⬜ Not started | 5–6 |
@@ -134,10 +134,25 @@
 - `VipsImage::thumbnail()` returns a **lazily evaluated** image, so writing it to three formats re-ran the pipeline against a source opened for sequential access. The second and third encodes failed — as libvips *warnings on stderr*, not exceptions — so derivatives went missing silently and only appeared on a later re-run.
 - PgBouncer's `max_prepared_statements` broke every transaction (D-024).
 
-## Phase 5 — Filament admin
+## Phase 5 — Filament admin 🔄
 
-**Gate:** a non-technical user completes a product create/edit unaided.
-**Blocked by:** Q-C (Filament v4 vs v5).
+**Gate:** a non-technical user completes a product create/edit unaided. **NOT YET MET** — there is no product form.
+
+| Sub-phase | Status |
+|---|---|
+| Panel, path, branding | ✅ Filament v5.7.6 |
+| 5b SEO tab: live SERP preview + character counts | ✅ shared `SeoFields` |
+| 5d Roles and policies | ✅ five roles, policy-enforced, 21 tests |
+| 5e 2FA, IP allowlist, noindex, rate limit, audit log | ✅ |
+| 5a Product resource | ⬜ |
+| 5c Category tree + Attribute resources | ⬜ Brand only |
+| 5f CSV/XLSX importer with dry-run diff | ⬜ |
+| 5g SEO tools (redirects, 404 log, indexability audit) | ⬜ |
+| 5h Settings (quote routing, locations, socials) | ⬜ |
+
+**Defect caught here:** deleting a user fired the audit observer, which inserted a row referencing the row disappearing in the same transaction — a foreign key violation that aborted the deletion itself.
+
+**Note on the scaffold:** `make:filament-resource --generate` exposed `uuid`, `logo_media_id` and `product_count_cached` as editable fields. That fails the gate on sight, so generated forms are rewritten rather than kept.
 
 - 5a Catalogue CRUD: products with variant repeater, media manager with drag-order and focal point, attribute matrix
 - 5b SEO tab with live SERP preview and character counts
