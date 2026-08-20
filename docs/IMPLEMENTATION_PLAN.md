@@ -1,6 +1,6 @@
 # Implementation Plan
 
-**Status:** Phase 0 in progress.
+**Status:** Phases 0, 1 and 2 complete. Phase 3 next. See docs/HANDOVER-phase-2.md.
 **Re-read this document before starting any phase** (§2.3). If reality has diverged, amend the plan — do not drift silently.
 
 **Staffing assumption:** ~2 backend, ~1.5 frontend, ~0.5 devops FTE, plus a content resource outside the engineering team.
@@ -15,7 +15,7 @@
 |---|---|---|---|
 | **0** | Discovery, decisions, IA, documentation | ✅ Done (0j/0k blocked) | 2–3 |
 | **1** | Foundation: monorepo, Docker, staging, CI | ✅ Done | 3–4 |
-| **2** | Data layer: schema, migrations, indexes | ⬜ Not started | 4–5 |
+| **2** | Data layer: schema, migrations, indexes | ✅ Done | 4–5 |
 | **3** | API core: catalogue reads, contract, caching | ⬜ Not started | 4–5 |
 | **4** | Media pipeline at 75k-image scale | ⬜ Not started | 4–5 |
 | **5** | Filament admin + CSV importer | ⬜ Not started | 4–5 |
@@ -79,9 +79,9 @@
 - PHPStan level 8 caught an unguarded `setFormatter()`/`pushProcessor()` on `HandlerInterface` in the logging tap — would have thrown at runtime on any non-formattable channel (`null`, `WhatFailureGroup`).
 - The Caddy content-hash matcher assumed dot-separated lowercase hex; Angular 22 emits `main-U44D4EQK.js`, so every hashed asset was silently falling back to the revalidate policy.
 
-## Phase 2 — Data layer
+## Phase 2 — Data layer ✅
 
-**Gate:** migrations reversible; read-your-own-writes integration test passes **through PgBouncer** (gap G8); no sequential scan on `products` in any request path; `QUERY_PLANS.md` committed.
+**Gate (all met):** migrations reversible; read-your-own-writes integration test passes **through PgBouncer** (gap G8); no sequential scan on `products` in any request path; `QUERY_PLANS.md` committed.
 
 - 2a Extensions: `pg_trgm`, `unaccent`, `citext`, `pgcrypto` (no `ltree` — see ARCHITECTURE.md §3)
 - 2b Catalogue schema: brands, categories (materialized path, depth CHECK), products, variants, attributes, media
@@ -91,6 +91,12 @@
 - 2f Indexes: GIN on `search_vector`, trigram GIN on name and sku, composite btrees, partial indexes on `status='active'`
 - 2g `EXPLAIN (ANALYZE, BUFFERS)` for the five hottest queries → `QUERY_PLANS.md`
 - 2h Seeders and factories, including the Phase 0 taxonomy
+
+**Verified at the gate:** 11 migrations, fully reversible · 54 tests / 213 assertions · no seq scan on `products` in any request path · G8 pooler gate proven (parameterised queries, repeated execution, boolean round-trip, read-your-own-writes) · PHPStan L8, Pint and `composer audit` clean.
+
+**Four defects caught here:** emulated prepares breaking boolean binding; the suite resolving to the *development* database; stock migrations running through the pooler; and a brand-listing index gap. All are documented in `docs/HANDOVER-phase-2.md` §3.
+
+**Correction:** the taxonomy is **124** categories, not 108 — the tree was right, the arithmetic in TAXONOMY.md was not. Caught by the seeder drift guard.
 
 ## Phase 3 — API core
 
