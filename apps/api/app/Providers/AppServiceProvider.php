@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Observers\InvalidatesRenderedRoutes;
 use App\Observers\WritesAuditLog;
+use App\Rendering\StaticSite;
 use App\Search\PostgresSearchEngine;
 use App\Search\SearchEngine;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -31,6 +32,15 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(
             SearchEngine::class,
             PostgresSearchEngine::class,
+        );
+
+        // The static root is configuration, not a constructor default: the
+        // render container and the API container mount the same volume at the
+        // same path, and a hardcoded default would silently write to the
+        // wrong one if either ever moved.
+        $this->app->singleton(
+            StaticSite::class,
+            static fn (): StaticSite => new StaticSite((string) config('rendering.static_root')),
         );
     }
 

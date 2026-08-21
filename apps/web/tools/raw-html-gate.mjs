@@ -125,15 +125,29 @@ const toUrl = (file) => {
 const templateOf = (url) => {
   if (url === '/') return 'home';
   if (url === '/c/') return 'category-index';
+  if (url === '/brands/') return 'brand-index';
+  if (url === '/search/') return 'search';
+  if (url === '/404/') return 'error';
   if (url.startsWith('/p/')) return 'product';
+  if (url.startsWith('/brands/')) return 'brand';
   if (url.startsWith('/c/')) return 'category';
   return 'other';
 };
 
+/** Templates that must carry breadcrumbs and a BreadcrumbList. */
+const BREADCRUMBED = new Set(['category', 'category-index', 'product', 'brand', 'brand-index']);
+
+/**
+ * Templates that are noindex BY DESIGN (SEO_SPEC.md section 2), so the gate
+ * must not demand a description or structured data from them — and must fail
+ * if they ever become indexable.
+ */
+const NOINDEX_BY_DESIGN = new Set(['search', 'error']);
+
 // ── the assertions ─────────────────────────────────────────────────────────
 
 function checkPage(url, template, html) {
-  const isError = template === 'other' && /not found/i.test(html);
+  const isError = NOINDEX_BY_DESIGN.has(template);
 
   // 1. <title>
   const title = between(html, '<title>', '</title>');
@@ -167,6 +181,8 @@ function checkPage(url, template, html) {
   const robots = attr(html, /<meta[^>]*name="robots"[^>]*>/i, 'content');
   if (!robots) {
     fail(url, 'no robots meta');
+  } else if (NOINDEX_BY_DESIGN.has(template) && !robots.includes('noindex')) {
+    fail(url, `${template} pages are noindex by design, but this one says "${robots}"`);
   }
 
   // 4. exactly one h1
@@ -189,7 +205,7 @@ function checkPage(url, template, html) {
   // 6. body copy actually present in the HTML, not fetched by script
   const body = mainText(html);
 
-  if (template === 'product' || template === 'category') {
+  if (['product', 'category', 'brand'].includes(template)) {
     if (/not found/i.test(body)) {
       fail(url, 'rendered the not-found branch: the render could not reach the API');
     }
@@ -198,11 +214,29 @@ function checkPage(url, template, html) {
     }
   }
 
-  // 7. breadcrumbs on every non-home page
-  if (template !== 'home' && !isError) {
-    if (!/aria-label="Breadcrumb"/i.test(html)) {
-      fail(url, 'no breadcrumb nav');
+  /*
+   * 6b. Collapsed accordion panels must still contain their content.
+   *
+   * The Phase 8 brief is explicit: spec accordions are "present in HTML
+   * whether or not expanded". Content rendered only on click is content
+   * Google may never see, and the specifications are the most valuable text
+   * on a product page. This is trivial to break by switching to a lazy
+   * @if — and impossible to notice by looking at the page.
+   */
+  if (template === 'product') {
+    const collapsed = [...html.matchAll(/<div[^>]*role="region"[^>]*hidden[^>]*>([\s\S]*?)<\/div>/g)];
+
+    for (const [, panel] of collapsed) {
+      if (!/<tr[\s>]/.test(panel)) {
+        fail(url, 'a collapsed accordion panel is empty: its content is withheld until expanded');
+        break;
+      }
     }
+  }
+
+  // 7. breadcrumbs on every template that sits inside the hierarchy
+  if (BREADCRUMBED.has(template) && !/aria-label="Breadcrumb"/i.test(html)) {
+    fail(url, 'no breadcrumb nav');
   }
 
   // 8. internal links, and every one of them slash-terminated
@@ -254,7 +288,7 @@ function checkPage(url, template, html) {
     }
   }
 
-  if (template !== 'home' && !isError && !types.includes('BreadcrumbList')) {
+  if (BREADCRUMBED.has(template) && !types.includes('BreadcrumbList')) {
     fail(url, 'missing BreadcrumbList JSON-LD');
   }
 
@@ -336,7 +370,7 @@ async function main() {
     notes.push(`${template}: ${take} of ${pages.length}`);
   }
 
-  for (const required of ['home', 'product', 'category']) {
+  for (const required of ['home', 'product', 'category', 'brand', 'brand-index', 'search']) {
     if (!byTemplate.has(required)) {
       failures.push(`no ${required} pages were rendered at all`);
     }

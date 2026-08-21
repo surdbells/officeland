@@ -36,6 +36,27 @@ export const serverRoutes: ServerRoute[] = [
     },
   },
   {
+    path: 'brands',
+    renderMode: RenderMode.Prerender,
+  },
+  {
+    path: 'brands/**',
+    renderMode: RenderMode.Prerender,
+    getPrerenderParams: async () => {
+      const manifest = await fetchRouteManifest();
+      return manifest.brands.map((path) => ({ '**': path }));
+    },
+  },
+  {
+    /*
+     * Prerendered as an empty shell. Results arrive client side (the page is
+     * noindex either way), but the URL still has to resolve to a FILE — a
+     * static host cannot route /search?q=toner to anything else.
+     */
+    path: 'search',
+    renderMode: RenderMode.Prerender,
+  },
+  {
     path: 'p/:slug',
     renderMode: RenderMode.Prerender,
     getPrerenderParams: async () => {

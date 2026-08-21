@@ -8,6 +8,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "gate:raw-html": "node tools/raw-html-gate.mjs",
+    "gate:crawl-depth": "node tools/crawl-depth-gate.mjs",
+    "gate": "npm run gate:raw-html && npm run gate:crawl-depth",
     "serve:ssr:web": "node dist/web/server/server.mjs"
   },
   "private": true,

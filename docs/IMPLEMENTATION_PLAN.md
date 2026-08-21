@@ -1,6 +1,6 @@
 # Implementation Plan
 
-**Status:** Phases 0-7 complete. Phase 5b or 8 next. See docs/HANDOVER-phase-2.md.
+**Status:** Phases 0-8 complete except the Phase 8 CWV measurement (needs Q7). Phase 5b or 9 next. See docs/HANDOVER-phase-2.md.
 **Re-read this document before starting any phase** (§2.3). If reality has diverged, amend the plan — do not drift silently.
 
 **Staffing assumption:** ~2 backend, ~1.5 frontend, ~0.5 devops FTE, plus a content resource outside the engineering team.
@@ -22,7 +22,7 @@
 | **5b** | Icecat ingestion framework | ⬜ Not started | 5–7 |
 | **6** | Search: FTS, trigram, synonyms, facets | ✅ Done | 3–4 |
 | **7** | Storefront foundation + UX_SPEC | ✅ Done | 5–6 |
-| **8** | Storefront catalogue + **static prerender pipeline** | ⬜ Not started | 7–9 |
+| **8** | Storefront catalogue + **static prerender pipeline** | 🟡 Built; CWV unmeasured | 7–9 |
 | **9** | Quote engine (basket, 3-field form, anti-abuse) | ⬜ Not started | 3–4 |
 | **10** | ZeptoMail transport, templates, queue, webhooks | ⬜ Not started | 3 |
 | **11** | Lead queue admin | ⬜ Not started | 1 |
@@ -224,15 +224,44 @@
 
 ## Phase 8 — Storefront catalogue + prerender pipeline
 
-**Gate:** CWV budgets met on the median of 5 throttled mobile runs (D-014); crawl-depth report passes; full-rebuild wall-clock time measured and documented.
+**Gate:** ⏳ 2 of 3. Crawl-depth report ✅ and full-rebuild wall-clock ✅ measured and documented; **CWV budgets not yet measured** — see below.
 
-- 8a Home, PLP (facets, list/grid toggle, counts, pagination), PDP (grouped spec accordions **present in HTML whether or not expanded**), brand hubs, search results
-- 8b Product card component — one component, one prop set, one test suite, used across PLP, search, related rails and collections
-- 8c **Render worker** — Angular server bundle invoked as a build-time renderer
-- 8d **Route resolver + invalidation graph** (ARCHITECTURE.md §4.3), including the bounded reverse-related cascade
-- 8e **Atomic writer**, debounced deduplicating render queue
-- 8f Full-build command; wall-clock measured; documented in `RUNBOOK.md`
-- 8g Sitemap generation and `lastmod` maintenance
+| Sub-phase | Deliverable | Status |
+|---|---|---|
+| 8a | Home, PLP (facets, counts, pagination), PDP (gallery, spec accordions), brand hubs, search results | ✅ Done |
+| 8b | Product card — one component, one prop set, one test suite | ✅ Done — 18 tests |
+| 8c | Render worker — Angular server bundle invoked as a build-time renderer | ✅ Done |
+| 8d | Route resolver + invalidation graph, bounded reverse-related cascade | ✅ Done |
+| 8e | Atomic writer, debounced deduplicating render queue | ✅ Done — 12 tests |
+| 8f | Full-build command; wall-clock measured; documented in `RUNBOOK.md` | ✅ Done |
+| 8g | Sitemap generation and `lastmod` maintenance | ✅ Done — 10 tests |
+
+**The pipeline works end to end.** A model change enqueues routes, the consumer renders them through the worker, and the atomic writer publishes them where Caddy serves them. Verified by touching one product: 10 routes enqueued, 5 rendered in 327 ms after the 60-second debounce, files replaced with no temporary files left behind.
+
+**Measured** (development stack, 145 routes, 10-product demo catalogue):
+
+| Operation | Wall clock | Per route |
+|---|---|---|
+| `render:full` (bundle already built) | **7.6 s** | **52 ms** |
+| `ng build` (compile + prerender) | ~200 s | — |
+| Incremental render, one product edited | 0.33 s | 66 ms |
+
+Extrapolated to 15,000 products (~15,150 routes): **~13 minutes** for `render:full`. That is the floor on time-to-recover for any markup or global-SEO defect, and it is in `RUNBOOK.md` §3 rather than in someone's head.
+
+**Crawl-depth gate: every product at 2 clicks**, one better than §14.5's requirement of 3, with headroom for another taxonomy level. D-011's child anchors combined with subtree listings are what produce that. The gate walks the prerendered files following only real `<a href>` — no JavaScript, no sitemap, no manifest, because both of those are generated from the database and would agree with each other while the link graph was broken.
+
+### Still outstanding
+
+- **CWV budgets (D-014): not measured.** It needs a Lighthouse harness that is not yet in the stack, and this machine cannot produce a trustworthy number — see D-033, where a bind-mounted file read costs 29 ms and a full API test run took 40 minutes. Measure on the production host once **Q7** (server spec) is answered.
+- **Mobile drawer, typeahead** — specified in `UX_SPEC.md`, not built.
+- **The render image rebuild is unverified.** The entrypoint now serves the SSR worker, but `docker buildx build` failed on a transient `ECONNRESET` from the npm registry and the change is only verified in a running container. Per D-026 that is not proof: rebuild and assert against the **image** before relying on it.
+
+### Decisions this phase forced
+
+- **D-031** — listings page by number, not by cursor; §8.3's requirement is met by a different route.
+- **D-032** — pagination is a path segment, because Angular cannot prerender a query string.
+- **D-033** — `vendor/` off the Windows bind mount; a 1,450× I/O difference that presented as an application fault.
+- **D-034** — `render:full` and `ng build` are different operations with different jobs.
 
 ## Phase 9 — Quote engine
 

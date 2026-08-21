@@ -41,5 +41,10 @@ if [ "${RENDER_WATCH:-0}" = "1" ]; then
     exec npm run watch
 fi
 
-log "build complete; idling"
-exec tail -f /dev/null
+# Serve the Angular server bundle so the API can ask it for one route at a
+# time (Phase 8c). This is NOT a public surface: Caddy never proxies to it,
+# and nothing outside the compose network can reach it. It exists so an
+# incremental render does not have to re-run the whole build to regenerate
+# a single page.
+log "serving the render worker on :${PORT:-4000}"
+exec node dist/web/server/server.mjs

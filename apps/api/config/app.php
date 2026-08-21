@@ -52,6 +52,25 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Public origin
+    |--------------------------------------------------------------------------
+    |
+    | The canonical public origin, used to build absolute URLs in sitemaps.
+    |
+    | Separate from APP_URL on purpose: APP_URL is where THIS application is
+    | reachable, which on this stack is an internal container address. The
+    | storefront is static files served from a different origin entirely, and a
+    | sitemap full of http://api/... would be worse than no sitemap.
+    |
+    | Must match SeoService.ORIGIN in the storefront, which builds canonicals.
+    | A sitemap whose URLs disagree with the canonicals on the pages they point
+    | at is a self-inflicted duplicate-content report.
+    |
+    */
+    'public_origin' => env('PUBLIC_ORIGIN', 'https://officelandng.com'),
+
     'url' => env('APP_URL', 'http://localhost'),
 
     /*

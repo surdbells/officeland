@@ -7,6 +7,20 @@ import {
 import express from 'express';
 import { join } from 'node:path';
 
+/*
+ * ── On angular.json security.allowedHosts ────────────────────────────────
+ * Angular 22 rejects a server-rendered request whose Host header is not on
+ * that list. It is SSRF protection, which is exactly why it is NOT a
+ * wildcard: this process renders arbitrary routes and would otherwise make a
+ * useful confused deputy.
+ *
+ * Only the internal names the render worker is reached by are listed. The API
+ * asks it for one route at a time over the compose network
+ * (http://render:4000), Caddy never proxies here, and nothing outside that
+ * network can reach it. Adding a public hostname there would be a real change
+ * in exposure, not a configuration tidy-up.
+ */
+
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();

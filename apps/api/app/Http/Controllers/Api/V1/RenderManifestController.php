@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Models\Category;
-use App\Models\Product;
+use App\Rendering\RouteManifest;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -48,80 +47,25 @@ use Illuminate\Http\JsonResponse;
  */
 final class RenderManifestController
 {
-    /**
-     * Must match the storefront listing page size, and the default in
-     * BuildsListingResponses::perPage(). If they disagree, the manifest
-     * renders a different number of pages than the listing links to.
-     */
-    private const PER_PAGE = 24;
+    public function __construct(private readonly RouteManifest $manifest) {}
 
     public function __invoke(): JsonResponse
     {
-        // `active`, not `indexable`: a discontinued or draft product has no
-        // page at all, but a live product held back by the section 14.7
-        // content floor still needs one to link to.
-        $products = Product::query()
-            ->active()
-            ->orderBy('slug')
-            ->pluck('slug')
-            ->all();
-
-        $categories = $this->categoryRoutes();
+        $products = $this->manifest->productSlugs();
+        $categories = $this->manifest->categoryRoutes();
+        $brands = $this->manifest->brandRoutes();
 
         return response()->json([
             'data' => [
                 'categories' => $categories,
                 'products' => $products,
+                'brands' => $brands,
             ],
             'meta' => [
                 'category_count' => count($categories),
                 'product_count' => count($products),
+                'brand_count' => count($brands),
             ],
         ]);
-    }
-
-    /**
-     * Every category path, plus a `page/N` route for each additional page of
-     * its listing.
-     *
-     * Pagination is a path segment rather than a query parameter (D-032),
-     * because Angular prerenders paths and cannot emit a file for a query
-     * string. Without these routes the pagination anchors the listing renders
-     * would point at files that do not exist: the static host would answer
-     * page 2 with the 404 template, and every product past the first 24 in a
-     * category would be unreachable — failing the crawl-depth gate for
-     * exactly the large categories that need it most.
-     *
-     * Counted per subtree, matching what CategoryController@products lists.
-     *
-     * @return list<string>
-     */
-    private function categoryRoutes(): array
-    {
-        $categories = Category::query()->orderBy('path')->get(['id', 'path']);
-
-        $routes = [];
-
-        foreach ($categories as $category) {
-            $base = trim((string) $category->path, '/');
-            $routes[] = $base;
-
-            $descendantIds = Category::query()
-                ->subtreeOf((string) $category->path)
-                ->pluck('id');
-
-            $total = Product::query()
-                ->active()
-                ->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $descendantIds))
-                ->count();
-
-            $pages = (int) ceil($total / self::PER_PAGE);
-
-            for ($page = 2; $page <= $pages; $page++) {
-                $routes[] = $base.'/page/'.$page;
-            }
-        }
-
-        return $routes;
     }
 }

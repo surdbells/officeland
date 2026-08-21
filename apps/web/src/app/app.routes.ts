@@ -24,6 +24,29 @@ export const routes: Routes = [
       import('./features/catalogue/category-page').then((m) => m.CategoryPage),
   },
   {
+    path: 'brands',
+    loadComponent: () =>
+      import('./features/brands/brand-index-page').then((m) => m.BrandIndexPage),
+  },
+  {
+    /*
+     * A wildcard rather than 'brands/:slug' so the hub can carry its own
+     * `page/N` pagination segments (D-032). BrandPage splits them off.
+     */
+    path: 'brands/**',
+    loadComponent: () => import('./features/brands/brand-page').then((m) => m.BrandPage),
+  },
+  {
+    /*
+     * Search is the one catalogue surface rendered at request time rather
+     * than at build time (SEO_SPEC.md section 2). It is prerendered as an
+     * empty shell so the URL resolves to a file; the results arrive client
+     * side, and the page is noindex either way.
+     */
+    path: 'search',
+    loadComponent: () => import('./features/search/search-page').then((m) => m.SearchPage),
+  },
+  {
     // Flat product URLs (D-008): one product, one URL, whatever its categories.
     path: 'p/:slug',
     loadComponent: () =>

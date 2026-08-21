@@ -27,6 +27,7 @@ export type Category = components['schemas']['Category'];
 export type Product = components['schemas']['Product'];
 export type ProductCard = components['schemas']['ProductCard'];
 export type Image = components['schemas']['Image'];
+export type SpecificationGroup = components['schemas']['SpecificationGroup'];
 export type ApiError = components['schemas']['Error'];
 
 export interface NavigationNode {

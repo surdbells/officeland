@@ -5,55 +5,14 @@ import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
 import {
   CatalogueApi,
   type Category,
-  type Listing,
   type ProductCard as ProductCardData,
 } from '../../core/api/catalogue-api';
 import { SeoService } from '../../core/seo/seo.service';
 import { breadcrumbSchema, itemListSchema } from '../../core/seo/structured-data';
+import { EMPTY_LISTING, filterParams, readFilters, splitPagedPath } from '../../shared/listing-state';
 import { FacetRail } from '../../shared/facet-rail';
 import { Pagination } from '../../shared/pagination';
 import { ProductCard } from '../../shared/product-card';
-
-/**
- * Splits `/c/x/y/page/3` into its category path and page number.
- *
- * Pagination is a PATH segment, not a query parameter, because Angular
- * prerenders paths and cannot emit a file for a query string (D-032). The
- * page number therefore arrives inside the wildcard the category route
- * matched, and has to be separated from the materialized path before the API
- * is asked for a category called "page".
- *
- * The trailing segment must be a positive integer, so a category legitimately
- * slugged `page` is not mistaken for pagination.
- */
-function splitPagedPath(segments: readonly string[]): { path: string; page: number } {
-  const parts = segments[0] === 'c' ? segments.slice(1) : [...segments];
-
-  if (parts.length >= 2 && parts[parts.length - 2] === 'page') {
-    const raw = Number(parts[parts.length - 1]);
-
-    if (Number.isInteger(raw) && raw > 1) {
-      return { path: parts.slice(0, -2).join('/'), page: raw };
-    }
-  }
-
-  return { path: parts.join('/'), page: 1 };
-}
-
-const EMPTY_LISTING: Listing = {
-  data: [],
-  meta: {
-    total: 0,
-    page: 1,
-    per_page: 24,
-    last_page: 1,
-    has_more: false,
-    sort: 'newest',
-    duration_ms: 0,
-    used_fallback: false,
-  },
-  facets: [],
-};
 
 /**
  * Category page — breadcrumbs, child anchors, facet rail, product grid.
@@ -187,26 +146,14 @@ export class CategoryPage {
     { initialValue: [] as string[] },
   );
 
-  protected readonly page = computed(() => splitPagedPath(this.segments()).page);
+  protected readonly page = computed(() => splitPagedPath(this.segments(), 'c').page);
 
   protected readonly sort = computed(() => this.queryParams()?.get('sort') ?? null);
 
-  /** `filters[capacity]=480,960` → `{ capacity: ['480', '960'] }`. */
   protected readonly selectedFilters = computed<Record<string, readonly string[]>>(() => {
     const params = this.queryParams();
-    if (!params) return {};
 
-    const filters: Record<string, readonly string[]> = {};
-
-    for (const key of params.keys) {
-      const match = /^filters\[(.+)\]$/.exec(key);
-      if (!match) continue;
-
-      const values = (params.get(key) ?? '').split(',').filter((v) => v !== '');
-      if (values.length > 0) filters[match[1]!] = values;
-    }
-
-    return filters;
+    return params ? readFilters(params) : {};
   });
 
   protected readonly hasFilters = computed(
@@ -222,7 +169,7 @@ export class CategoryPage {
    */
   private readonly result = toSignal(
     this.route.url.pipe(
-      map((segments) => splitPagedPath(segments.map((s) => s.path))),
+      map((segments) => splitPagedPath(segments.map((s) => s.path), 'c')),
       switchMap(({ path, page }) =>
         combineLatest([
           this.api.category(path).pipe(
@@ -274,15 +221,10 @@ export class CategoryPage {
   });
 
   /** Carried across page changes: filters and sort both survive. */
-  protected readonly paginationParams = computed<Record<string, string>>(() => {
-    const params: Record<string, string> = { ...this.preservedParams() };
-
-    for (const [code, values] of Object.entries(this.selectedFilters())) {
-      if (values.length > 0) params[`filters[${code}]`] = values.join(',');
-    }
-
-    return params;
-  });
+  protected readonly paginationParams = computed<Record<string, string>>(() => ({
+    ...this.preservedParams(),
+    ...filterParams(this.selectedFilters()),
+  }));
 
   constructor() {
     /*
@@ -371,22 +313,4 @@ export class CategoryPage {
 
     this.seo.setStructuredData(nodes);
   }
-}
-
-/** Shared by the template signal and the fetch pipeline. */
-function readFilters(params: {
-  keys: string[];
-  get(key: string): string | null;
-}): Record<string, string[]> {
-  const filters: Record<string, string[]> = {};
-
-  for (const key of params.keys) {
-    const match = /^filters\[(.+)\]$/.exec(key);
-    if (!match) continue;
-
-    const values = (params.get(key) ?? '').split(',').filter((v) => v !== '');
-    if (values.length > 0) filters[match[1]!] = values;
-  }
-
-  return filters;
 }

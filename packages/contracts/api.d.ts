@@ -241,6 +241,10 @@ export interface components {
             /** @description The full gallery, primary first. The storefront gives the first image fetchpriority=high as the LCP element. */
             images?: components["schemas"]["Image"][];
             specifications?: components["schemas"]["SpecificationGroup"][];
+            /** @description Typed relations supplied by the source rather than hand-curated (ICECAT_MAPPING.md F-3), keyed by relation type: accessory, compatible-with, replacement. This is what answers "which toner fits this printer". */
+            related?: {
+                [key: string]: components["schemas"]["ProductCard"][];
+            };
             seo?: components["schemas"]["Seo"];
         };
     };

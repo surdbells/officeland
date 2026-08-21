@@ -245,6 +245,15 @@ jobs:
         working-directory: apps/web
         run: npm run gate:raw-html
 
+      # SEO_SPEC.md sections 10.4 and 10.5. Walks the prerendered files following
+      # only real <a href> — no JavaScript, no sitemap, no manifest. The sitemap
+      # and the manifest are both generated from the database and would agree
+      # with each other while the actual link graph was broken; this measures
+      # what a crawler can reach, which is the only thing that counts.
+      - name: Crawl-depth and orphan gate
+        working-directory: apps/web
+        run: npm run gate:crawl-depth
+
   contract:
     name: Contract · spec and types in sync
     runs-on: ubuntu-latest

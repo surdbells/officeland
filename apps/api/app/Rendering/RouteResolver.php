@@ -46,6 +46,27 @@ final class RouteResolver
     }
 
     /**
+     * A listing URL and every paginated page behind it.
+     *
+     * Adding or removing one product shifts the page boundaries for the WHOLE
+     * listing: what was the last item on page 2 becomes the first on page 3,
+     * and so on to the end. Regenerating only the first page would leave every
+     * later page showing products that have moved, which is invisible until
+     * someone notices the same product on two pages.
+     *
+     * Emitted as a `page/*` marker rather than enumerated, because the page
+     * COUNT also changes and the resolver would have to recount to know it.
+     * The renderer expands the marker against the manifest, which is the one
+     * place that already knows how many pages a listing has (D-032).
+     *
+     * @return list<string>
+     */
+    private function listingRoutes(string $url): array
+    {
+        return [$url, $url.'page/*'];
+    }
+
+    /**
      * @return list<RenderRequest>
      */
     private function forProduct(Product $product): array
@@ -56,19 +77,19 @@ final class RouteResolver
         // a listing page shows products from its whole subtree, so a change
         // deep in the tree is visible further up.
         foreach ($product->categories()->get() as $category) {
-            $direct[] = $category->url();
+            $direct = array_merge($direct, $this->listingRoutes($category->url()));
 
             foreach ($category->ancestors() as $ancestor) {
-                $direct[] = $ancestor->url();
+                $direct = array_merge($direct, $this->listingRoutes($ancestor->url()));
             }
         }
 
         if ($product->primaryCategory !== null) {
-            $direct[] = $product->primaryCategory->url();
+            $direct = array_merge($direct, $this->listingRoutes($product->primaryCategory->url()));
         }
 
         if ($product->brand !== null) {
-            $direct[] = $product->brand->url();
+            $direct = array_merge($direct, $this->listingRoutes($product->brand->url()));
         }
 
         // Sitemap lastmod changes whenever an indexable product changes.
@@ -133,12 +154,12 @@ final class RouteResolver
      */
     private function forCategory(Category $category): array
     {
-        $routes = [$category->url()];
+        $routes = $this->listingRoutes($category->url());
 
         // The parent renders this category in its child list (D-011), so a
         // rename or reorder changes the parent page too.
         foreach ($category->ancestors() as $ancestor) {
-            $routes[] = $ancestor->url();
+            $routes = array_merge($routes, $this->listingRoutes($ancestor->url()));
         }
 
         // Children carry the breadcrumb, which includes this category's name.
@@ -186,7 +207,7 @@ final class RouteResolver
     private function forBrand(Brand $brand): array
     {
         $requests = [new RenderRequest(
-            $this->normalise([$brand->url(), '/brands/', '/sitemap-brands.xml']),
+            $this->normalise(array_merge($this->listingRoutes($brand->url()), ['/brands/', '/sitemap-brands.xml'])),
             RenderRequest::PRIORITY_DIRECT,
             "brand:{$brand->slug}",
         )];

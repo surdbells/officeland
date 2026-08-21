@@ -229,6 +229,15 @@ use OpenApi\Attributes as OA;
             items: new OA\Items(ref: '#/components/schemas/Image'),
         ),
         new OA\Property(property: 'specifications', type: 'array', items: new OA\Items(ref: '#/components/schemas/SpecificationGroup')),
+        new OA\Property(
+            property: 'related',
+            description: 'Typed relations supplied by the source rather than hand-curated (ICECAT_MAPPING.md F-3), keyed by relation type: accessory, compatible-with, replacement. This is what answers "which toner fits this printer".',
+            type: 'object',
+            additionalProperties: new OA\AdditionalProperties(
+                type: 'array',
+                items: new OA\Items(ref: '#/components/schemas/ProductCard'),
+            ),
+        ),
         new OA\Property(property: 'seo', ref: '#/components/schemas/Seo'),
     ],
     type: 'object',

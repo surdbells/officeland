@@ -2,7 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@a
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, switchMap } from 'rxjs';
-import { CatalogueApi, type Product } from '../../core/api/catalogue-api';
+import {
+  CatalogueApi,
+  type Product,
+  type ProductCard as ProductCardData,
+} from '../../core/api/catalogue-api';
+import { ProductGallery } from '../../shared/product-gallery';
+import { SpecAccordion } from '../../shared/spec-accordion';
+import { ProductCard } from '../../shared/product-card';
 import { SeoService } from '../../core/seo/seo.service';
 import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data';
 
@@ -23,7 +30,7 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
   selector: 'ol-product-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, ProductGallery, SpecAccordion, ProductCard],
   template: `
     @if (product(); as p) {
       <article class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8">
@@ -51,8 +58,7 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
 
         <div class="mt-6 grid gap-8 lg:grid-cols-2">
           <div>
-            <!-- Gallery: Phase 8, with the derivative pipeline from Phase 4. -->
-            <div class="aspect-square rounded-lg bg-ink-50"></div>
+            <ol-product-gallery [images]="p.images ?? []" />
           </div>
 
           <div>
@@ -96,25 +102,34 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
         @if (p.specifications?.length) {
           <section class="mt-12">
             <h2 class="font-heading text-xl font-semibold">Specifications</h2>
-            @for (group of p.specifications ?? []; track group.group) {
-              <div class="mt-6">
-                <h3 class="font-heading text-sm font-semibold uppercase tracking-wide text-ink-600">
-                  {{ group.group }}
-                </h3>
-                <table class="mt-2 w-full max-w-3xl text-sm">
-                  <tbody>
-                    @for (item of group.items ?? []; track $index) {
-                      <tr class="border-b border-ink-100">
-                        <th scope="row" class="py-2 pr-4 text-left font-medium">{{ item.label }}</th>
-                        <td class="py-2 text-ink-600">{{ item.value }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            }
+            <ol-spec-accordion [groups]="p.specifications ?? []" />
           </section>
         }
+
+        @if (p.warranty_text) {
+          <section class="mt-10">
+            <h2 class="font-heading text-xl font-semibold">Warranty</h2>
+            <p class="mt-2 max-w-3xl text-ink-600">{{ p.warranty_text }}</p>
+          </section>
+        }
+
+        <!--
+          Related products, from typed supplier relations rather than
+          hand-curation (ICECAT_MAPPING.md F-3). This is the rail that answers
+          "which toner fits this printer", which is the single most common
+          consumables question in this catalogue.
+        -->
+        @if (related().length) {
+          <section class="mt-12">
+            <h2 class="font-heading text-xl font-semibold">Related products</h2>
+            <ul class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              @for (item of related(); track item.uuid) {
+                <li class="h-full"><ol-product-card [product]="item" [headingLevel]="3" /></li>
+              }
+            </ul>
+          </section>
+        }
+
       </article>
     } @else if (failed()) {
       <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-20">
@@ -146,6 +161,25 @@ export class ProductPage {
 
   protected readonly product = computed(() => this.result().product);
   protected readonly failed = computed(() => this.result().failed);
+
+  /**
+   * The related rail, flattened and bounded.
+   *
+   * The API groups relations by type (accessory, compatible-with,
+   * replacement). A single rail is the right surface for now: four typed
+   * rails on a page with one accessory each is worse than one rail of four.
+   * Bounded at 8 because every card carries an image, and the PDP has an
+   * 800 KB page-weight budget (section 14.9).
+   */
+  protected readonly related = computed(() => {
+    const groups = this.product()?.related;
+
+    if (!groups) return [];
+
+    return Object.values(groups as Record<string, ProductCardData[]>)
+      .flat()
+      .slice(0, 8);
+  });
 
   protected readonly showQuantityRules = computed(() => {
     const p = this.product();

@@ -441,6 +441,13 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/SpecificationGroup'
+            related:
+              description: 'Typed relations supplied by the source rather than hand-curated (ICECAT_MAPPING.md F-3), keyed by relation type: accessory, compatible-with, replacement. This is what answers "which toner fits this printer".'
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductCard'
             seo:
               $ref: '#/components/schemas/Seo'
           type: object

@@ -23,9 +23,11 @@ export interface RouteManifest {
   readonly categories: readonly string[];
   /** Product slugs without the /p/ prefix. */
   readonly products: readonly string[];
+  /** Brand hub routes without the /brands/ prefix, including `slug/page/N`. */
+  readonly brands: readonly string[];
 }
 
-const EMPTY: RouteManifest = { categories: [], products: [] };
+const EMPTY: RouteManifest = { categories: [], products: [], brands: [] };
 
 /** Cached for the lifetime of one build: getPrerenderParams is called per route. */
 let cached: Promise<RouteManifest> | null = null;
@@ -56,6 +58,7 @@ async function load(): Promise<RouteManifest> {
     return {
       categories: normalise(body.data?.categories),
       products: normalise(body.data?.products),
+      brands: normalise(body.data?.brands),
     };
   } catch (error) {
     if (allowEmpty) {
