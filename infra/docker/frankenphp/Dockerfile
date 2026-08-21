@@ -38,6 +38,11 @@ RUN install-php-extensions \
     && apt-get install -y --no-install-recommends \
         git \
         unzip \
+        # Media backups (Phase 13d). The media tree is content-addressed, so
+        # rsync --ignore-existing turns a 50 GB+ nightly into a directory
+        # comparison. Without it scripts/backup/media-backup.sh cannot run
+        # where the volume is actually mounted.
+        rsync \
         libvips42 \
         libheif1 \
         libheif-plugin-aomenc \

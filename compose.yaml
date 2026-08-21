@@ -14,6 +14,24 @@ name: officeland
 services:
   postgres:
     image: postgres:16-alpine
+    # Continuous WAL archiving (Phase 13d).
+    #
+    # The sh wrapper exists to create and chown /backups before Postgres drops
+    # to the postgres user. A named volume mounted at a path the image does not
+    # contain is created root-owned, so archive_command would fail on every
+    # segment — and archive failures are near-silent: Postgres retries forever,
+    # pg_wal grows, and the first symptom anybody sees is a full disk.
+    command:
+      - sh
+      - -c
+      - >-
+        mkdir -p /backups/wal /backups/base
+        && chown -R postgres:postgres /backups
+        && exec docker-entrypoint.sh postgres
+        -c archive_mode=on
+        -c "archive_command=test ! -f /backups/wal/%f && cp %p /backups/wal/%f"
+        -c archive_timeout=300
+        -c wal_level=replica
     environment:
       POSTGRES_USER: ${DB_USERNAME:-officeland}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
@@ -23,6 +41,11 @@ services:
       POSTGRES_INITDB_ARGS: "--auth-host=md5"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      # Base backups and archived WAL (Phase 13d). A SEPARATE volume from
+      # pgdata on purpose: a backup on the same device as the thing it backs
+      # up is not a backup. In production this must be a different device or
+      # host entirely — see Q21.
+      - pgbackups:/backups
       - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
     ports:
       # Exposed for migrations, which connect DIRECT and never via PgBouncer
@@ -161,6 +184,8 @@ services:
 
 volumes:
   pgdata:
+  # Base backups + archived WAL. See the postgres service.
+  pgbackups:
   # See the api service for why vendor/ is not on the bind mount.
   api_vendor:
   redisdata:

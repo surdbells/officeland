@@ -572,6 +572,22 @@ Three details carry the value:
 Registered explicitly rather than by auto-discovery: these are the events an investigation starts from, and a listener that silently stops being discovered is a log that silently stops being written.
 **Status:** architect decision; finding F2 in `docs/SECURITY_REVIEW.md`.
 
+### D-055 — Backups are physical-primary with a logical secondary, and the drill is the deliverable
+**Decision:** continuous WAL archiving plus nightly `pg_basebackup` as the primary; a weekly `pg_dump -Fc` as a secondary; `rsync --ignore-existing` for the media tree. A restore drill that verifies against a throwaway cluster is run on a schedule.
+
+**Physical primary, because it is the only one that does point-in-time recovery.** A logical dump restores to the moment it was taken; base backup plus archived WAL restores to any moment in between. On a 15,000-product catalogue with 75,000 media rows, a logical restore is also a replay of every INSERT and a rebuild of every index.
+
+**Logical secondary, because a physical backup faithfully copies problems too.** A corrupt page or a bad `UPDATE` from three weeks ago is present in every base backup taken since. A dump is a stream of SQL: slower, no PITR, but it survives that case and it restores into a *different major version*, which is the only backup that helps when a version upgrade goes wrong. Weekly rather than nightly, because its value is depth of history — recency is what the WAL archive is for.
+
+**The media tree is copied, not regenerated.** Derivatives could in principle be rebuilt from originals, but Phase 4 measured 3.6s per image for 15 variants: 75,000 images is roughly **75 hours** of single-core libvips. That is not a recovery, it is an outage with a progress bar. Storage is cheaper than the downtime.
+
+`--ignore-existing` is safe here specifically because media is content-addressed (Phase 4b): a path is derived from its content, so **a file at a given path never changes** and the nightly run is a directory comparison rather than a 50 GB read. Verified — a second consecutive run transfers zero files.
+
+**The drill is the deliverable, and it is verified against its own failure modes.** Every way a backup silently fails to restore is invisible from the backup side: an archive that stopped accepting segments weeks ago, a tar written by a server version the restore host lacks, a base backup taken while `archive_command` was failing. So the drill restores into a **separate** cluster — safe to run in production, and therefore actually runnable on a schedule — and compares **row counts** rather than checking an exit code, because a restore that starts cleanly holding the wrong data is the worst outcome available.
+
+Proven rather than asserted: a row inserted *after* the base backup was recovered through the archive (124 categories in the backup, 125 restored), and a truncated artefact fails with exit 1.
+**Status:** architect decision. Timings in `RUNBOOK.md` §12.4 are development-scale and must be re-measured on the production host (**Q7**). The offsite destination, retention and RPO/RTO remain open (**Q21**).
+
 ## Open
 
 ### Q-A — Icecat subscription tier
@@ -592,4 +608,13 @@ Resolved by D-020 (Angular 22, Filament v5) and D-019 (Laravel 12, forced by sec
 Laravel 12 replaces Laravel 11, which §6.3 marked as fixed by the client. The substitution is forced — Laravel 11 cannot be installed without disabling Composer's security-advisory policy — but §6.3's "do not substitute" instruction means this needs explicit acknowledgement rather than silent adoption.
 
 ### Q-D — Remaining §22 items unaffected by the above
-Q13 (WoodTek), Q14 (Dubai/hreflang), Q15 (first-party reviews), Q16 (captcha provider), Q17 (brand assets, social URLs), Q18 (ZeptoMail region, and what `hostinger-reach` currently sends), Q20 (delivery model), Q21 (RPO/RTO, offsite backup destination), Q22 (compliance scope), Q23 (merchandising taxonomy approval — see TAXONOMY.md §7).
+Q13 (WoodTek), Q14 (Dubai/hreflang), Q15 (first-party reviews), Q16 (captcha provider), Q17 (brand assets, social URLs), Q18 (ZeptoMail region, and what `hostinger-reach` currently sends), Q20 (delivery model), Q22 (compliance scope), Q23 (merchandising taxonomy approval — see TAXONOMY.md §7).
+
+### Q21 — RPO/RTO and the offsite backup destination — **sharpened 2026-08-22**
+The backup and restore machinery is built, run and verified (D-055): WAL archiving, base backups, a weekly logical dump, an incremental media copy, and a drill that catches corruption and proves WAL replay. **Every script takes a destination and none of them has one.**
+
+Three specific answers are needed, and they are cheap to give:
+
+1. **Where does the offsite copy go?** It must be a different *host* — a copy on the same machine survives a mistaken `rm` and nothing else, not a failed disk and not ransomware. A second VPS, an S3-compatible bucket, or a NAS at the office all work; the scripts take an rsync target.
+2. **How far back must it reach?** Retention drives cost, and it is the only defence against a problem discovered late — a bad `UPDATE` noticed three weeks on is unrecoverable from a seven-day window.
+3. **What RPO and RTO is the business actually promising itself?** Continuous WAL archiving makes an RPO of minutes achievable; whether that is worth its cost is a business call, not an engineering one. The RTO cannot be quoted at all until the drill is re-run on the production host (**Q7**) — the development figure of 12s is on a 12 MB database and would be dishonest to extrapolate.

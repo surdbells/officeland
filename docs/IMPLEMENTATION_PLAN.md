@@ -1,6 +1,6 @@
 # Implementation Plan
 
-**Status:** Phases 0-11 built; Phase 12's pipeline built and enforced, its writing not started. Five gates remain open, none of them on code: Phase 8 CWV (Q7 + a browser harness), Phase 9 viewport testing (same), Phase 10 real sends (Q18 credentials), Phase 11 UAT (the sales team), and Phase 12 the writing itself (**Q-B**). Phase 13a (security review) is done — four findings, all fixed. Phase 5b, or the rest of 13, next. See docs/HANDOVER-phase-2.md.
+**Status:** Phases 0-11 built; Phase 12's pipeline built and enforced, its writing not started. Five gates remain open, none of them on code: Phase 8 CWV (Q7 + a browser harness), Phase 9 viewport testing (same), Phase 10 real sends (Q18 credentials), Phase 11 UAT (the sales team), and Phase 12 the writing itself (**Q-B**). Phase 13a (security review, four findings all fixed) and 13d (restore drill, passing) are done. Phase 5b, or the rest of 13, next. See docs/HANDOVER-phase-2.md.
 
 **Q-B is now the binding constraint on launch date.** Everything mechanical that 15,000 indexable products needs is in place; what is missing is the copy, and no decision has been taken about who writes it.
 **Re-read this document before starting any phase** (§2.3). If reality has diverged, amend the plan — do not drift silently.
@@ -29,7 +29,7 @@
 | **10** | ZeptoMail transport, templates, queue, webhooks | 🟡 Built; needs Q18 to send | 3 |
 | **11** | Lead queue admin | 🟡 Built; awaiting UAT | 1 |
 | **12** | Content: category intros, guides, product copy | 🟡 Pipeline built; writing blocked on Q-B | *content track* |
-| **13** | Hardening: security, load, a11y, backup drill | 🟡 13a done; 13b–13g not started | 4–5 |
+| **13** | Hardening: security, load, a11y, backup drill | 🟡 13a + 13d done; 13b/13c/13e open | 4–5 |
 | **14** | Cutover: redirects, sitemaps, 30-day watch | ⬜ Not started | 3–4 |
 
 **Critical path:** 0 → 2 → 3 → 7 → 8 → 14. Phases 4, 5, 5b and 6 parallelise against 7/8. Phase 12 runs continuously from Phase 5.
@@ -412,17 +412,17 @@ docker compose exec api php artisan content:draft
 
 ## Phase 13 — Hardening 🟡
 
-**Gate:** all gates green; restore drill timed and documented. **13a is done; the rest is not started.**
+**Gate:** all gates green; restore drill timed and documented. **13a and 13d are done. The restore drill — the one hard gate in this phase — passes.**
 
 | Sub-phase | Deliverable | Status |
 |---|---|---|
 | 13a | Security review against OWASP Top 10, evidenced | ✅ Done — `docs/SECURITY_REVIEW.md`, 4 findings fixed, 15 tests |
 | 13b | k6 load test on search and facets; p95/p99 and breaking point | ⬜ Not started |
 | 13c | axe-core clean; WCAG 2.2 AA verified | ⬜ Not started |
-| 13d | **Backup and restore drill**, timed in staging | ⬜ Not started |
+| 13d | **Backup and restore drill**, timed | ✅ Done — D-055, drill run and verified against its own failure modes |
 | 13e | Observability: Sentry, metrics, synthetic quote submission | ⬜ Not started |
 | 13f | Read replica for DR (D-018) | ⬜ Open on Q7 |
-| 13g | `RUNBOOK.md` complete | 🟡 §11 added; completes with the rest of 13 |
+| 13g | `RUNBOOK.md` complete | 🟡 §11 security and §12 backup added; completes with the rest of 13 |
 
 ### 13a — what the review found
 
@@ -445,7 +445,7 @@ Four findings, all fixed. **Two were serious, and both were absences rather than
 
 - **13b needs a decision about where to measure.** Numbers from this development machine are worthless — D-033 records bind-mount reads at ~29 ms, a factor of 1,450 slower than container-local. The k6 scripts can be written and exercised here; the p95/p99 and breaking point that go in a document have to come from the production host (**Q7**).
 - **13c needs a browser harness**, the same gap that blocks the Phase 8 CWV budgets and Phase 9 viewport testing. A useful subset of axe-core rules runs against prerendered HTML under jsdom without a browser; colour contrast does not, because it needs real rendering.
-- **13d is the gate**, and it is the one item here that can be completed on this machine: Postgres WAL plus a base backup, restored into a scratch database with the wall clock recorded. The media half (50 GB+ incremental offsite) needs a destination — **Q21**.
+- **13d is done** — the drill runs in 12s on the development dataset and is verified against its own failure modes (RUNBOOK §12.5). What is still open is where the offsite copy goes, its retention, and the RPO/RTO it is meant to meet — all **Q21**. Media *restore* is also untested: the copy is verified, pulling it back and serving a page from it is not.
 - **13e needs a Sentry DSN** (client credential). The integration and the synthetic quote monitor can be built and unit-tested without one; verifying that events actually arrive cannot.
 
 ## Phase 14 — Cutover
