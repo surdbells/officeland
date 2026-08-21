@@ -1,6 +1,6 @@
 # Implementation Plan
 
-**Status:** Phases 0-10 built. Three gates remain open on external inputs: Phase 8 CWV (Q7 + a browser harness), Phase 9 viewport testing (same), and Phase 10 real sends (Q18 credentials). Phase 5b or 11 next. See docs/HANDOVER-phase-2.md.
+**Status:** Phases 0-11 built. Four gates remain open, none of them on code: Phase 8 CWV (Q7 + a browser harness), Phase 9 viewport testing (same), Phase 10 real sends (Q18 credentials), and Phase 11 UAT (the sales team). Phase 5b or 12 next. See docs/HANDOVER-phase-2.md.
 **Re-read this document before starting any phase** (§2.3). If reality has diverged, amend the plan — do not drift silently.
 
 **Staffing assumption:** ~2 backend, ~1.5 frontend, ~0.5 devops FTE, plus a content resource outside the engineering team.
@@ -148,7 +148,7 @@
 | 5c Category tree + Attribute resources | ✅ derived path/depth, drag reorder |
 | 5f CSV importer with dry-run diff | ✅ idempotent, field-level diff, 16 tests |
 | 5g SEO tools (redirects, 404 log, indexability audit) | ✅ zero-result terms await Phase 6 search |
-| 5h Settings (quote routing, locations, socials) | ⏭ deferred to Phase 10/11 — a test-send button with no mail transport is a stub |
+| 5h Settings (quote routing, locations, socials) | 🟡 quote routing + test-send landed in Phase 11d; locations and socials still open on Q17 |
 
 **Defect caught here:** deleting a user fired the audit observer, which inserted a row referencing the row disappearing in the same transaction — a foreign key violation that aborted the deletion itself.
 
@@ -325,14 +325,40 @@ Extrapolated to 15,000 products (~15,150 routes): **~13 minutes** for `render:fu
 - **Email client testing.** The templates are Laravel markdown mail, so they compile to the table-based inlined-CSS HTML Outlook needs and generate the plain-text alternative from one source. They have not been opened in Gmail, Outlook or Apple Mail, in light or dark mode. That is a manual step and belongs with the first real send.
 - **SPF/DKIM/DMARC are a go-live blocker.** Not a hardening task for afterwards: without them, confirmations land in spam, the customer concludes we never replied, and **nobody involved learns the email was the problem**.
 
-## Phase 11 — Lead queue admin (D-005)
+## Phase 11 — Lead queue admin (D-005) 🟡
 
-**Gate:** the sales team completes a full lead cycle in UAT.
+**Gate:** ⏳ **built, awaiting UAT.** The gate is "the sales team completes a full lead cycle", which only the sales team can sign off. The cycle itself is proven end to end in `LeadQueueTest` — a lead arrives, somebody takes it, replies, notes what happened, and closes it won or lost, with every step on the timeline afterwards — driven through the real Filament pages rather than the models.
 
-- 11a List view with filters (status, assignee, age, source, category), detail view with line items and customer context
-- 11b Assignment, internal notes, status transitions, full `quote_events` timeline
-- 11c SLA age indicator highlighting anything unanswered beyond 4 working hours
-- 11d Routing configuration: default recipients, per-category overrides, test-send
+| Sub-phase | Deliverable | Status |
+|---|---|---|
+| 11a | List view with filters (status, owner, source, age), detail view with line items and customer context | ✅ Done |
+| 11b | Assignment, internal notes, status transitions, full `quote_events` timeline | ✅ Done |
+| 11c | SLA age indicator, working hours, highlighting anything past 4 | ✅ Done — D-044, 23 tests |
+| 11d | Routing: default recipient, per-category overrides, test-send | ✅ Done — D-046, D-047 |
+
+**This is a queue, not a CRM.** D-005 put pricing and the reply itself outside the system, so the only job left here is making sure every lead is seen, owned and answered within the promise the site makes on every page. Everything on the screen serves that and nothing else: there is no create form (a lead typed by hand is indistinguishable from a real submission afterwards), no pricing, no pipeline board.
+
+**The default view is deliberately narrow.** Tabs — Waiting, Late, Mine, Everything — rather than a pre-applied filter. A queue that opens on "everything ever submitted" gets scrolled past; and unlike a hidden default filter, a tab makes it obvious that the view *is* narrowed, which is how somebody avoids concluding a lead was never received.
+
+**Oldest first**, which is the opposite of most admin tables and correct here: newest-first buries the lead that has waited longest under every new submission.
+
+### Judgements worth knowing about
+
+- **D-044** — the SLA clock counts **working hours** in Africa/Lagos, and public holidays are deliberately not modelled. Elapsed time makes every Friday-evening lead look catastrophically late by Monday, and a queue where most rows are red is one nobody reads — which hides the row that is genuinely late.
+- **D-045** — `first_response_at` is set by an explicit "I have replied" button, never inferred. The reply happens outside this system, so nothing can detect it; every alternative either makes the metric a lie or never sets it for the leads that stall.
+- **D-046** — routing rules live in the **database**, editable by sales; the fallback address stays in config. Routing is a personnel decision, and config-file routing means a deploy every time somebody changes desk. Rules point at a category row rather than a path string, longest prefix wins, and routing can narrow but **never drop** — every failure mode falls back to the default inbox.
+- **D-047** — the test-send fabricates a quote and sends it synchronously. Fabricated because the destination is typed into a form, so a real lead would let admin access forward a customer's details anywhere; synchronous because a queued test reports success before the transport is touched, which is exactly the failure the button exists to catch.
+
+### Two corrections made while building this
+
+- **`QuoteReceivedMail` counted its lines with a second query** (`items()->count()`) while the body iterated the same rows. Now counted from the loaded relation — one fewer query per notification, and it is what lets an unsaved quote render at all.
+- **A rule for a soft-deleted category kept its row.** Categories soft-delete, so the FK cascade never fires. It stops *routing* because the trashed category resolves to null through the relation and the lead falls back — asserted directly, because the failure would otherwise be leads sent to a team for a department that no longer exists.
+
+### Outstanding
+
+- **UAT with the sales team** is the gate and cannot be simulated. What it needs to establish: that the four tabs match how they actually triage, that "I have replied" is pressed reliably enough for the SLA to mean anything, and that the routing rules they want are expressible as category prefixes.
+- **`first_response_at` depends on discipline.** If the button is not pressed, the queue reports leads as unanswered forever. That is a training matter, not a code one — but if UAT shows it is not happening, the honest fix is to remove the indicator rather than let it report a number nobody trusts.
+- **Public holidays** will read as one day of overrun each. If that turns out to matter, it needs a maintained holiday table (D-044), not a constant.
 
 ## Phase 12 — Content (parallel track from Phase 5)
 

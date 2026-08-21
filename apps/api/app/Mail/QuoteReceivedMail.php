@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Mail;
 
 use App\Models\Quote;
+use App\Models\QuoteItem;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -39,7 +41,14 @@ final class QuoteReceivedMail extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
-        $lines = $this->quote->items()->count();
+        /*
+         * Counted from the loaded relation rather than with a fresh
+         * `items()->count()` query. Two reasons: the body is about to iterate
+         * the same rows anyway, so the query is pure waste; and it lets a
+         * quote that was never persisted — the routing test-send (§11d) —
+         * render, which a query against `quote_id = null` cannot.
+         */
+        $lines = $this->lines()->count();
 
         return new Envelope(
             // The subject is the triage surface: reference, size and who from,
@@ -61,9 +70,24 @@ final class QuoteReceivedMail extends Mailable implements ShouldQueue
             markdown: 'mail.quote.received',
             with: [
                 'quote' => $this->quote,
-                'items' => $this->quote->items,
+                'items' => $this->lines(),
             ],
         );
+    }
+
+    /**
+     * The quote's lines, loaded once.
+     *
+     * `loadMissing` rather than `load`: a caller that has already attached the
+     * rows — a preview built in memory — keeps them.
+     *
+     * @return Collection<int, QuoteItem>
+     */
+    private function lines(): Collection
+    {
+        $this->quote->loadMissing('items');
+
+        return $this->quote->items;
     }
 
     public function headers(): Headers

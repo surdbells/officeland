@@ -6,6 +6,7 @@ namespace App\Mail;
 
 use App\Models\EmailSuppression;
 use App\Models\Quote;
+use App\Quotes\QuoteRouting;
 use Illuminate\Contracts\Mail\Mailable;
 use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Support\Facades\Log;
@@ -27,7 +28,10 @@ use Illuminate\Support\Facades\Log;
  */
 final class QuoteMailer
 {
-    public function __construct(private readonly Mailer $mailer) {}
+    public function __construct(
+        private readonly Mailer $mailer,
+        private readonly QuoteRouting $routing,
+    ) {}
 
     /**
      * Queues both emails for a submitted quote.
@@ -71,7 +75,10 @@ final class QuoteMailer
 
     private function notifySales(Quote $quote): void
     {
-        $recipient = (string) config('mail.sales_address', 'sales@officelandng.com');
+        // Routed by category where a rule exists, so the team that can answer
+        // it owns it (section 11d). Always falls back to the default inbox:
+        // an unroutable lead must not be a dropped one.
+        $recipient = $this->routing->recipientFor($quote);
 
         $this->dispatch($quote, new QuoteReceivedMail($quote), $recipient, 'quote.received');
     }

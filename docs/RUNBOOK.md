@@ -261,3 +261,74 @@ The Phase 10 gate — *real send to real inboxes, failure and retry path proven,
 3. Send to a known-invalid address on the sending domain, confirm the webhook fires and the address appears in the suppression list.
 4. Break the token deliberately, confirm the job retries and lands in `queue:failed`, then fix it and `queue:retry`.
 5. Render both templates in Gmail, Outlook and Apple Mail, in light and dark mode.
+
+---
+
+## 9. The lead queue
+
+Filament → **Quotes → Lead queue**. Visible to Sales and Super Admin only: a quote carries a customer's contact details and buying intent, which is not catalogue data.
+
+D-005 put pricing and the reply itself outside this system. So the queue's only job is making sure every lead is **seen, owned and answered** — and everything below serves that.
+
+### 9.1 The four tabs
+
+| Tab | Shows | Use it for |
+|---|---|---|
+| **Waiting** | No first reply yet, not closed | The working view. Oldest first. |
+| **Late** | Waiting and past 4 working hours | Triage when the backlog is deep |
+| **Mine** | Assigned to you | Your own list |
+| **Everything** | All leads ever | Finding one from last week |
+
+The filters underneath compose with whichever tab is open.
+
+Oldest-first is deliberate and is the opposite of most admin tables. Newest-first buries the lead that has waited longest under every new submission.
+
+### 9.2 The four hour clock
+
+The **Waiting** column counts **working hours** — 08:00–17:00, Monday to Friday, Lagos time — not elapsed hours (D-044). A quote submitted at 16:30 on Friday and answered at 09:30 on Monday reads as **one working hour**, which is the honest number.
+
+**Public holidays are not modelled.** A lead over a holiday reads as roughly one day of overrun; read it accordingly. Making this exact needs a maintained holiday table, not a code change.
+
+The navigation badge shows how many leads are waiting, and turns **red** as soon as any one of them is past four working hours.
+
+### 9.3 Press "I have replied"
+
+**Nothing detects that you answered a lead.** You reply from your own mail client, outside this system, so the clock is stopped by the button and by nothing else (D-045).
+
+If it is not pressed the lead stays in **Waiting** forever, the badge keeps counting it, and the SLA figure stops meaning anything. Pressing it also assigns the lead to you if nobody had taken it.
+
+### 9.4 What each action records
+
+Everything lands on the timeline at the bottom of the lead, including the events nobody performed — a suppressed confirmation, an email that failed to queue. Those are the ones that explain a customer who says they never heard from us.
+
+| Action | Effect |
+|---|---|
+| **I have replied** | Stops the clock; assigns to you if unowned; `new` → `contacted` |
+| **Assign** | Changes the owner |
+| **Add a note** | Internal only — the customer never sees it |
+| **Change status** | `won`/`lost`/`spam` stamp a closing time; anything else clears it |
+
+Use the **Why** box when marking a lead **Lost**. It is the only record of the reason that will ever exist.
+
+### 9.5 Routing notifications
+
+Filament → **Quotes → Notification routing**.
+
+Leads without a matching rule go to `MAIL_SALES_ADDRESS`. A rule sends one category — **and everything beneath it** — somewhere else. The most specific matching rule wins, so `/it-products/printers/` can be routed separately from `/it-products/` regardless of the order the rules were added.
+
+Matching is on the primary category of the **first line** of the quote. A quote spanning departments has to land somewhere, and the first line is what the buyer reached for first.
+
+**Routing can narrow but never drop.** No rule, a paused rule, a deleted category, a product with no category — all of them fall back to the default inbox. There is deliberately no "send nowhere".
+
+Prefer a **shared team inbox** over a personal address: a personal address survives neither a holiday nor a resignation, and the failure mode is silent.
+
+**After adding or editing a rule, press "Send a test".** It sends the real notification template through the real transport, so a typo in the address bounces at you instead of quietly swallowing a lead. The test uses a made-up sample quote — never a real customer's details — and creates nothing in the queue.
+
+### 9.6 Fault: leads are not arriving
+
+In order:
+
+1. **Notification routing** — is there a rule sending them somewhere unexpected? Press *Send a test* against the address you expect.
+2. **Quotes → Email suppressions** — is the recipient suppressed? A suppressed *sales* address stops the notification entirely.
+3. `php artisan queue:failed` — did the job fail rather than never exist?
+4. The lead itself — open it and read the History section. `email_queued` means it reached the queue; `email_queue_failed` means Redis was unreachable and **nothing was enqueued to retry**.

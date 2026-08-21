@@ -429,6 +429,50 @@ An open pixel and rewritten links on a **transactional receipt** are a privacy c
 
 Configurable rather than removed, because a future marketing mailer may legitimately want them; the default belongs on the side of the customer.
 **Status:** architect decision.
+### D-044 — The SLA clock counts working hours, and public holidays are deliberately not modelled
+**Decision:** lead ageing is measured in **working hours** — 08:00–17:00, Monday to Friday, Africa/Lagos — not elapsed hours. Nigerian public holidays are **not** modelled.
+
+§11c asks to highlight anything unanswered beyond four working hours. Elapsed time cannot express that. A quote submitted at 16:30 on Friday and answered at 09:30 on Monday took **one working hour**, but sixty-five elapsed ones. Under elapsed time every weekend row turns red, and a queue where most rows are red is a queue nobody reads — which hides the row that is genuinely late: a Monday-morning lead untouched since 09:00.
+
+The timezone is **configured, not inherited from the server**. A server that moves region must not silently change what "four working hours" means; the business, its customers and the promise printed on every page are all in West Africa Time.
+
+Public holidays are excluded on purpose. Nigerian public holidays are partly declared at short notice, so a hardcoded list would be wrong within a year — and wrong in the damaging direction, flagging a lead as late when the office was shut. Weekends are handled; a holiday reads as one day of overrun, which a salesperson interprets correctly. Making this exact needs a maintained holiday table, not a constant in a class.
+
+The clock **stops at the first reply**, and closed leads (won/lost/spam) never age. A queue that keeps ageing rows nobody is waiting on cannot be triaged at a glance — and one spam run would otherwise turn the whole screen red.
+**Status:** architect decision.
+
+### D-045 — `first_response_at` is set by an explicit action, never inferred
+**Decision:** the SLA clock is stopped by a salesperson pressing **"I have replied"**. Nothing infers it.
+
+D-005 put the reply outside this system: sales prices and responds in their own tools, so no code can observe that the customer was answered. Every alternative is worse than a button. Setting it as a side effect of opening the record makes the metric a lie — the promise would be met by clicking. Setting it on a status change means it is never set for the leads that stall, which are the only ones the metric is about. Leaving it unset makes every answered lead look permanently overdue, and within a week the whole indicator is ignored.
+
+Replying also **takes ownership**: an unowned lead is assigned to whoever pressed the button. Reassignment afterwards is one action, but the default must never be "answered by nobody" — an unowned lead is exactly the state the queue exists to eliminate.
+**Status:** architect decision.
+
+### D-046 — Quote routing rules live in the database; the fallback address stays in config
+**Decision:** per-category routing (§11d) is a `quote_routing_rules` table editable in admin. The **default** recipient stays in `MAIL_SALES_ADDRESS`.
+
+Routing is a personnel decision — it changes when somebody joins, leaves or swaps desks. Config-file routing makes each of those a developer task and a deploy, and the predictable result is that it stops being maintained while leads keep arriving in a former colleague's inbox.
+
+The default is the exception because it is infrastructure, not personnel: it is the address the whole system falls back to, it changes about never, and two places that could define it is how it ends up defined twice and differently.
+
+Three properties are load-bearing:
+
+- **Rules point at a category row, not a path string.** The match is a path prefix, but storing the path would stop matching the day somebody moves or renames a category — and it would fail *open*, routing to the general inbox with no error anywhere.
+- **Longest prefix wins, not first match.** `/it-products/printers/` can be routed separately from `/it-products/` without depending on the order somebody happened to create the rules in.
+- **Routing can narrow but never drop.** There is no "send nowhere". No rule, a paused rule, a trashed category, a product with no category, a quote with no lines — every one of them falls back to the default inbox. A configuration screen for a feature whose purpose is "make leads more likely to be answered" must not offer a way to make one vanish.
+
+Database rules override config rules for the same path: once somebody has set a rule in the UI, the UI is the truth, or a change made there appears to do nothing.
+**Status:** architect decision.
+
+### D-047 — The routing test-send uses a fabricated quote, sent synchronously
+**Decision:** "Send a test" builds an unsaved sample quote and sends it with `sendNow`.
+
+**Fabricated, because the address is typed into a form.** Sending a real lead would let anyone with admin access forward a customer's email address, phone number and buying intent to an arbitrary inbox with one click. A sample proves the routing works just as well and discloses nothing. It is also never persisted, so the test does not create a lead in the queue that somebody then tries to answer, and its reference is `OL-Q-TEST` rather than the real `OL-Q-YYYY-NNNNNN` format so nobody chases it.
+
+**Synchronous, because a queued test cannot fail visibly.** `QuoteReceivedMail` implements `ShouldQueue`, so an ordinary `send` would enqueue it and report success before the transport was touched — a wrong token or a dead address would surface only in a failed job nobody is watching, which is exactly the failure the button exists to catch.
+**Status:** architect decision.
+
 
 
 

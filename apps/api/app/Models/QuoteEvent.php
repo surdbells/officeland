@@ -48,4 +48,50 @@ final class QuoteEvent extends Model
     {
         return $this->belongsTo(Quote::class);
     }
+
+    /**
+     * One line of plain English for the timeline (§11b).
+     *
+     * The payload is a jsonb bag whose shape differs per type, and a timeline
+     * that renders it raw is one a salesperson skips. It lives on the model
+     * rather than in the Filament page because the same wording belongs in any
+     * future export or digest — and because a type added elsewhere should show
+     * up here without an admin change.
+     *
+     * The fallthrough is deliberate: an unrecognised type still renders as
+     * something, because a silent gap in an audit trail is worse than an ugly
+     * line in one.
+     */
+    public function describe(): string
+    {
+        $payload = $this->payload;
+
+        $lines = (int) ($payload['lines'] ?? 0);
+        $units = (int) ($payload['units'] ?? 0);
+
+        return match ($this->type) {
+            'submitted' => sprintf(
+                '%d line%s, %d unit%s',
+                $lines,
+                $lines === 1 ? '' : 's',
+                $units,
+                $units === 1 ? '' : 's',
+            ),
+            'email_queued' => sprintf('%s queued to %s', $payload['template'] ?? 'email', $payload['to'] ?? 'unknown'),
+            'email_queue_failed' => sprintf('%s could NOT be queued: %s', $payload['template'] ?? 'email', $payload['error'] ?? 'unknown error'),
+            'confirmation_suppressed' => sprintf('No receipt sent — %s is suppressed', $payload['email'] ?? 'the address'),
+            'assigned' => sprintf('Assigned to %s', $payload['to'] ?? 'nobody'),
+            'first_response' => 'Marked as replied to',
+            'note' => (string) ($payload['note'] ?? ''),
+            'status_changed' => trim(sprintf(
+                '%s → %s%s',
+                $payload['from'] ?? '?',
+                $payload['to'] ?? '?',
+                isset($payload['note']) ? ' — '.$payload['note'] : '',
+            )),
+            default => $payload === []
+                ? ''
+                : (json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: ''),
+        };
+    }
 }
