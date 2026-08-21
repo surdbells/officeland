@@ -48,6 +48,13 @@ use Illuminate\Http\JsonResponse;
  */
 final class RenderManifestController
 {
+    /**
+     * Must match the storefront listing page size, and the default in
+     * BuildsListingResponses::perPage(). If they disagree, the manifest
+     * renders a different number of pages than the listing links to.
+     */
+    private const PER_PAGE = 24;
+
     public function __invoke(): JsonResponse
     {
         // `active`, not `indexable`: a discontinued or draft product has no
@@ -59,11 +66,7 @@ final class RenderManifestController
             ->pluck('slug')
             ->all();
 
-        $categories = Category::query()
-            ->orderBy('path')
-            ->pluck('path')
-            ->map(static fn (string $path): string => trim($path, '/'))
-            ->all();
+        $categories = $this->categoryRoutes();
 
         return response()->json([
             'data' => [
@@ -75,5 +78,50 @@ final class RenderManifestController
                 'product_count' => count($products),
             ],
         ]);
+    }
+
+    /**
+     * Every category path, plus a `page/N` route for each additional page of
+     * its listing.
+     *
+     * Pagination is a path segment rather than a query parameter (D-032),
+     * because Angular prerenders paths and cannot emit a file for a query
+     * string. Without these routes the pagination anchors the listing renders
+     * would point at files that do not exist: the static host would answer
+     * page 2 with the 404 template, and every product past the first 24 in a
+     * category would be unreachable — failing the crawl-depth gate for
+     * exactly the large categories that need it most.
+     *
+     * Counted per subtree, matching what CategoryController@products lists.
+     *
+     * @return list<string>
+     */
+    private function categoryRoutes(): array
+    {
+        $categories = Category::query()->orderBy('path')->get(['id', 'path']);
+
+        $routes = [];
+
+        foreach ($categories as $category) {
+            $base = trim((string) $category->path, '/');
+            $routes[] = $base;
+
+            $descendantIds = Category::query()
+                ->subtreeOf((string) $category->path)
+                ->pluck('id');
+
+            $total = Product::query()
+                ->active()
+                ->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $descendantIds))
+                ->count();
+
+            $pages = (int) ceil($total / self::PER_PAGE);
+
+            for ($page = 2; $page <= $pages; $page++) {
+                $routes[] = $base.'/page/'.$page;
+            }
+        }
+
+        return $routes;
     }
 }

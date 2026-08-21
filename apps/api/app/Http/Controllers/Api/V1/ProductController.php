@@ -43,7 +43,12 @@ final class ProductController extends Controller
                 'primaryCategory',
                 'variants',
                 'attributeValues.attribute.group',
-                'relatedProducts' => fn ($q) => $q->active()->with('brand')->limit(24),
+                'media.derivatives',
+                // Related cards need their own primary image, so the rail is not
+                // a row of grey boxes. Bounded at 24 either way.
+                'relatedProducts' => fn ($q) => $q->active()
+                    ->with(['brand', 'media.derivatives'])
+                    ->limit(24),
             ])
             ->first();
 

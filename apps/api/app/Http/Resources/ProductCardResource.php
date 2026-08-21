@@ -50,6 +50,18 @@ final class ProductCardResource extends JsonResource
             'pricing_mode' => $this->pricing_mode,
             'min_order_qty' => $this->min_order_qty,
             'qty_step' => $this->qty_step,
+            /*
+             * The primary image only. A 24-item grid does not need four
+             * gallery shots per card, and shipping them would multiply the
+             * listing payload for bytes the card never renders.
+             */
+            'image' => $this->when(
+                $this->relationLoaded('media'),
+                fn (): ?ProductImageResource => $this->media->isEmpty()
+                    ? null
+                    : new ProductImageResource($this->media->first()),
+            ),
+
             'key_specs' => $this->when(
                 $this->relationLoaded('attributeValues'),
                 fn (): array => $this->keySpecs(),

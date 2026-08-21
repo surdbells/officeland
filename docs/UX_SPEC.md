@@ -2,7 +2,7 @@
 
 **Phase 7 deliverable 7g.** Annotated wireframes, component inventory, and facet groups per category family.
 
-**Status:** Phase 7 components are built and marked ✅. Everything marked ⬜ is specified here and built in Phase 8 or 9, so that the structure is agreed before the components exist rather than after.
+**Status:** components marked ✅ are built. Everything marked ⬜ is specified here and built later in Phase 8 or in Phase 9, so the structure is agreed before the components exist rather than after.
 
 **Provisional:** every colour, font and social URL depends on **Q17** (brand assets, exact hex, fonts). The tokens in `apps/web/src/styles.css` carry placeholder values and are marked as such. Nothing else in this document is blocked by Q17.
 
@@ -100,9 +100,9 @@ The USP strip does more conversion work than anything else on the page for a B2B
 ├────────────────────────────────────────────────────────┤
 │  Browse by category  →  every child as a real <a href> │  ✅ D-011
 ├────────────┬───────────────────────────────────────────┤
-│  facet     │  product grid, 24 per page                │  ⬜ Phase 8
+│  facet     │  product grid, 24 per page                │  ✅
 │  rail      │  [card] [card] [card] [card]              │
-│  (§4)      │  pagination: real <a> to ?page=2          │
+│  (§4)      │  pagination: real <a> to page/2/          │
 └────────────┴───────────────────────────────────────────┘
 ```
 
@@ -200,10 +200,11 @@ Two entries carry disproportionate weight for this market and are called out del
 | `TrailingSlashUrlSerializer` | ✅ | D-028 |
 | `ServerApiBackend` | ✅ | D-027 |
 | Mobile drawer | ⬜ P8 | Reuses megamenu markup |
-| Product card | ⬜ P8 | One shape for PLP, search, related rails |
-| Facet rail | ⬜ P8 | Per §4 above |
-| Pagination | ⬜ P8 | Real anchors, `rel="next"`/`rel="prev"` |
-| Gallery | ⬜ P8 | Phase 4 derivatives, LQIP, `fetchpriority` on the first image |
+| Product card | ✅ | One shape for PLP, search, related rails — 18 tests |
+| Facet rail | ✅ | Per §4 above; real anchors, live counts |
+| Pagination | ✅ | Real anchors on `page/N` paths (D-032), `rel=next`/`rel=prev` |
+| Product image | ✅ | `<picture>` over Phase 4 derivatives, intrinsic dimensions |
+| Gallery | ⬜ P8 | Multi-image PDP gallery with thumbnails |
 | Typeahead | ⬜ P8 | Progressive enhancement over the existing form |
 | Quote basket + form | ⬜ P9 | Three fields |
 | Delivery/lead-time checker | ⬜ P9 | |

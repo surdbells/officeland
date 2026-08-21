@@ -93,6 +93,24 @@ final class Product extends Model
             ->withPivot('sort_order');
     }
 
+    /**
+     * Gallery images, primary first.
+     *
+     * Ordered by role before sort_order, so the `primary` image leads whatever
+     * its position in the gallery. The storefront takes the first image as the
+     * LCP element and gives it fetchpriority="high" (section 14.9), which is
+     * only correct if "first" is deterministic.
+     *
+     * @return BelongsToMany<Media, $this>
+     */
+    public function media(): BelongsToMany
+    {
+        return $this->belongsToMany(Media::class, 'product_media')
+            ->withPivot(['role', 'sort_order'])
+            ->orderByRaw("case product_media.role when 'primary' then 0 else 1 end")
+            ->orderBy('product_media.sort_order');
+    }
+
     /** @return HasMany<ProductVariant, $this> */
     public function variants(): HasMany
     {

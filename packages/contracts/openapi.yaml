@@ -235,6 +235,54 @@ components:
         seo:
           $ref: '#/components/schemas/Seo'
       type: object
+    Image:
+      description: 'One image, shaped for a <picture> element (section 12.5). Only derivatives that actually exist are advertised — generation is resumable, so a srcset must never promise a 404.'
+      required:
+        - uuid
+        - alt
+        - sources
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        alt:
+          description: 'Never empty: alt text is required before media may be attached (section 12.6).'
+          type: string
+        width:
+          description: 'Intrinsic width of the fallback. Set on the img to prevent layout shift.'
+          type:
+            - integer
+            - 'null'
+        height:
+          type:
+            - integer
+            - 'null'
+        role:
+          type: string
+          enum:
+            - primary
+            - gallery
+            - spec_sheet
+            - lifestyle
+        src:
+          description: 'Fallback JPEG for the img element.'
+          type:
+            - string
+            - 'null'
+          example: /media/ab/cd/<sha>/pdp-800.jpeg
+        sources:
+          description: 'Ordered best-format-first: AVIF, WebP, then JPEG.'
+          type: array
+          items:
+            properties:
+              type:
+                type: string
+                example: image/avif
+              srcset:
+                type: string
+                example: '/media/.../card-400.avif 400w, /media/.../pdp-800.avif 800w'
+            type: object
+      type: object
     ProductCard:
       description: 'Listing payload. One shape shared by PLP, search, related rails and collections.'
       required:
@@ -297,6 +345,29 @@ components:
         qty_step:
           type: integer
           minimum: 1
+        key_specs:
+          description: '4-6 bullets shown above the fold, ordered by the source"s own buyer-orientation priority (Icecat ProductFeature@No). Present only when the caller loaded attribute values.'
+          type: array
+          items:
+            required:
+              - label
+              - value
+            properties:
+              label:
+                type: string
+                example: 'Page yield'
+              value:
+                type: string
+                example: '2,000 pages'
+            type: object
+        image:
+          oneOf:
+            -
+              $ref: '#/components/schemas/Image'
+              description: 'The primary image only. A 24-item grid does not need four gallery shots per card.'
+            -
+              type: 'null'
+          description: 'The primary image only. A 24-item grid does not need four gallery shots per card.'
       type: object
     SpecificationGroup:
       description: 'Specifications arrive already grouped from the source (Icecat CategoryFeatureGroup).'
@@ -361,6 +432,11 @@ components:
               type:
                 - string
                 - 'null'
+            images:
+              description: 'The full gallery, primary first. The storefront gives the first image fetchpriority=high as the LCP element.'
+              type: array
+              items:
+                $ref: '#/components/schemas/Image'
             specifications:
               type: array
               items:
@@ -378,3 +454,4 @@ tags:
   -
     name: Search
     description: Search
+

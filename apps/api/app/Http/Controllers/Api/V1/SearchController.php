@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Concerns\BuildsListingResponses;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductCardResource;
 use App\Search\SearchEngine;
@@ -15,6 +16,8 @@ use OpenApi\Attributes as OA;
 
 final class SearchController extends Controller
 {
+    use BuildsListingResponses;
+
     public function __construct(
         private readonly SearchEngine $engine,
         private readonly SearchQueryLogger $logger,
@@ -56,21 +59,8 @@ final class SearchController extends Controller
 
         return response()->json([
             'data' => ProductCardResource::collection($result->items),
-            'meta' => [
-                'total' => $result->total,
-                'page' => $query->page,
-                'per_page' => $query->perPage,
-                'duration_ms' => $result->durationMs,
-                // Surfaced so the storefront can say "showing results for
-                // something similar" rather than pretending it was exact.
-                'used_fallback' => $result->usedFallback,
-            ],
-            'facets' => array_map(static fn ($group): array => [
-                'code' => $group->code,
-                'label' => $group->label,
-                'indexable' => $group->indexable,
-                'values' => $group->values,
-            ], $result->facets),
+            'meta' => $this->listingMeta($query, $result),
+            'facets' => $this->facetPayload($result),
         ]);
     }
 
@@ -95,32 +85,5 @@ final class SearchController extends Controller
             ],
             'meta' => ['duration_ms' => $suggestions->durationMs],
         ]);
-    }
-
-    /** @return array<string, list<string>> */
-    private function filters(Request $request): array
-    {
-        $raw = $request->query('filters');
-
-        if (! is_array($raw)) {
-            return [];
-        }
-
-        $filters = [];
-
-        foreach ($raw as $code => $values) {
-            if (! is_string($code)) {
-                continue;
-            }
-
-            $list = is_array($values) ? $values : explode(',', (string) $values);
-            $clean = array_values(array_filter(array_map('strval', $list), static fn (string $v): bool => $v !== ''));
-
-            if ($clean !== []) {
-                $filters[$code] = $clean;
-            }
-        }
-
-        return $filters;
     }
 }

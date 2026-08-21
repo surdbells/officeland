@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\Attribute;
+use App\Models\AttributeGroup;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 final class CatalogueApiTest extends TestCase
@@ -177,11 +180,22 @@ final class CatalogueApiTest extends TestCase
     }
 
     /**
-     * Section 8.3 requires cursor pagination on any list that can exceed 1,000
-     * rows. Offset pagination degrades linearly as a crawler walks deep into a
-     * large category.
+     * Listings page by NUMBER, not by cursor.
+     *
+     * This test previously asserted the opposite, citing §8.3's requirement of
+     * cursor pagination on any list that can exceed 1,000 rows. That
+     * requirement is right for an API consumer walking a large collection and
+     * wrong for a listing, for a reason §8.3 predates: under D-009 every page
+     * of every listing is a prerendered FILE reached by a crawlable anchor,
+     * and a cursor cannot produce one — it is opaque, so page 3 is unreachable
+     * without first fetching page 2, and no `page/3` route can be rendered at
+     * build time.
+     *
+     * Both survive by serving different consumers: listings are offset-paged
+     * and bounded, and the render worker walks the whole catalogue through
+     * /api/v1/render/manifest, which is not paginated at all. See D-031.
      */
-    public function test_category_listings_use_cursor_pagination(): void
+    public function test_category_listings_page_by_number(): void
     {
         $category = Category::factory()->root('office-furniture')->create();
 
@@ -193,8 +207,140 @@ final class CatalogueApiTest extends TestCase
 
         $response->assertOk()->assertJsonCount(2, 'data');
 
-        $this->assertArrayHasKey('next_cursor', $response->json('meta'));
-        $this->assertNotNull($response->json('meta.next_cursor'));
+        $response->assertJsonPath('meta.total', 3);
+        $response->assertJsonPath('meta.page', 1);
+        $response->assertJsonPath('meta.per_page', 2);
+        $response->assertJsonPath('meta.last_page', 2);
+        $response->assertJsonPath('meta.has_more', true);
+    }
+
+    public function test_a_later_listing_page_returns_the_remainder(): void
+    {
+        $category = Category::factory()->root('office-furniture')->create();
+
+        foreach (Product::factory()->count(3)->create() as $product) {
+            $product->categories()->attach($category->id);
+        }
+
+        $response = $this->getJson('/api/v1/categories/office-furniture/products?per_page=2&page=2');
+
+        $response->assertOk()->assertJsonCount(1, 'data');
+        $response->assertJsonPath('meta.page', 2);
+        $response->assertJsonPath('meta.has_more', false);
+    }
+
+    /**
+     * Pages must not overlap. An off-by-one in the offset silently duplicates
+     * a product across two prerendered pages and drops another entirely.
+     */
+    public function test_listing_pages_do_not_overlap(): void
+    {
+        $category = Category::factory()->root('office-furniture')->create();
+
+        foreach (Product::factory()->count(5)->create() as $product) {
+            $product->categories()->attach($category->id);
+        }
+
+        $first = $this->getJson('/api/v1/categories/office-furniture/products?per_page=2&page=1')
+            ->json('data.*.uuid');
+        $second = $this->getJson('/api/v1/categories/office-furniture/products?per_page=2&page=2')
+            ->json('data.*.uuid');
+        $third = $this->getJson('/api/v1/categories/office-furniture/products?per_page=2&page=3')
+            ->json('data.*.uuid');
+
+        $seen = array_merge($first, $second, $third);
+
+        $this->assertCount(5, $seen);
+        $this->assertCount(5, array_unique($seen), 'A product appeared on more than one page.');
+    }
+
+    /**
+     * §23.2: facet counts are mandatory, and §16 requires that facets never
+     * offer a zero-result combination — which is only enforceable if the
+     * counts are live against the current filter set.
+     */
+    public function test_a_category_listing_returns_facets_with_counts(): void
+    {
+        $category = Category::factory()->root('office-furniture')->create();
+
+        // updateOrCreate, not create: setUp truncates products and categories
+        // but not the attribute tables, so these survive between tests in this
+        // class and a plain insert collides on the unique code.
+        $group = AttributeGroup::query()->updateOrCreate(
+            ['code' => 'general'],
+            ['uuid' => (string) Str::uuid(), 'name' => 'General'],
+        );
+
+        $attribute = Attribute::query()->updateOrCreate(
+            ['code' => 'colour'],
+            [
+                'uuid' => (string) Str::uuid(),
+                'group_id' => $group->id,
+                'name' => 'Colour',
+                'data_type' => 'string',
+                'is_filterable' => true,
+            ],
+        );
+
+        foreach (['Black', 'Black', 'Grey'] as $colour) {
+            $product = Product::factory()->create();
+            $product->categories()->attach($category->id);
+            $product->attributeValues()->create([
+                'attribute_id' => $attribute->id,
+                'value_raw' => $colour,
+                'value_presentation' => $colour,
+            ]);
+        }
+
+        $facets = $this->getJson('/api/v1/categories/office-furniture/products')->json('facets');
+
+        $colourFacet = collect($facets)->firstWhere('code', 'colour');
+
+        $this->assertNotNull($colourFacet, 'The colour facet was not returned.');
+
+        $counts = collect($colourFacet['values'])->pluck('count', 'value');
+
+        $this->assertSame(2, $counts['Black']);
+        $this->assertSame(1, $counts['Grey']);
+    }
+
+    /** Selecting a facet must narrow the result set, not merely annotate it. */
+    public function test_a_facet_filter_narrows_the_listing(): void
+    {
+        $category = Category::factory()->root('office-furniture')->create();
+
+        // updateOrCreate, not create: setUp truncates products and categories
+        // but not the attribute tables, so these survive between tests in this
+        // class and a plain insert collides on the unique code.
+        $group = AttributeGroup::query()->updateOrCreate(
+            ['code' => 'general'],
+            ['uuid' => (string) Str::uuid(), 'name' => 'General'],
+        );
+
+        $attribute = Attribute::query()->updateOrCreate(
+            ['code' => 'colour'],
+            [
+                'uuid' => (string) Str::uuid(),
+                'group_id' => $group->id,
+                'name' => 'Colour',
+                'data_type' => 'string',
+                'is_filterable' => true,
+            ],
+        );
+
+        foreach (['Black', 'Black', 'Grey'] as $colour) {
+            $product = Product::factory()->create();
+            $product->categories()->attach($category->id);
+            $product->attributeValues()->create([
+                'attribute_id' => $attribute->id,
+                'value_raw' => $colour,
+                'value_presentation' => $colour,
+            ]);
+        }
+
+        $this->getJson('/api/v1/categories/office-furniture/products?filters[colour]=Grey')
+            ->assertOk()
+            ->assertJsonPath('meta.total', 1);
     }
 
     // -----------------------------------------------------------------

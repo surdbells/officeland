@@ -82,7 +82,13 @@ Disallow: /
 	# ---------------------------------------------------------------------
 	# Media — content-addressed, therefore immutable (docs/ARCHITECTURE.md 8).
 	# ---------------------------------------------------------------------
-	handle /media/* {
+	# handle_path, NOT handle: handle_path strips the matched prefix, handle
+	# does not. With `handle` Caddy resolved /media/ab/cd/<sha>/pdp-800.jpeg
+	# against /app/storage-media/media/ab/cd/... — a path that never exists —
+	# and every image 404'd while the files sat correctly on disk. The store is
+	# addressed by checksum from the media root, so the /media prefix is a URL
+	# namespace only and must not reach the filesystem.
+	handle_path /media/* {
 		root * /app/storage-media
 		header Cache-Control "public, max-age=31536000, immutable"
 		file_server
@@ -109,9 +115,18 @@ Disallow: /
 		file_server
 	}
 
+	# The prerendered 404 template, NOT the homepage.
+	#
+	# This served /index.html, so every unknown URL returned the homepage body
+	# under a 404 status: no search box, no department links, and a <title>
+	# and canonical claiming to be the home page. Section 14.8 requires a real
+	# 404 with a search box and top categories.
+	#
+	# The status code is preserved, so this stays a hard 404 rather than
+	# becoming a soft one.
 	handle_errors {
 		root * /app/static
-		rewrite * /index.html
+		rewrite * /404/index.html
 		file_server
 	}
 }

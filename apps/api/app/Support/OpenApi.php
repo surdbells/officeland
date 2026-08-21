@@ -126,6 +126,29 @@ use OpenApi\Attributes as OA;
     type: 'object',
 )]
 #[OA\Schema(
+    schema: 'Image',
+    description: 'One image, shaped for a <picture> element (section 12.5). Only derivatives that actually exist are advertised — generation is resumable, so a srcset must never promise a 404.',
+    required: ['uuid', 'alt', 'sources'],
+    properties: [
+        new OA\Property(property: 'uuid', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'alt', description: 'Never empty: alt text is required before media may be attached (section 12.6).', type: 'string'),
+        new OA\Property(property: 'width', description: 'Intrinsic width of the fallback. Set on the img to prevent layout shift.', type: 'integer', nullable: true),
+        new OA\Property(property: 'height', type: 'integer', nullable: true),
+        new OA\Property(property: 'role', type: 'string', enum: ['primary', 'gallery', 'spec_sheet', 'lifestyle']),
+        new OA\Property(property: 'src', description: 'Fallback JPEG for the img element.', type: 'string', nullable: true, example: '/media/ab/cd/<sha>/pdp-800.jpeg'),
+        new OA\Property(
+            property: 'sources',
+            description: 'Ordered best-format-first: AVIF, WebP, then JPEG.',
+            type: 'array',
+            items: new OA\Items(properties: [
+                new OA\Property(property: 'type', type: 'string', example: 'image/avif'),
+                new OA\Property(property: 'srcset', type: 'string', example: '/media/.../card-400.avif 400w, /media/.../pdp-800.avif 800w'),
+            ], type: 'object'),
+        ),
+    ],
+    type: 'object',
+)]
+#[OA\Schema(
     schema: 'ProductCard',
     description: 'Listing payload. One shape shared by PLP, search, related rails and collections.',
     required: ['uuid', 'name', 'slug', 'url', 'availability', 'pricing_mode'],
@@ -152,6 +175,21 @@ use OpenApi\Attributes as OA;
         ),
         new OA\Property(property: 'min_order_qty', type: 'integer', minimum: 1),
         new OA\Property(property: 'qty_step', type: 'integer', minimum: 1),
+        new OA\Property(
+            property: 'key_specs',
+            description: '4-6 bullets shown above the fold, ordered by the source'.'"'.'s own buyer-orientation priority (Icecat ProductFeature@No). Present only when the caller loaded attribute values.',
+            type: 'array',
+            items: new OA\Items(required: ['label', 'value'], properties: [
+                new OA\Property(property: 'label', type: 'string', example: 'Page yield'),
+                new OA\Property(property: 'value', type: 'string', example: '2,000 pages'),
+            ], type: 'object'),
+        ),
+        new OA\Property(
+            property: 'image',
+            description: 'The primary image only. A 24-item grid does not need four gallery shots per card.',
+            ref: '#/components/schemas/Image',
+            nullable: true,
+        ),
     ],
     type: 'object',
 )]
@@ -184,6 +222,12 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'short_description', type: 'string', nullable: true),
         new OA\Property(property: 'description_html', type: 'string', nullable: true),
         new OA\Property(property: 'warranty_text', type: 'string', nullable: true),
+        new OA\Property(
+            property: 'images',
+            description: 'The full gallery, primary first. The storefront gives the first image fetchpriority=high as the LCP element.',
+            type: 'array',
+            items: new OA\Items(ref: '#/components/schemas/Image'),
+        ),
         new OA\Property(property: 'specifications', type: 'array', items: new OA\Items(ref: '#/components/schemas/SpecificationGroup')),
         new OA\Property(property: 'seo', ref: '#/components/schemas/Seo'),
     ],

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Concerns\BuildsListingResponses;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\ProductCardResource;
 use App\Models\Category;
-use App\Models\Product;
+use App\Search\SearchEngine;
+use App\Search\SearchQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -16,6 +18,10 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class CategoryController extends Controller
 {
+    use BuildsListingResponses;
+
+    public function __construct(private readonly SearchEngine $engine) {}
+
     public function index(): AnonymousResourceCollection
     {
         return CategoryResource::collection(
@@ -37,23 +43,44 @@ final class CategoryController extends Controller
      * A department listing must show products filed against its leaves —
      * otherwise /c/office-furniture/ appears empty while every chair sits three
      * levels down.
+     *
+     * ── Why this runs through SearchEngine ───────────────────────────────
+     * A listing and a search result are the same question with a different
+     * filter, and §16 puts facets behind the engine. Building the PLP on a
+     * separate Eloquent query would mean two implementations of subtree
+     * resolution, attribute filtering and facet counting, which would disagree
+     * the first time either changed.
+     *
+     * ── Why page-based and not cursor pagination ─────────────────────────
+     * Cursor pagination cannot produce a crawlable `?page=2`: the cursor is
+     * opaque, so page 3 is unreachable without first fetching page 2, and no
+     * anchor can be rendered for it at build time. Under D-009 every page of
+     * every listing is a prerendered file, so the pagination must be
+     * addressable by number. Offset pagination is the cost of that, and the
+     * `products_active_idx` index carries it at this catalogue size.
      */
-    public function products(Request $request, string $path): AnonymousResourceCollection
+    public function products(Request $request, string $path): JsonResponse
     {
         $category = $this->resolve($path);
 
-        $descendantIds = Category::query()
-            ->subtreeOf($category->path)
-            ->pluck('id');
+        $query = new SearchQuery(
+            filters: $this->filters($request),
+            categoryId: $category->id,
+            brandId: $request->integer('brand') ?: null,
+            page: max(1, $request->integer('page', 1)),
+            perPage: $this->perPage($request),
+            // Relevance is meaningless without a term; newest-first is the
+            // listing default and the only order that is stable across pages.
+            sort: (string) $request->query('sort', 'newest'),
+        );
 
-        $products = Product::query()
-            ->active()
-            ->whereHas('categories', fn ($q) => $q->whereIn('categories.id', $descendantIds))
-            ->with(['brand', 'attributeValues.attribute'])
-            ->orderByDesc('published_at')
-            ->cursorPaginate($this->perPage($request));
+        $result = $this->engine->search($query);
 
-        return ProductCardResource::collection($products);
+        return response()->json([
+            'data' => ProductCardResource::collection($result->items),
+            'meta' => $this->listingMeta($query, $result),
+            'facets' => $this->facetPayload($result),
+        ]);
     }
 
     /**
@@ -74,10 +101,5 @@ final class CategoryController extends Controller
         }
 
         return $category;
-    }
-
-    private function perPage(Request $request): int
-    {
-        return min(max((int) $request->integer('per_page', 24), 1), 50);
     }
 }

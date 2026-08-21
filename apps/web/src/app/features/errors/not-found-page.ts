@@ -52,7 +52,7 @@ export class NotFoundPage {
   constructor() {
     this.seo.apply({
       title: 'Page not found',
-      path: '/404',
+      path: '/404/',
       indexable: false,
     });
   }

@@ -26,6 +26,7 @@ export type Brand = components['schemas']['Brand'];
 export type Category = components['schemas']['Category'];
 export type Product = components['schemas']['Product'];
 export type ProductCard = components['schemas']['ProductCard'];
+export type Image = components['schemas']['Image'];
 export type ApiError = components['schemas']['Error'];
 
 export interface NavigationNode {
@@ -40,6 +41,49 @@ export interface NavigationNode {
 export interface Navigation {
   readonly departments: readonly NavigationNode[];
   readonly brands: ReadonlyArray<{ name: string; slug: string; url: string }>;
+}
+
+export interface FacetValue {
+  readonly value: string;
+  readonly label?: string;
+  readonly count: number;
+}
+
+export interface FacetGroup {
+  readonly code: string;
+  readonly label: string;
+  /** Only an indexable facet may ever become a landing page. */
+  readonly indexable: boolean;
+  readonly values: readonly FacetValue[];
+}
+
+export interface ListingMeta {
+  readonly total: number;
+  readonly page: number;
+  readonly per_page: number;
+  readonly last_page: number;
+  readonly has_more: boolean;
+  readonly sort: string;
+  readonly duration_ms: number;
+  readonly used_fallback: boolean;
+}
+
+/**
+ * One envelope for every listing surface — PLP, search, brand hub — because
+ * one card component renders all three (section 23.5).
+ */
+export interface Listing {
+  readonly data: readonly ProductCard[];
+  readonly meta: ListingMeta;
+  readonly facets: readonly FacetGroup[];
+}
+
+export interface ListingParams {
+  readonly page?: number;
+  readonly perPage?: number;
+  readonly sort?: string;
+  /** attribute code => selected values */
+  readonly filters?: Readonly<Record<string, readonly string[]>>;
 }
 
 export interface Paginated<T> {
@@ -74,14 +118,24 @@ export class CatalogueApi {
     return this.unwrap<Category>(`${this.base}/categories/${this.segment(path)}`);
   }
 
-  categoryProducts(path: string, cursor?: string, perPage = 24): Observable<Paginated<ProductCard>> {
-    let params = new HttpParams().set('per_page', perPage);
-    if (cursor) params = params.set('cursor', cursor);
-
-    return this.http.get<Paginated<ProductCard>>(
+  categoryProducts(path: string, params: ListingParams = {}): Observable<Listing> {
+    return this.http.get<Listing>(
       `${this.base}/categories/${this.segment(path)}/products`,
-      { params },
+      { params: this.listingParams(params) },
     );
+  }
+
+  brandProducts(slug: string, params: ListingParams = {}): Observable<Listing> {
+    return this.http.get<Listing>(
+      `${this.base}/brands/${encodeURIComponent(slug)}/products`,
+      { params: this.listingParams(params) },
+    );
+  }
+
+  search(term: string, params: ListingParams = {}): Observable<Listing> {
+    return this.http.get<Listing>(`${this.base}/search`, {
+      params: this.listingParams(params).set('q', term),
+    });
   }
 
   product(slug: string): Observable<Product> {
@@ -94,6 +148,26 @@ export class CatalogueApi {
 
   brand(slug: string): Observable<Brand> {
     return this.unwrap<Brand>(`${this.base}/brands/${encodeURIComponent(slug)}`);
+  }
+
+  /**
+   * Filters are sent as `filters[code]=a,b` rather than repeated keys.
+   * It is the shorter URL, and the URL is the state: it is what a facet
+   * anchor points at, what the browser bookmarks, and what the render worker
+   * would have to reproduce if a facet page were ever prerendered.
+   */
+  private listingParams(params: ListingParams): HttpParams {
+    let http = new HttpParams();
+
+    if (params.page && params.page > 1) http = http.set('page', params.page);
+    if (params.perPage) http = http.set('per_page', params.perPage);
+    if (params.sort) http = http.set('sort', params.sort);
+
+    for (const [code, values] of Object.entries(params.filters ?? {})) {
+      if (values.length > 0) http = http.set(`filters[${code}]`, values.join(','));
+    }
+
+    return http;
   }
 
   private unwrap<T>(url: string): Observable<T> {

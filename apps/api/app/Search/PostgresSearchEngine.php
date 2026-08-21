@@ -89,7 +89,7 @@ final class PostgresSearchEngine implements SearchEngine
         $total = (clone $base)->count();
 
         $items = $this->applySort(clone $base, $query)
-            ->with(['brand', 'attributeValues.attribute'])
+            ->with(['brand', 'attributeValues.attribute', 'media.derivatives'])
             ->skip($query->offset())
             ->take($query->perPage)
             ->get();
@@ -178,7 +178,7 @@ final class PostgresSearchEngine implements SearchEngine
             ->active()
             ->whereRaw("upper(replace(replace(coalesce(sku,''), ' ', ''), '-', '')) = ?", [$normalised])
             ->orWhereRaw("upper(replace(replace(coalesce(mpn,''), ' ', ''), '-', '')) = ?", [$normalised])
-            ->with(['brand', 'attributeValues.attribute'])
+            ->with(['brand', 'attributeValues.attribute', 'media.derivatives'])
             ->limit(2)
             ->get();
 

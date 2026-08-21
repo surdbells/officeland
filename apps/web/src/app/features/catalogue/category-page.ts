@@ -1,13 +1,62 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, map, of, switchMap } from 'rxjs';
-import { CatalogueApi, type Category } from '../../core/api/catalogue-api';
+import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
+import {
+  CatalogueApi,
+  type Category,
+  type Listing,
+  type ProductCard as ProductCardData,
+} from '../../core/api/catalogue-api';
 import { SeoService } from '../../core/seo/seo.service';
-import { breadcrumbSchema } from '../../core/seo/structured-data';
+import { breadcrumbSchema, itemListSchema } from '../../core/seo/structured-data';
+import { FacetRail } from '../../shared/facet-rail';
+import { Pagination } from '../../shared/pagination';
+import { ProductCard } from '../../shared/product-card';
 
 /**
- * Category page.
+ * Splits `/c/x/y/page/3` into its category path and page number.
+ *
+ * Pagination is a PATH segment, not a query parameter, because Angular
+ * prerenders paths and cannot emit a file for a query string (D-032). The
+ * page number therefore arrives inside the wildcard the category route
+ * matched, and has to be separated from the materialized path before the API
+ * is asked for a category called "page".
+ *
+ * The trailing segment must be a positive integer, so a category legitimately
+ * slugged `page` is not mistaken for pagination.
+ */
+function splitPagedPath(segments: readonly string[]): { path: string; page: number } {
+  const parts = segments[0] === 'c' ? segments.slice(1) : [...segments];
+
+  if (parts.length >= 2 && parts[parts.length - 2] === 'page') {
+    const raw = Number(parts[parts.length - 1]);
+
+    if (Number.isInteger(raw) && raw > 1) {
+      return { path: parts.slice(0, -2).join('/'), page: raw };
+    }
+  }
+
+  return { path: parts.join('/'), page: 1 };
+}
+
+const EMPTY_LISTING: Listing = {
+  data: [],
+  meta: {
+    total: 0,
+    page: 1,
+    per_page: 24,
+    last_page: 1,
+    has_more: false,
+    sort: 'newest',
+    duration_ms: 0,
+    used_fallback: false,
+  },
+  facets: [],
+};
+
+/**
+ * Category page — breadcrumbs, child anchors, facet rail, product grid.
  *
  * ── D-011, and why the child list is not decoration ──────────────────────
  * Section 14.5 requires every product within 3 clicks of the homepage.
@@ -25,7 +74,7 @@ import { breadcrumbSchema } from '../../core/seo/structured-data';
   selector: 'ol-category-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, ProductCard, FacetRail, Pagination],
   template: `
     @if (category(); as cat) {
       <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8">
@@ -54,7 +103,7 @@ import { breadcrumbSchema } from '../../core/seo/structured-data';
           <nav aria-label="Subcategories" class="mt-8">
             <h2 class="font-heading text-sm font-semibold uppercase tracking-wide">Browse by category</h2>
             <ul class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              @for (child of cat.children ?? []; track child.slug) {
+              @for (child of cat.children; track child.slug) {
                 <li>
                   <a [routerLink]="child.url" class="block rounded-lg border border-ink-100 px-4 py-3 hover:border-brand-600">
                     <span class="font-medium">{{ child.name }}</span>
@@ -68,7 +117,53 @@ import { breadcrumbSchema } from '../../core/seo/structured-data';
           </nav>
         }
 
-        <!-- The product grid, facet rail and pagination land in Phase 8. -->
+        <div class="mt-10 grid gap-8 lg:grid-cols-[16rem_1fr]">
+          <ol-facet-rail
+            [facets]="listing().facets"
+            [selected]="selectedFilters()"
+            [basePath]="cat.url"
+            [preserved]="preservedParams()"
+          />
+
+          <section aria-labelledby="products-heading">
+            <div class="flex flex-wrap items-baseline justify-between gap-3">
+              <h2 id="products-heading" class="font-heading text-lg font-semibold">
+                Products
+                <span class="ml-1 font-normal text-ink-600">({{ listing().meta.total }})</span>
+              </h2>
+              <p class="text-sm text-ink-600">{{ rangeLabel() }}</p>
+            </div>
+
+            @if (listing().data.length) {
+              <ul class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                @for (product of listing().data; track product.uuid) {
+                  <li class="h-full">
+                    <ol-product-card [product]="product" [headingLevel]="3" />
+                  </li>
+                }
+              </ul>
+
+              <ol-pagination
+                [page]="listing().meta.page"
+                [lastPage]="listing().meta.last_page"
+                [basePath]="cat.url"
+                [preserved]="paginationParams()"
+              />
+            } @else {
+              <p class="mt-6 text-ink-600">
+                @if (hasFilters()) {
+                  No products match those filters.
+                  <a [routerLink]="cat.url" class="text-brand-600 hover:underline">Clear them</a>
+                  to see everything in {{ cat.name }}.
+                } @else {
+                  Nothing is listed here yet.
+                  <a routerLink="/quote/" class="text-brand-600 hover:underline">Ask us for a quote</a>
+                  &mdash; we supply far more than we list.
+                }
+              </p>
+            }
+          </section>
+        </div>
       </div>
     } @else if (failed()) {
       <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-20">
@@ -85,29 +180,109 @@ export class CategoryPage {
   private readonly api = inject(CatalogueApi);
   private readonly seo = inject(SeoService);
 
+  private readonly queryParams = toSignal(this.route.queryParamMap, { initialValue: null });
+
+  private readonly segments = toSignal(
+    this.route.url.pipe(map((parts) => parts.map((s) => s.path))),
+    { initialValue: [] as string[] },
+  );
+
+  protected readonly page = computed(() => splitPagedPath(this.segments()).page);
+
+  protected readonly sort = computed(() => this.queryParams()?.get('sort') ?? null);
+
+  /** `filters[capacity]=480,960` → `{ capacity: ['480', '960'] }`. */
+  protected readonly selectedFilters = computed<Record<string, readonly string[]>>(() => {
+    const params = this.queryParams();
+    if (!params) return {};
+
+    const filters: Record<string, readonly string[]> = {};
+
+    for (const key of params.keys) {
+      const match = /^filters\[(.+)\]$/.exec(key);
+      if (!match) continue;
+
+      const values = (params.get(key) ?? '').split(',').filter((v) => v !== '');
+      if (values.length > 0) filters[match[1]!] = values;
+    }
+
+    return filters;
+  });
+
+  protected readonly hasFilters = computed(
+    () => Object.keys(this.selectedFilters()).length > 0,
+  );
+
+  /*
+   * ActivatedRoute.url for a 'c/**' route yields every segment the route
+   * consumed, INCLUDING the literal 'c'. The API keys categories on the
+   * materialized path, which has no /c/ prefix (D-008), so passing this
+   * through unmodified requests /api/v1/categories/c/office-furniture and
+   * 404s every category page on the site.
+   */
   private readonly result = toSignal(
     this.route.url.pipe(
-      /*
-       * ActivatedRoute.url for a 'c/**' route yields every segment the route
-       * consumed, INCLUDING the literal 'c'. The API keys categories on the
-       * materialized path, which has no /c/ prefix (D-008), so passing this
-       * through unmodified requests /api/v1/categories/c/office-furniture and
-       * 404s every category page on the site.
-       */
-      map((segments) => segments.map((s) => s.path)),
-      map((parts) => (parts[0] === 'c' ? parts.slice(1) : parts).join('/')),
-      switchMap((path) =>
-        this.api.category(path).pipe(
-          map((category) => ({ category, failed: false })),
-          catchError(() => of({ category: null, failed: true })),
-        ),
+      map((segments) => splitPagedPath(segments.map((s) => s.path))),
+      switchMap(({ path, page }) =>
+        combineLatest([
+          this.api.category(path).pipe(
+            map((category) => ({ category, failed: false })),
+            catchError(() => of({ category: null as Category | null, failed: true })),
+          ),
+          this.route.queryParamMap.pipe(
+            switchMap((params) =>
+              this.api
+                .categoryProducts(path, {
+                  page,
+                  sort: params.get('sort') ?? undefined,
+                  filters: readFilters(params),
+                })
+                // A failed listing must not take the category page down: the
+                // intro copy, the child anchors and the breadcrumbs are the
+                // parts a crawler needs, and they do not depend on the grid.
+                .pipe(catchError(() => of(EMPTY_LISTING))),
+            ),
+          ),
+        ]).pipe(map(([category, listing]) => ({ ...category, listing }))),
       ),
     ),
-    { initialValue: { category: null as Category | null, failed: false } },
+    { initialValue: { category: null as Category | null, failed: false, listing: EMPTY_LISTING } },
   );
 
   protected readonly category = computed(() => this.result().category);
   protected readonly failed = computed(() => this.result().failed);
+  protected readonly listing = computed(() => this.result().listing);
+
+  protected readonly rangeLabel = computed(() => {
+    const meta = this.listing().meta;
+    if (meta.total === 0) return '';
+
+    const first = (meta.page - 1) * meta.per_page + 1;
+    const last = Math.min(meta.page * meta.per_page, meta.total);
+
+    return `Showing ${first}–${last} of ${meta.total}`;
+  });
+
+  /** Carried across facet changes; page is deliberately not. */
+  protected readonly preservedParams = computed<Record<string, string>>(() => {
+    const sort = this.sort();
+    const params: Record<string, string> = {};
+
+    if (sort) params['sort'] = sort;
+
+    return params;
+  });
+
+  /** Carried across page changes: filters and sort both survive. */
+  protected readonly paginationParams = computed<Record<string, string>>(() => {
+    const params: Record<string, string> = { ...this.preservedParams() };
+
+    for (const [code, values] of Object.entries(this.selectedFilters())) {
+      if (values.length > 0) params[`filters[${code}]`] = values.join(',');
+    }
+
+    return params;
+  });
 
   constructor() {
     /*
@@ -129,11 +304,29 @@ export class CategoryPage {
     const cat = this.category();
     if (!cat) return;
 
+    const meta = this.listing().meta;
+    const page = meta.page;
+    const filtered = this.hasFilters();
+
     const crumbs = [
       { name: 'Home', url: '/' },
       ...(cat.breadcrumb ?? []).map((c) => ({ name: c.name, url: c.url })),
       { name: cat.name, url: cat.url },
     ];
+
+    /*
+     * ── Paginated and filtered pages (SEO_SPEC.md section 2) ─────────────
+     *
+     * A filtered page is noindex, follow. The combinatorial space of facet
+     * selections is enormous and every one of them is a near-duplicate of the
+     * unfiltered page; `follow` keeps them useful as a discovery surface.
+     *
+     * Page 2+ IS indexable and self-canonical. Canonicalising it to page 1 is
+     * a common mistake: it tells Google the products on page 2 belong to a
+     * page that does not list them, and they drop out of the index. The
+     * distinct title is what stops page 2 reading as a duplicate.
+     */
+    const paged = page > 1;
 
     this.seo.apply({
       /*
@@ -145,18 +338,55 @@ export class CategoryPage {
        * characters, so shorter whole phrases are offered rather than letting
        * the budget truncate the first one mid-clause.
        */
-      title: [
-        `${cat.name} in Nigeria — Prices & Bulk Supply`,
-        `${cat.name} — Prices & Bulk Supply`,
-        `${cat.name} in Nigeria`,
-        cat.name,
-      ],
+      title: paged
+        ? [
+            `${cat.name} in Nigeria — Page ${page}`,
+            `${cat.name} — Page ${page}`,
+          ]
+        : [
+            `${cat.name} in Nigeria — Prices & Bulk Supply`,
+            `${cat.name} — Prices & Bulk Supply`,
+            `${cat.name} in Nigeria`,
+            cat.name,
+          ],
       description: cat.seo?.meta_description ?? cat.intro_copy ?? undefined,
-      path: cat.url,
-      indexable: cat.seo?.is_indexable !== false,
+      path: paged ? `${cat.url}page/${page}/` : cat.url,
+      indexable: filtered ? false : cat.seo?.is_indexable !== false,
       canonicalOverride: cat.seo?.canonical_override ?? null,
     });
 
-    this.seo.setStructuredData([breadcrumbSchema(crumbs)]);
+    const nodes: Array<Record<string, unknown>> = [breadcrumbSchema(crumbs)];
+
+    // ItemList reflects what this page actually lists, in display order.
+    if (this.listing().data.length > 0) {
+      nodes.push(
+        itemListSchema(
+          this.listing().data.map((product: ProductCardData) => ({
+            name: product.name,
+            url: product.url,
+          })),
+        ),
+      );
+    }
+
+    this.seo.setStructuredData(nodes);
   }
+}
+
+/** Shared by the template signal and the fetch pipeline. */
+function readFilters(params: {
+  keys: string[];
+  get(key: string): string | null;
+}): Record<string, string[]> {
+  const filters: Record<string, string[]> = {};
+
+  for (const key of params.keys) {
+    const match = /^filters\[(.+)\]$/.exec(key);
+    if (!match) continue;
+
+    const values = (params.get(key) ?? '').split(',').filter((v) => v !== '');
+    if (values.length > 0) filters[match[1]!] = values;
+  }
+
+  return filters;
 }

@@ -248,6 +248,40 @@ This refines §14.3's sacrifice order (drop the brand segment, then shorten the 
 **Guarded by:** `seo.service.spec.ts`, and by the raw-HTML gate's title-budget assertion.
 **Status:** architect decision, driven by the real title data.
 
+### D-031 — Listings page by number, not by cursor; §8.3 applies to API consumers
+**Decision:** every listing surface (PLP, brand hub, search) is offset-paginated by page number. Cursor pagination is retained nowhere in the catalogue read path.
+
+**The conflict.** §8.3 requires cursor pagination on any list that can exceed 1,000 rows, because offset degrades linearly as a crawler walks deep. §14 requires every page of a listing to be reachable by a crawlable anchor. Under D-009 those cannot both be satisfied by one mechanism: a cursor is opaque, so page 3 is unreachable without first fetching page 2, and no anchor for it can be rendered at build time.
+
+**Resolution — they serve different consumers.**
+- **Listings** are read by humans and crawlers, page by page, and every page is a prerendered file. They are offset-paginated and *bounded*: a 5,000-product brand hub is ~208 pages at 24 a page, and `products_active_idx` carries that.
+- **The render worker** walks the whole catalogue, and it does not paginate at all — `/api/v1/render/manifest` returns everything in one response, precisely because a partial answer is indistinguishable from a complete one at the point of use.
+
+So §8.3's concern — a client walking a large collection — is still met, by removing the pagination rather than by making it opaque.
+
+**Consequence.** `CategoryController@products` and `BrandController@products` now run through `SearchEngine` rather than their own Eloquent queries. A listing and a search result are the same question with a different filter, and §16 puts facets behind the engine; two implementations of subtree resolution, attribute filtering and facet counting would have disagreed the first time either changed. The shared envelope lives in `BuildsListingResponses`.
+
+**Superseded:** `test_category_listings_use_cursor_pagination`, which asserted the opposite and cited §8.3. Replaced by tests for page numbering, non-overlapping pages, facet counts and facet narrowing.
+**Status:** architect decision; the spec conflict is resolved in favour of crawlability, and the §8.3 requirement is met by a different route.
+
+### D-032 — Pagination is a path segment, not a query parameter
+**Decision:** page 2 of a listing is `/c/office-furniture/page/2/`. Query-string pagination is not used anywhere.
+
+Angular prerenders **paths**. It cannot emit a file for a query string, so under D-009 `?page=2` would have no file behind it: the static host would answer it with `/c/office-furniture/index.html` — page 1 — and every listing page past the first would be duplicate content showing the wrong products, while the anchors pointing at them looked perfectly correct.
+
+This shows up in three places, and all three have to agree or the pagination silently breaks:
+- `Pagination` builds `page/N` paths.
+- `CategoryPage` splits a trailing `page/N` off the wildcard before asking the API for a category (the trailing segment must be a positive integer, so a category legitimately slugged `page` is not mistaken for pagination).
+- `RenderManifestController` emits a `page/N` route for every additional page, counted over the whole subtree, matching what the listing lists.
+
+`RenderManifestController::PER_PAGE` must match the listing page size in `BuildsListingResponses::perPage()`. If they diverge the manifest renders a different number of pages than the listing links to, which is a 404 on the last page or an orphaned file past it.
+
+**Facets stay as query parameters.** Facet pages are `noindex, follow` and are not prerendered; a crawler following one receives the unfiltered page, whose product links are a superset of the filtered page's. That is the correct outcome, and it is why the combinatorial facet space costs nothing at build time.
+
+**Guarded by:** `RenderManifestTest`, which asserts the paged routes exist, stop at the right number, and count a parent's whole subtree.
+**Status:** architect decision, forced by what static prerendering can and cannot address.
+
+
 
 ---
 

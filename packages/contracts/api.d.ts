@@ -155,6 +155,30 @@ export interface components {
             breadcrumb?: components["schemas"]["BreadcrumbItem"][];
             seo?: components["schemas"]["Seo"];
         };
+        /** @description One image, shaped for a <picture> element (section 12.5). Only derivatives that actually exist are advertised — generation is resumable, so a srcset must never promise a 404. */
+        Image: {
+            /** Format: uuid */
+            uuid: string;
+            /** @description Never empty: alt text is required before media may be attached (section 12.6). */
+            alt: string;
+            /** @description Intrinsic width of the fallback. Set on the img to prevent layout shift. */
+            width?: number | null;
+            height?: number | null;
+            /** @enum {string} */
+            role?: "primary" | "gallery" | "spec_sheet" | "lifestyle";
+            /**
+             * @description Fallback JPEG for the img element.
+             * @example /media/ab/cd/<sha>/pdp-800.jpeg
+             */
+            src?: string | null;
+            /** @description Ordered best-format-first: AVIF, WebP, then JPEG. */
+            sources: {
+                /** @example image/avif */
+                type?: string;
+                /** @example /media/.../card-400.avif 400w, /media/.../pdp-800.avif 800w */
+                srcset?: string;
+            }[];
+        };
         /** @description Listing payload. One shape shared by PLP, search, related rails and collections. */
         ProductCard: {
             /** Format: uuid */
@@ -177,6 +201,15 @@ export interface components {
             pricing_mode: "public" | "quote_only";
             min_order_qty?: number;
             qty_step?: number;
+            /** @description 4-6 bullets shown above the fold, ordered by the source"s own buyer-orientation priority (Icecat ProductFeature@No). Present only when the caller loaded attribute values. */
+            key_specs?: {
+                /** @example Page yield */
+                label: string;
+                /** @example 2,000 pages */
+                value: string;
+            }[];
+            /** @description The primary image only. A 24-item grid does not need four gallery shots per card. */
+            image?: components["schemas"]["Image"] | null;
         };
         /** @description Specifications arrive already grouped from the source (Icecat CategoryFeatureGroup). */
         SpecificationGroup: {
@@ -205,6 +238,8 @@ export interface components {
             short_description?: string | null;
             description_html?: string | null;
             warranty_text?: string | null;
+            /** @description The full gallery, primary first. The storefront gives the first image fetchpriority=high as the LCP element. */
+            images?: components["schemas"]["Image"][];
             specifications?: components["schemas"]["SpecificationGroup"][];
             seo?: components["schemas"]["Seo"];
         };

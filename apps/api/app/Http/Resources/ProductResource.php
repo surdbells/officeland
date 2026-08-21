@@ -54,6 +54,13 @@ final class ProductResource extends JsonResource
             'min_order_qty' => $this->min_order_qty,
             'qty_step' => $this->qty_step,
 
+            /*
+             * The full gallery, primary first. The storefront gives the first
+             * image fetchpriority="high" as the LCP element (section 14.9),
+             * which relies on Product::media() ordering primary first.
+             */
+            'images' => ProductImageResource::collection($this->whenLoaded('media')),
+
             'specifications' => $this->when(
                 $this->relationLoaded('attributeValues'),
                 fn (): array => $this->groupedSpecifications(),
