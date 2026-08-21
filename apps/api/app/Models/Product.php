@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Content\ContentMinimums;
+use App\Models\Concerns\EnforcesContentMinimums;
 use App\Models\Concerns\HasPublicUuid;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -13,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -25,9 +28,21 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int|null $primary_category_id
  * @property string $status
  * @property bool $is_indexable
+ * @property string|null $description_html
+ * @property string|null $source_description
+ * @property string|null $warranty_text
+ * @property string|null $box_contents
+ * @property int|null $lead_time_days
+ * @property Carbon|null $description_generated_at
+ * @property Carbon|null $description_flagged_at
+ * @property Carbon|null $description_approved_at
+ * @property float|null $description_similarity
+ * @property int|null $description_similar_to_id
  */
 final class Product extends Model
 {
+    use EnforcesContentMinimums;
+
     /** @use HasFactory<ProductFactory> */
     use HasFactory;
 
@@ -36,9 +51,14 @@ final class Product extends Model
 
     /**
      * Minimum original description length before a product may be indexed
-     * (MASTER BUILD PROMPT section 14.7). Enforced when publishing, not here.
+     * (MASTER BUILD PROMPT section 14.7).
+     *
+     * The rule itself lives in ContentMinimums, which enforces it along with
+     * the rest of §14.7 — the spec table, the "in the box" list, warranty and
+     * lead time. This constant is kept because it is referenced from the admin
+     * form's word counter.
      */
-    public const CONTENT_MINIMUM_WORDS = 120;
+    public const CONTENT_MINIMUM_WORDS = ContentMinimums::PRODUCT_WORDS;
 
     protected $guarded = ['id'];
 
@@ -61,6 +81,10 @@ final class Product extends Model
             'price_ngn' => 'decimal:2',
             'published_at' => 'datetime',
             'icecat_synced_at' => 'datetime',
+            'description_generated_at' => 'datetime',
+            'description_flagged_at' => 'datetime',
+            'description_approved_at' => 'datetime',
+            'description_similarity' => 'float',
         ];
     }
 
@@ -174,15 +198,24 @@ final class Product extends Model
     }
 
     /**
-     * Whether this product meets the content floor for indexing.
+     * The description a person is on record as having approved.
      *
-     * Deliberately not automatic: raising is_indexable is an editorial act,
-     * and this only reports whether it would be permitted.
+     * Generated copy that nobody has read since is not approved, however long
+     * it is — see EnforcesContentMinimums and DescriptionDrafter.
      */
-    public function meetsContentMinimum(): bool
+    public function descriptionIsApproved(): bool
     {
-        $words = str_word_count(strip_tags((string) $this->description_html));
+        if ($this->description_generated_at === null) {
+            return trim(strip_tags((string) $this->description_html)) !== '';
+        }
 
-        return $words >= self::CONTENT_MINIMUM_WORDS;
+        return $this->description_approved_at !== null
+            && $this->description_approved_at->greaterThanOrEqualTo($this->description_generated_at);
+    }
+
+    /** @return BelongsTo<Product, $this> */
+    public function descriptionSimilarTo(): BelongsTo
+    {
+        return $this->belongsTo(Product::class, 'description_similar_to_id');
     }
 }

@@ -1,6 +1,8 @@
 # Implementation Plan
 
-**Status:** Phases 0-11 built. Four gates remain open, none of them on code: Phase 8 CWV (Q7 + a browser harness), Phase 9 viewport testing (same), Phase 10 real sends (Q18 credentials), and Phase 11 UAT (the sales team). Phase 5b or 12 next. See docs/HANDOVER-phase-2.md.
+**Status:** Phases 0-11 built; Phase 12's pipeline built and enforced, its writing not started. Five gates remain open, none of them on code: Phase 8 CWV (Q7 + a browser harness), Phase 9 viewport testing (same), Phase 10 real sends (Q18 credentials), Phase 11 UAT (the sales team), and Phase 12 the writing itself (**Q-B**). Phase 5b or 13 next. See docs/HANDOVER-phase-2.md.
+
+**Q-B is now the binding constraint on launch date.** Everything mechanical that 15,000 indexable products needs is in place; what is missing is the copy, and no decision has been taken about who writes it.
 **Re-read this document before starting any phase** (§2.3). If reality has diverged, amend the plan — do not drift silently.
 
 **Staffing assumption:** ~2 backend, ~1.5 frontend, ~0.5 devops FTE, plus a content resource outside the engineering team.
@@ -25,8 +27,8 @@
 | **8** | Storefront catalogue + **static prerender pipeline** | 🟡 Built; CWV unmeasured | 7–9 |
 | **9** | Quote engine (basket, 3-field form, anti-abuse) | ✅ Done | 3–4 |
 | **10** | ZeptoMail transport, templates, queue, webhooks | 🟡 Built; needs Q18 to send | 3 |
-| **11** | Lead queue admin | ⬜ Not started | 1 |
-| **12** | Content: category intros, guides, product copy | ⬜ Not started | *content track* |
+| **11** | Lead queue admin | 🟡 Built; awaiting UAT | 1 |
+| **12** | Content: category intros, guides, product copy | 🟡 Pipeline built; writing blocked on Q-B | *content track* |
 | **13** | Hardening: security, load, a11y, backup drill | ⬜ Not started | 4–5 |
 | **14** | Cutover: redirects, sitemaps, 30-day watch | ⬜ Not started | 3–4 |
 
@@ -360,17 +362,53 @@ Extrapolated to 15,000 products (~15,150 routes): **~13 minutes** for `render:fu
 - **`first_response_at` depends on discipline.** If the button is not pressed, the queue reports leads as unanswered forever. That is a training matter, not a code one — but if UAT shows it is not happening, the honest fix is to remove the indicator rather than let it report a number nobody trusts.
 - **Public holidays** will read as one day of overrun each. If that turns out to matter, it needs a maintained holiday table (D-044), not a constant.
 
-## Phase 12 — Content (parallel track from Phase 5)
+## Phase 12 — Content (parallel track from Phase 5) 🟡
 
-**Gate:** no indexable page below the content minimums of SEO_SPEC.md §7.
-**Blocked by:** Q-B (who writes, at what throughput).
+**Gate:** ⏳ **the machinery is built and enforced; the writing has not started and cannot until Q-B.**
 
-- 12a Category intros — 150–300 words × 124 categories
-- 12b Product descriptions — the D-010 workload; attribute-driven generation plus review, with the family-scoped similarity gate
-- 12c Buying guides with real named authors
-- 12d Locations pages with genuine local content
-- 12e Policy pages: privacy (NDPA), terms, cookies
-- 12f Editorial workflow and review queue ordered by keyword value
+The gate is *no indexable page below the content minimums of SEO_SPEC §7*. That is now **structurally true rather than aspirational**: a product or category below the floor cannot be marked indexable at all, because the guard is on the model rather than in the form (D-048). What remains is the writing itself, and the writing needs a writer.
+
+| Sub-phase | Deliverable | Status |
+|---|---|---|
+| 12a | Category intros — 150–300 words × 124 | 🟡 Enforced and queued; **nothing written** (Q-B) |
+| 12b | Product descriptions: attribute-driven generation, review, family-scoped similarity gate | ✅ Pipeline done — D-049, D-050, 27 tests |
+| 12c | Buying guides with real named authors | ⬜ Not started — needs real authors |
+| 12d | Locations pages with genuine local content | ⬜ Not started — needs branch addresses |
+| 12e | Policy pages: privacy (NDPA), terms, cookies | ⬜ Not started — needs company registration details and legal review |
+| 12f | Editorial workflow and review queue ordered by keyword value | ✅ Done — D-051 |
+
+### What "enforced" now means
+
+`is_indexable` is refused on any product missing 120 words of original prose, three specifications, an "in the box" list, a warranty line or a lead time — and on any category without a 150-word intro. It throws, from the model, so the CSV importer and any future Icecat sync are covered rather than just the editor (D-048).
+
+### What turning it on immediately caught
+
+Two things, both of which had been quietly wrong:
+
+- **The test suite was creating indexable products with no content at all** — asserting sitemap and manifest behaviour for pages the real system will never publish. They now build content-complete fixtures via `Product::factory()->indexable()`.
+- **Eight of the ten demo catalogue products were below the 120-word floor**, and two had fewer than three specifications — while the seeder carried a comment asserting *"these carry genuine original copy, so they clear the §14.7 content floor"*. Nobody had ever counted. That file is the reference for what a finished product record looks like, and for the raw-HTML gate, so it has been brought up to the floor rather than exempted from it.
+
+The second is the more useful finding. A comment claiming a threshold is met is worth nothing; the same claim as an assertion that throws is worth having.
+
+### The pipeline for 15,000 descriptions
+
+`content:draft` composes a draft from each product's **distinguishing** attributes — the ones that vary within its family, since an attribute every sibling shares says nothing about this product. It **refuses to pad**: a product without enough structured data gets no draft and a place in the queue marked as needing *data*, not copy.
+
+Every draft is stamped, and a stamped description cannot be indexed until a person approves it **since** the stamp (D-049). The similarity gate strips names, SKUs and MPNs before comparing within the family, which is what makes it catch the §14.3 defect instead of scoring lowest exactly where the defect is worst (D-050).
+
+Run it dry first — the report answers the question that decides the launch plan:
+
+```bash
+docker compose exec api php artisan content:draft
+```
+
+### Outstanding
+
+- **Q-B is now the binding constraint on launch.** Everything mechanical is in place; what is missing is 124 category intros and 15,000 product descriptions, and no decision has been taken about who writes them or at what rate. Until that is answered, Phase 12's completion date is unknowable — and it gates D-010's promise that every product is indexable at launch.
+- **The review order is a proxy.** §12f asks for "keyword value"; that number does not exist before launch, so the queue orders by our own search log instead, and says so on the screen (D-051). Replace it once GSC has 28 days.
+- **12c needs real authors.** E-E-A-T on a buying guide means a named person with a bio page and something to be expert about. That is a client decision about who at OfficeLand puts their name to it, not a schema problem — the `articles` table already carries `author_id`, `reviewed_by` and `reviewed_at`.
+- **12e is a legal document, not a template.** An NDPA privacy policy needs the registered company details, the data-protection contact, and a lawyer's eye. Generating something that *looks* like a policy would be the most dangerous kind of finished-looking work.
+- **The orphan-page report (§7) is not built.** It belongs with 12c: it only becomes meaningful once guides exist to link down into categories, since today every product already has breadcrumb and category inbound links by construction.
 
 ## Phase 13 — Hardening
 

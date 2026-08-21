@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\EnforcesContentMinimums;
 use App\Models\Concerns\HasPublicUuid;
 use Database\Factories\CategoryFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,6 +28,8 @@ use Illuminate\Support\Collection;
  */
 final class Category extends Model
 {
+    use EnforcesContentMinimums;
+
     /** @use HasFactory<CategoryFactory> */
     use HasFactory;
 

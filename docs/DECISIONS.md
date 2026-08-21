@@ -481,14 +481,69 @@ Database rules override config rules for the same path: once somebody has set a 
 
 ---
 
+### D-048 — The content floor is enforced on the model, not in the form
+**Decision:** `is_indexable` cannot be set to true on a product or category that is below the SEO_SPEC §7 minimums. The transition throws.
+
+The Phase 12 gate is *no indexable page below the content minimums*. A word counter beside a checkbox does not achieve that. Three routes write `is_indexable` — the Filament editor, the CSV importer, and any future Icecat sync — and a form validator sees one of them. The two it does not see are the bulk ones, which is exactly how 15,000 thin pages would enter the sitemap in a single afternoon. Same reasoning as alt-text enforcement in Phase 4f.
+
+Two deliberate limits:
+
+- **It throws rather than silently correcting.** Quietly resetting the flag would leave an editor believing a page is indexed when it is not, and the discrepancy would surface weeks later as traffic that never arrived. An exception is unpleasant exactly once, while somebody can still act on it.
+- **Only the transition INTO indexable is guarded.** A live page whose content is later trimmed is not un-indexed as a side effect of an unrelated edit — that is a bigger surprise than the thin page it prevents. The readiness report surfaces those instead.
+
+The 150–300 word range for category intros is enforced only at the bottom. A 400-word intro is a reason to tell the editor it reads long, never a reason to withhold the page from Google; enforcing the ceiling would be enforcing house style as though it were an SEO requirement.
+**Status:** architect decision.
+
+### D-049 — Generated descriptions cannot be indexed until a person approves them
+**Decision:** anything written by `DescriptionDrafter` is stamped `description_generated_at`, and `ContentMinimums` refuses to index it while that stamp is newer than `description_approved_at`.
+
+D-010 puts 15,000 products in the index on day one and §14.7 wants 120+ words on each. At that scale the first draft is machine-written, and §14.3 forbids shipping the result — *never a boilerplate string with the name swapped in*. A template is a boilerplate string with the name swapped in, however carefully written. What makes the output defensible is the editing pass, so the pipeline makes that pass **mandatory rather than encouraged**.
+
+**Timestamps rather than a status enum.** The rule is "a human approved it *after* the machine last touched it", and an enum cannot express the ordering — regenerating a description would leave it sitting on `approved` with nobody having read the new text. Comparing timestamps makes both re-generation and re-flagging invalidate a prior approval automatically, which is the safe direction.
+
+**The drafter refuses rather than padding.** A product with three generic attributes cannot support 120 words of specific prose, and the alternative to refusing is filler — the exact failure mode, dressed as success. A refusal puts the product in the review queue marked as needing *data*, not copy, which is a different job for a different person.
+
+The draft is built from the attributes that **vary within the product's family**, because SEO_SPEC §7.2 makes information density the whole test: an attribute every sibling shares says nothing about this product, and a draft built from shared attributes reads identically for every sibling.
+**Status:** architect decision.
+
+### D-050 — The similarity gate strips identifiers, scopes to a family, and flags rather than fails
+**Decision:** implements the SEO_SPEC §7.3 correction to §17.4, plus one addition: product names, SKUs, MPNs and model codes are removed from both texts before comparison.
+
+§17.4 asked that no two products share >70% description similarity and that the import fail if they do. Toner variants legitimately share ~90% — they are the same cartridge in four colours — so the original rule rejects the honest case and takes the whole import down with it.
+
+The addition matters as much as the corrections. The defect being caught is *a boilerplate string with the name swapped in*. Left in the text, the name is the one part guaranteed to differ, so it drags the similarity score **down** — the gate would read lowest exactly where the defect is worst. Stripped, two boilerplate descriptions score ~1.0, which is what they are.
+
+The threshold is 0.95, set high on purpose. Genuine variants differ by a colour or a page yield, which is a small difference in trigram terms; a lower threshold would flag most of a legitimate family and teach reviewers to approve without reading, which is worse than not flagging at all.
+
+Family is *same brand + same primary category* — the closest thing the schema carries to a manufacturer's range within one product type, and the boundary inside which shared phrasing is legitimate.
+
+Re-running the gate never re-stamps an existing flag, so a nightly batch cannot silently un-index every variant a reviewer already accepted.
+**Status:** architect decision; supersedes §17.4's global 70% rule, per SEO_SPEC §7.3.
+
+### D-051 — The review queue is ordered by internal search demand, as an admitted proxy for keyword value
+**Decision:** §12f's "ordered by keyword value" is implemented against our own `search_query_log`, weighted 3× for queries that returned nothing, plus catalogue depth for categories.
+
+Keyword value means search volume. Search Console has no data until the site is live and crawled, and no keyword-tool subscription is in scope — so the number §12f asks for **does not exist yet**. Ordering by an invented one would be worse than an admitted proxy, because people trust a priority order.
+
+Internal search demand is genuinely good in one respect a keyword tool is not: it is *our* buyers rather than the market at large. Zero-result queries are weighted up, not down — that is demand we are visibly failing to meet, and a page that answers it converts a dead end into a landing page.
+
+Categories are listed before products in the queue. 124 intros are a week's work and unlock indexability for the pages the whole taxonomy hangs off; 15,000 product descriptions are a quarter's. Doing the cheap structural work first is the difference between launching with a coherent site and launching with 15,000 orphaned leaves.
+
+**Replace this once GSC has 28 days of data.** It is called from one place so that swapping the signal is a change in `ContentValue` and nowhere else.
+**Status:** architect decision; revisit after launch.
+
 ## Open
 
 ### Q-A — Icecat subscription tier
 Open Icecat (free) covers **600+ sponsoring brands**, verified to include HP, ASUS, Lenovo, Canon, Dell, Epson and Brother. **Baseus is not among them.** Baseus exists in Icecat's wider catalogue at 50% data health — community-sourced rather than brand-authorised — which places it behind Full Icecat (paid) and means its content will be patchy even then.
 **Decision needed:** Open Icecat only (and Baseus via CSV/manual), or a Full Icecat subscription? This bears directly on whether 15,000 products is reachable from Icecat alone.
 
-### Q-B — Who is rewriting 15,000 descriptions, and at what throughput?
+### Q-B — Who is rewriting 15,000 descriptions, and at what throughput? — **NOW BLOCKING**
 Determines whether Phase 12 is a scheduling constraint or a launch blocker. If AI-assisted, the review queue needs the similarity gate described in SEO_SPEC.md §7.
+
+**Updated 2026-08-21.** The similarity gate, the attribute-driven drafter, the approval step and the review queue are all built and enforced (D-048 through D-051). Every mechanical prerequisite for D-010's promise — all 15,000 products indexable at launch — is in place. **The only thing missing is the writing**, and with the content floor now enforced rather than advisory, an unwritten product is not a thin page in the sitemap: it is a page that cannot enter the sitemap at all.
+
+That makes Q-B the binding constraint on the launch date rather than a quality risk. Two numbers are needed to plan around it: **who writes**, and **how many products a week**. `php artisan content:draft` (dry run) reports how many products have enough structured data to support a draft at all, which sets the floor on how much of the work is editing rather than writing from nothing.
 
 ### ~~Q-C — Framework versions~~ — CLOSED 2026-08-20
 Resolved by D-020 (Angular 22, Filament v5) and D-019 (Laravel 12, forced by security advisories).

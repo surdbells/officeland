@@ -26,7 +26,7 @@ final class RenderManifestTest extends TestCase
         // Categories seed as is_indexable = false pending intro copy, and are
         // linked from the megamenu the whole time. Filtering them out of the
         // manifest would 404 links the site itself publishes.
-        $indexable = Category::factory()->create(['slug' => 'shown', 'is_indexable' => true]);
+        $indexable = Category::factory()->indexable()->create(['slug' => 'shown']);
         $hidden = Category::factory()->create(['slug' => 'hidden', 'is_indexable' => false]);
 
         $categories = $this->manifest()['data']['categories'];

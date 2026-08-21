@@ -6,6 +6,7 @@ namespace App\Filament\Resources\Products\Schemas;
 
 use App\Filament\Forms\SeoFields;
 use App\Models\Product;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
@@ -129,6 +130,27 @@ final class ProductForm
                             ->label('Warranty')
                             ->rows(2)
                             ->columnSpanFull(),
+
+                        // §14.7 lists this among the product minimums. It is
+                        // also the question buyers ask most often after price
+                        // — "does it come with the cable?" — and the one the
+                        // supplier data almost never answers.
+                        Textarea::make('box_contents')
+                            ->label('In the box')
+                            ->rows(3)
+                            ->placeholder("Printer\nStarter toner cartridge\nPower cable\nQuick-start guide")
+                            ->helperText('One item per line. Required before this product can be indexed.')
+                            ->columnSpanFull(),
+
+                        /*
+                         * The whole content floor in one line, live. Without
+                         * it the rule is discovered at publish time, as an
+                         * exception, by somebody who has already moved on.
+                         */
+                        Placeholder::make('content_readiness')
+                            ->label('Ready to index?')
+                            ->content(fn (?Product $record): HtmlString => self::readiness($record))
+                            ->columnSpanFull(),
                     ]),
                 ]),
 
@@ -238,6 +260,34 @@ final class ProductForm
                 ),
             ])->columnSpanFull(),
         ]);
+    }
+
+    /**
+     * The full §14.7 checklist for this product, as one line.
+     *
+     * Reads from the saved record rather than live form state: most of the
+     * minimums (specifications, approval, the similarity flag) are not fields
+     * on this form, so a live version would report on half the rule and read
+     * as a bug the first time it disagreed with the save.
+     */
+    private static function readiness(?Product $record): HtmlString
+    {
+        if ($record === null) {
+            return new HtmlString('<span style="color:#6b7280">Save the product first.</span>');
+        }
+
+        $readiness = $record->contentReadiness();
+
+        if ($readiness->isReady()) {
+            return new HtmlString(
+                '<span style="color:#15803d;font-weight:600">Clears every content minimum.</span>'
+            );
+        }
+
+        return new HtmlString(
+            '<span style="color:#b45309;font-weight:600">Not yet: </span>'
+            .'<span style="color:#b45309">'.e($readiness->summary()).'</span>'
+        );
     }
 
     private static function wordCount(?string $state): HtmlString

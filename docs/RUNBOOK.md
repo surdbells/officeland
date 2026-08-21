@@ -332,3 +332,51 @@ In order:
 2. **Quotes → Email suppressions** — is the recipient suppressed? A suppressed *sales* address stops the notification entirely.
 3. `php artisan queue:failed` — did the job fail rather than never exist?
 4. The lead itself — open it and read the History section. `email_queued` means it reached the queue; `email_queue_failed` means Redis was unreachable and **nothing was enqueued to retry**.
+
+---
+
+## 10. Content
+
+### 10.1 Why a page will not go indexable
+
+`is_indexable` is refused — with an exception, not a silent correction — while a page is below the SEO_SPEC §7 floor (D-048). The guard is on the **model**, so it applies to the CSV importer and any future Icecat sync as well as to the admin form.
+
+| Record | Must have |
+|---|---|
+| **Product** | 120+ words of original description · 3+ specifications · an "in the box" list · a warranty line · a lead time |
+| **Category** | a 150+ word intro |
+
+Two further product rules catch the failures a word count cannot:
+
+- **The supplier's text verbatim is not original copy** (D-015). Compared on the text, not the markup, so reformatting through the editor does not launder it.
+- **A generated description needs a person's approval** (D-049), given *after* the machine last wrote it. Regenerating invalidates a prior approval automatically.
+
+The full checklist for one product is on the **Description** tab of the product form, live. The whole catalogue is at **Catalogue → Content readiness**.
+
+### 10.2 Drafting descriptions
+
+```bash
+docker compose exec api php artisan content:draft
+```
+
+Dry run by default. The report is worth reading on its own — *"not enough structured data to describe"* counts products that need **data**, not copy, which is a different job for a different person.
+
+Add `--apply` to write. Every draft is stamped and none of them can be indexed until approved one at a time on the product page.
+
+It never overwrites an approved description, so re-running after a week of editing is safe.
+
+### 10.3 "Reads like another product"
+
+The similarity gate compares a description against others **in the same family** — same brand, same primary category — after stripping the name, SKU, MPN and model code from both (D-050).
+
+That stripping is the point: left in, those are the one part guaranteed to differ, so they would drag the score down exactly where the boilerplate is worst.
+
+Flagged is **not** rejected. Genuine variants exist — four colours of one cartridge legitimately share most of their text. Read it, and either rewrite it or press **Approve this description**. Use **Re-check for duplication** after a rewrite to clear the flag immediately.
+
+### 10.4 What to write first
+
+**Catalogue → Content readiness** orders the queue by demand from our own search log, weighting queries that returned **nothing** three times higher — that is demand we are visibly failing to meet (D-051).
+
+This is a stand-in for keyword value, and it says so on the screen. Replace it once Search Console has 28 days of data.
+
+**Categories before products.** 124 intros are a week and unlock whole subtrees; 15,000 descriptions are a quarter.

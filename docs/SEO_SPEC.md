@@ -124,6 +124,8 @@ Every product must be reachable within **3 clicks** of the homepage. Delivered b
 
 The differentiator, and under D-010 the largest risk.
 
+> **Status, 2026-08-21.** Everything in this section is now **enforced in code** rather than described: the minimums below are checked on the model and refuse `is_indexable` (D-048), generated copy needs a named person's approval (D-049), the similarity gate is built as corrected in §7.3 (D-050), and the review queue is ordered as §12f asks (D-051). What is not done is the writing — see **Q-B**.
+
 **Product minimums (§14.7):** ≥120 words of original description · a spec table built from structured attributes, not prose · an "in the box" list · warranty and lead-time facts.
 
 **D-010 makes all 15,000 products indexable at launch.** The risk this creates is recorded in `DECISIONS.md`. The mitigations that make it defensible:

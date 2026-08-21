@@ -116,7 +116,7 @@ final class RenderInvalidationTest extends TestCase
 
     public function test_an_indexable_product_invalidates_the_sitemap(): void
     {
-        $product = Product::factory()->create(['is_indexable' => true]);
+        $product = Product::factory()->indexable()->create();
 
         $direct = $this->routesOf($this->resolver->resolve($product), RenderRequest::PRIORITY_DIRECT);
 

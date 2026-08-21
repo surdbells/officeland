@@ -68,9 +68,9 @@ final class SitemapGeneratorTest extends TestCase
      */
     public function test_it_lists_only_indexable_products(): void
     {
-        $indexable = Product::factory()->create(['status' => 'active', 'is_indexable' => true]);
+        $indexable = Product::factory()->indexable()->create();
         $held = Product::factory()->create(['status' => 'active', 'is_indexable' => false]);
-        $draft = Product::factory()->draft()->create(['is_indexable' => true]);
+        $draft = Product::factory()->indexable()->create(['status' => 'draft']);
 
         $this->generator->generate();
         $xml = $this->contents('sitemap-products.xml');
@@ -82,7 +82,7 @@ final class SitemapGeneratorTest extends TestCase
 
     public function test_it_lists_only_indexable_categories(): void
     {
-        $shown = Category::factory()->create(['slug' => 'shown', 'is_indexable' => true]);
+        $shown = Category::factory()->indexable()->create(['slug' => 'shown']);
         $hidden = Category::factory()->create(['slug' => 'hidden', 'is_indexable' => false]);
 
         $this->generator->generate();
@@ -111,7 +111,7 @@ final class SitemapGeneratorTest extends TestCase
      */
     public function test_urls_are_absolute_against_the_public_origin(): void
     {
-        Product::factory()->create(['status' => 'active', 'is_indexable' => true]);
+        Product::factory()->indexable()->create();
 
         $this->generator->generate();
         $xml = $this->contents('sitemap-products.xml');
@@ -124,7 +124,7 @@ final class SitemapGeneratorTest extends TestCase
     /** Trailing slashes must match the canonicals the pages themselves emit. */
     public function test_urls_keep_their_trailing_slash(): void
     {
-        $product = Product::factory()->create(['status' => 'active', 'is_indexable' => true]);
+        $product = Product::factory()->indexable()->create();
 
         $this->generator->generate();
 
@@ -133,7 +133,7 @@ final class SitemapGeneratorTest extends TestCase
 
     public function test_it_records_a_real_lastmod(): void
     {
-        Product::factory()->create(['status' => 'active', 'is_indexable' => true]);
+        Product::factory()->indexable()->create();
 
         $this->generator->generate();
 
@@ -150,7 +150,7 @@ final class SitemapGeneratorTest extends TestCase
      */
     public function test_it_does_not_list_paginated_pages(): void
     {
-        $category = Category::factory()->create(['slug' => 'big', 'is_indexable' => true]);
+        $category = Category::factory()->indexable()->create(['slug' => 'big']);
         $products = Product::factory()->count(30)->create(['status' => 'active']);
         $category->products()->attach($products->pluck('id'));
 
@@ -177,9 +177,9 @@ final class SitemapGeneratorTest extends TestCase
 
     public function test_every_written_sitemap_is_valid_xml(): void
     {
-        Product::factory()->count(3)->create(['status' => 'active', 'is_indexable' => true]);
+        Product::factory()->indexable()->count(3)->create();
         Brand::factory()->create(['is_indexable' => true]);
-        Category::factory()->create(['is_indexable' => true]);
+        Category::factory()->indexable()->create();
 
         $written = $this->generator->generate();
 

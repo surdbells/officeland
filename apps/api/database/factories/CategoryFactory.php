@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Content\ContentMinimums;
 use App\Models\Category;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -56,6 +57,23 @@ final class CategoryFactory extends Factory
             'slug' => $slug,
             'path' => '/'.$slug.'/',
             'depth' => 1,
+        ]);
+    }
+
+    /**
+     * A category with a real intro, so it may actually be indexed.
+     *
+     * The model refuses `is_indexable` without one (EnforcesContentMinimums),
+     * which is the rule SEO_SPEC §7 states: an intro is *required before a
+     * category may be marked indexable*.
+     */
+    public function indexable(): self
+    {
+        return $this->state(fn (): array => [
+            'is_indexable' => true,
+            'intro_copy' => implode(' ', (array) $this->faker->words(
+                ContentMinimums::CATEGORY_WORDS_MIN + 20,
+            )),
         ]);
     }
 }
