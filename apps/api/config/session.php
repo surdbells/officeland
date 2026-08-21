@@ -169,7 +169,20 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    /*
+     * Defaults to ON in production rather than to null (Phase 13a).
+     *
+     * Laravel's stock default leaves this unset, which means the admin session
+     * cookie is sent over plain HTTP if anything ever reaches the site that
+     * way — a redirect, a mixed-content asset, a misconfigured health probe.
+     * The cookie is a live grant of catalogue write access, so the safe value
+     * has to be the default and the override has to be the deliberate act.
+     *
+     * `env('APP_ENV')` rather than `app()->isProduction()`: config files are
+     * loaded before the container is ready, and cached config must not depend
+     * on runtime state.
+     */
+    'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production'),
 
     /*
     |--------------------------------------------------------------------------

@@ -532,6 +532,46 @@ Categories are listed before products in the queue. 124 intros are a week's work
 **Replace this once GSC has 28 days of data.** It is called from one place so that swapping the signal is a change in `ContentValue` and nowhere else.
 **Status:** architect decision; revisit after launch.
 
+### D-052 — The public API is rate limited per surface, with internal traffic exempt
+**Decision:** separate limits for catalogue reads (300/min), search (60/min), basket writes (60/min) and the mail webhook (120/min), keyed by client address, with private addresses exempt.
+
+**The finding this closes.** Before Phase 13a the public API had **no rate limit of any kind** — only the admin panel and quote submission were protected. Search was both the most expensive endpoint in the system and completely open: it runs a weighted FTS query, then a **trigram fallback whenever FTS finds nothing**, then facet aggregation. A query designed to miss goes down the slowest path every time, and nothing stopped one client sending it continuously. Basket writes were the second hole — one row inserted per request, unbounded.
+
+One global number would have been wrong in both directions. The surfaces differ by more than an order of magnitude in cost, and the render worker's traffic pattern looks nothing like a user's.
+
+**The exemption is the load-bearing part.** `render:full` walks 15,000+ routes; throttling it would turn a template fix into a half-built site. Private addresses are therefore exempt, which is safe **only because PHP runs inside Caddy under FrankenPHP** — there is no proxy hop, `$request->ip()` is the real socket address, and an internet client cannot present a private one.
+
+That property is an assumption about the deployment, not about the code, so it is pinned by a test (`test_a_public_address_is_never_treated_as_internal`) and carries a warning in both the review and the runbook: **putting a load balancer in front of Caddy without adding it to `trusted_proxies` would make every request on the internet exempt.**
+**Status:** architect decision; finding F1 in `docs/SECURITY_REVIEW.md`.
+
+### D-053 — The storefront CSP is generated from the build, and gated in CI
+**Decision:** `apps/web/tools/csp-hashes.mjs` derives SHA-256 hashes of Angular's inline scripts from the prerendered output and generates `infra/caddy/csp.caddy`. CI fails when the committed policy stops matching the build.
+
+**Why not Angular's own auto-CSP.** Angular 22 ships `security.autoCsp`, which does exactly this — and refuses to run here: *"Cannot set both SSR and auto-CSP at the same time."* D-009 prerenders through the SSR builder, so it is unavailable to this project. A nonce is equally unavailable: nonces must be unique per response and injected by whatever serves the page, and the storefront is static files with no application in the path.
+
+**Measured rather than assumed.** Three distinct inline scripts across 147 prerendered pages — Angular's hydration bootstrap embeds the event-replay contract for the events a page actually binds, so pages genuinely differ and the policy is the union of all of them. The tool fails above 24 distinct hashes, because past that something page-specific is being inlined and hashes are the wrong mechanism.
+
+**Why the CI gate matters more than the policy.** A stale hash does not error — it blanks the site. The browser silently refuses to run the bootstrap, the page renders as inert static HTML, and the only evidence is a console message no user will ever report. A generated policy without a gate is a trap set for a future Angular upgrade.
+
+**`style-src` keeps `'unsafe-inline'` and `script-src` does not.** Angular sets style attributes during hydration, which hashes cannot cover without `'unsafe-hashes'`. The asymmetry is the point: inline style is a defacement risk, inline script is code execution, and the whole value of a CSP is in the second one.
+
+**The admin panel is deliberately excluded from the script policy.** Livewire and Alpine construct functions at runtime, so it would need `'unsafe-eval'` — most of the appearance of protection and little of the substance. It is defended instead by authentication, mandatory 2FA, an optional IP allowlist, a non-default path, `throttle:admin`, and `frame-ancestors 'none'`.
+**Status:** architect decision; finding F3 in `docs/SECURITY_REVIEW.md`.
+
+### D-054 — Authentication events are logged, and failures are `warning`
+**Decision:** `Failed`, `Lockout`, `Login`, `Logout` and `PasswordReset` are written to the structured log. Failures, lockouts and resets at `warning`; successes at `info`.
+
+**Nothing recorded a failed login before this.** Filament caps attempts at five per minute, so brute force could not succeed quickly — but *cannot succeed quickly* is not *somebody will notice*. A fortnight of patient credential stuffing against `/admin` left no trace anywhere, and the first evidence of a compromise would have been its consequences. That is OWASP A09 exactly: the controls existed, the record did not.
+
+Three details carry the value:
+
+- **`user_exists` on a failure.** A run of failures against a real account is an attack on a specific person; the same run against addresses that do not exist is a scanner working a leaked list. Different responses, and the log cannot distinguish them without this.
+- **`warning`, not `info`.** A failed login at `info` is a line nobody has ever alerted on. At `warning` it clears a level filter and reaches whatever is watching.
+- **Never the password.** Asserted directly, because the natural implementation logs `$event->credentials` wholesale.
+
+Registered explicitly rather than by auto-discovery: these are the events an investigation starts from, and a listener that silently stops being discovered is a log that silently stops being written.
+**Status:** architect decision; finding F2 in `docs/SECURITY_REVIEW.md`.
+
 ## Open
 
 ### Q-A — Icecat subscription tier

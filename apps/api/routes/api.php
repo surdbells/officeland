@@ -29,7 +29,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::prefix('v1')->name('api.')->group(function (): void {
+Route::prefix('v1')->name('api.')->middleware('throttle:catalogue')->group(function (): void {
     Route::get('navigation', NavigationController::class)->name('navigation');
 
     Route::get('brands', [BrandController::class, 'index'])->name('brands.index');
@@ -51,12 +51,14 @@ Route::prefix('v1')->name('api.')->group(function (): void {
      * cacheable: identity comes from a signed HttpOnly cookie, and the server
      * is authoritative for every line (section 9a).
      */
-    Route::get('basket', [BasketController::class, 'show'])->name('basket.show');
-    Route::post('basket/items', [BasketController::class, 'addProduct'])->name('basket.add');
-    Route::post('basket/items/free-text', [BasketController::class, 'addFreeText'])->name('basket.add-free-text');
-    Route::patch('basket/items/{item}', [BasketController::class, 'updateItem'])->name('basket.update');
-    Route::delete('basket/items/{item}', [BasketController::class, 'removeItem'])->name('basket.remove');
-    Route::delete('basket', [BasketController::class, 'clear'])->name('basket.clear');
+    Route::middleware('throttle:basket')->group(function (): void {
+        Route::get('basket', [BasketController::class, 'show'])->name('basket.show');
+        Route::post('basket/items', [BasketController::class, 'addProduct'])->name('basket.add');
+        Route::post('basket/items/free-text', [BasketController::class, 'addFreeText'])->name('basket.add-free-text');
+        Route::patch('basket/items/{item}', [BasketController::class, 'updateItem'])->name('basket.update');
+        Route::delete('basket/items/{item}', [BasketController::class, 'removeItem'])->name('basket.remove');
+        Route::delete('basket', [BasketController::class, 'clear'])->name('basket.clear');
+    });
 
     Route::post('quotes', [QuoteController::class, 'store'])->name('quotes.store');
 
@@ -68,13 +70,15 @@ Route::prefix('v1')->name('api.')->group(function (): void {
      * controller. An unverified webhook could suppress an arbitrary address,
      * so the check is the whole security boundary here.
      */
-    Route::post('webhooks/mail', MailWebhookController::class)->name('webhooks.mail');
+    Route::post('webhooks/mail', MailWebhookController::class)->name('webhooks.mail')->middleware('throttle:webhook');
 
     // Search results are noindex (SEO_SPEC.md section 2) and client-rendered,
     // so these are the one catalogue surface consumed at request time rather
     // than at build time.
-    Route::get('search', SearchController::class)->name('search');
-    Route::get('search/suggest', [SearchController::class, 'suggest'])->name('search.suggest');
+    Route::middleware('throttle:search')->group(function (): void {
+        Route::get('search', SearchController::class)->name('search');
+        Route::get('search/suggest', [SearchController::class, 'suggest'])->name('search.suggest');
+    });
 
     // Catch-all paths must come last, and the more specific /products suffix
     // must be declared before the bare path — otherwise 'a/b/products' is

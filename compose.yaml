@@ -115,6 +115,8 @@ services:
       # After changing composer.json: docker compose exec api composer install
       - api_vendor:/app/vendor
       - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Generated CSP snippet, imported by the Caddyfile (Phase 13a).
+      - ./infra/caddy/csp.caddy:/etc/caddy/csp.caddy:ro
       - static:/app/static
       - media:/app/storage-media
     ports:

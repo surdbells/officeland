@@ -1,6 +1,6 @@
 # Implementation Plan
 
-**Status:** Phases 0-11 built; Phase 12's pipeline built and enforced, its writing not started. Five gates remain open, none of them on code: Phase 8 CWV (Q7 + a browser harness), Phase 9 viewport testing (same), Phase 10 real sends (Q18 credentials), Phase 11 UAT (the sales team), and Phase 12 the writing itself (**Q-B**). Phase 5b or 13 next. See docs/HANDOVER-phase-2.md.
+**Status:** Phases 0-11 built; Phase 12's pipeline built and enforced, its writing not started. Five gates remain open, none of them on code: Phase 8 CWV (Q7 + a browser harness), Phase 9 viewport testing (same), Phase 10 real sends (Q18 credentials), Phase 11 UAT (the sales team), and Phase 12 the writing itself (**Q-B**). Phase 13a (security review) is done — four findings, all fixed. Phase 5b, or the rest of 13, next. See docs/HANDOVER-phase-2.md.
 
 **Q-B is now the binding constraint on launch date.** Everything mechanical that 15,000 indexable products needs is in place; what is missing is the copy, and no decision has been taken about who writes it.
 **Re-read this document before starting any phase** (§2.3). If reality has diverged, amend the plan — do not drift silently.
@@ -29,7 +29,7 @@
 | **10** | ZeptoMail transport, templates, queue, webhooks | 🟡 Built; needs Q18 to send | 3 |
 | **11** | Lead queue admin | 🟡 Built; awaiting UAT | 1 |
 | **12** | Content: category intros, guides, product copy | 🟡 Pipeline built; writing blocked on Q-B | *content track* |
-| **13** | Hardening: security, load, a11y, backup drill | ⬜ Not started | 4–5 |
+| **13** | Hardening: security, load, a11y, backup drill | 🟡 13a done; 13b–13g not started | 4–5 |
 | **14** | Cutover: redirects, sitemaps, 30-day watch | ⬜ Not started | 3–4 |
 
 **Critical path:** 0 → 2 → 3 → 7 → 8 → 14. Phases 4, 5, 5b and 6 parallelise against 7/8. Phase 12 runs continuously from Phase 5.
@@ -410,17 +410,43 @@ docker compose exec api php artisan content:draft
 - **12e is a legal document, not a template.** An NDPA privacy policy needs the registered company details, the data-protection contact, and a lawyer's eye. Generating something that *looks* like a policy would be the most dangerous kind of finished-looking work.
 - **The orphan-page report (§7) is not built.** It belongs with 12c: it only becomes meaningful once guides exist to link down into categories, since today every product already has breadcrumb and category inbound links by construction.
 
-## Phase 13 — Hardening
+## Phase 13 — Hardening 🟡
 
-**Gate:** all gates green; restore drill timed and documented.
+**Gate:** all gates green; restore drill timed and documented. **13a is done; the rest is not started.**
 
-- 13a Security review against OWASP Top 10, evidenced
-- 13b k6 load test on search and facet endpoints; p95/p99 and breaking point documented
-- 13c axe-core clean; WCAG 2.2 AA verified
-- 13d **Backup and restore drill** — Postgres WAL + nightly base, media tree incremental offsite (50 GB+), restored in staging with wall-clock time recorded. An untested backup is not a backup.
-- 13e Observability: Sentry with release tagging and source maps, metrics, alerting including a synthetic quote submission every 15 minutes
-- 13f Read replica if wanted for DR (D-018)
-- 13g `RUNBOOK.md` complete
+| Sub-phase | Deliverable | Status |
+|---|---|---|
+| 13a | Security review against OWASP Top 10, evidenced | ✅ Done — `docs/SECURITY_REVIEW.md`, 4 findings fixed, 15 tests |
+| 13b | k6 load test on search and facets; p95/p99 and breaking point | ⬜ Not started |
+| 13c | axe-core clean; WCAG 2.2 AA verified | ⬜ Not started |
+| 13d | **Backup and restore drill**, timed in staging | ⬜ Not started |
+| 13e | Observability: Sentry, metrics, synthetic quote submission | ⬜ Not started |
+| 13f | Read replica for DR (D-018) | ⬜ Open on Q7 |
+| 13g | `RUNBOOK.md` complete | 🟡 §11 added; completes with the rest of 13 |
+
+### 13a — what the review found
+
+Four findings, all fixed. **Two were serious, and both were absences rather than mistakes** — the code that was there was sound; the code that should have been there did not exist.
+
+- **F1 (High) — the public API had no rate limit of any kind.** Only the admin panel and quote submission were throttled. Search was both the most expensive endpoint in the system and completely open: FTS, then a **trigram fallback whenever FTS finds nothing**, then facet aggregation. A query designed to miss takes the slowest path every time, and nothing stopped one client sending it continuously. Fixed with per-surface limits (D-052).
+- **F2 (High) — nothing recorded a failed login.** Filament caps attempts at five a minute, so brute force could not succeed quickly — but that is not the same as somebody noticing. A fortnight of patient credential stuffing left no trace at all. Fixed with an authentication log (D-054).
+- **F3 (Medium) — no CSP and nothing preventing the site from being framed.** Angular's own auto-CSP refuses to run alongside SSR, so the hashes are now derived from the prerendered output and gated in CI (D-053).
+- **F4 (Medium) — the session cookie was not `Secure` by default**, so the admin session could travel over plain HTTP if anything ever reached the site that way.
+
+**Reviewed and found sound**, recorded because that is the half of a review worth keeping: every raw SQL fragment (user input is bound throughout, including the tsquery builder), basket item scoping (no IDOR), media MIME detection from magic bytes with SVG rejected, webhook HMAC over the raw body, CSV formula-injection defusing, and `composer audit` / `npm audit` already failing the build.
+
+### What is deliberately outside 13a
+
+- **Penetration testing.** This is a code and configuration review. An authenticated test against a deployed instance is a different exercise and needs the production host (**Q7**).
+- **The admin panel under a strict script CSP.** Livewire and Alpine build functions at runtime, so it would need `'unsafe-eval'` — most of the appearance of protection, little of the substance.
+- **Edge rate limiting.** These limits are per-process in Redis. A volumetric attack is absorbed upstream, which is a Cloudflare-or-equivalent decision that is still open.
+
+### Outstanding for the rest of Phase 13
+
+- **13b needs a decision about where to measure.** Numbers from this development machine are worthless — D-033 records bind-mount reads at ~29 ms, a factor of 1,450 slower than container-local. The k6 scripts can be written and exercised here; the p95/p99 and breaking point that go in a document have to come from the production host (**Q7**).
+- **13c needs a browser harness**, the same gap that blocks the Phase 8 CWV budgets and Phase 9 viewport testing. A useful subset of axe-core rules runs against prerendered HTML under jsdom without a browser; colour contrast does not, because it needs real rendering.
+- **13d is the gate**, and it is the one item here that can be completed on this machine: Postgres WAL plus a base backup, restored into a scratch database with the wall clock recorded. The media half (50 GB+ incremental offsite) needs a destination — **Q21**.
+- **13e needs a Sentry DSN** (client credential). The integration and the synthetic quote monitor can be built and unit-tested without one; verifying that events actually arrive cannot.
 
 ## Phase 14 — Cutover
 

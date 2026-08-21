@@ -39,8 +39,18 @@
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+
+		# Clickjacking. frame-ancestors in the CSP below is the real control;
+		# this covers browsers that predate it and costs one line.
+		X-Frame-Options "DENY"
+
 		-Server
 	}
+
+	# Content-Security-Policy, with script hashes derived from the prerendered
+	# output (Phase 13a). GENERATED — see apps/web/tools/csp-hashes.mjs, and
+	# the CI gate that fails when the build stops matching it.
+	import /etc/caddy/csp.caddy
 
 	# ---------------------------------------------------------------------
 	# Staging guard (docs/SEO_SPEC.md section 8).

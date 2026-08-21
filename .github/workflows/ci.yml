@@ -254,6 +254,14 @@ jobs:
         working-directory: apps/web
         run: npm run gate:crawl-depth
 
+      # Phase 13a. The CSP in infra/caddy/csp.caddy hashes the inline scripts
+      # Angular emits. If a build changes what it inlines, Caddy would serve a
+      # policy that blocks every page -- silently, for users, with a console
+      # message nobody sees. This fails the build instead.
+      - name: Content-Security-Policy gate
+        working-directory: apps/web
+        run: npm run gate:csp
+
   contract:
     name: Contract · spec and types in sync
     runs-on: ubuntu-latest

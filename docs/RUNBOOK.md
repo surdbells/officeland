@@ -380,3 +380,54 @@ Flagged is **not** rejected. Genuine variants exist — four colours of one cart
 This is a stand-in for keyword value, and it says so on the screen. Replace it once Search Console has 28 days of data.
 
 **Categories before products.** 124 intros are a week and unlock whole subtrees; 15,000 descriptions are a quarter.
+
+---
+
+## 11. Security
+
+Full review: `docs/SECURITY_REVIEW.md`. This section is the operational half — what breaks, and what to change.
+
+### 11.1 The Content-Security-Policy is generated, not hand-written
+
+`infra/caddy/csp.caddy` contains SHA-256 hashes of the inline scripts Angular emits into every prerendered page. **A stale hash blanks the site**: the browser refuses to run the hydration bootstrap, the page renders as static HTML with nothing interactive, and the only symptom is a console message no user will report.
+
+After any Angular upgrade or build-configuration change:
+
+```bash
+docker compose exec render sh -lc 'cd /repo/apps/web && npx ng build' && cd apps/web && node tools/csp-hashes.mjs --write
+```
+
+Then commit `infra/caddy/csp.caddy` and restart the api container. CI runs `npm run gate:csp` and fails the build when the two disagree, so this cannot ship silently — but it *can* be missed locally.
+
+If the tool reports more than 24 distinct hashes, something page-specific is being inlined. Do not raise the ceiling: find what changed.
+
+### 11.2 Rate limits, and the one way to get them badly wrong
+
+Limits are per client IP, per surface, configured in `.env` (see `API_RATE_*`). Search is deliberately the tightest — it is the most expensive query in the system.
+
+**`API_TRUSTED_PREFIXES` is the dangerous setting.** Addresses matching it are exempt entirely, so the render worker can walk 15,000+ routes during a full build. This is only safe because PHP runs *inside* Caddy under FrankenPHP: there is no proxy hop, and a client on the internet cannot present a private source address.
+
+> **Before putting a load balancer or CDN in front of Caddy**, re-read F1 in `SECURITY_REVIEW.md`. If the upstream's address matches a trusted prefix, every request on the internet becomes exempt and the limits stop existing.
+
+Symptom of getting it wrong in the other direction: `render:full` reporting failed routes with 429. It exits non-zero and names them, so it fails loudly.
+
+### 11.3 Reading the authentication log
+
+Failed logins, lockouts and password resets are logged at `warning`; successful logins and logouts at `info`.
+
+```bash
+docker compose exec api sh -lc 'grep auth. storage/logs/laravel.log | tail -50'
+```
+
+| Pattern | What it usually means |
+|---|---|
+| Many `auth.failed`, one email, `user_exists: true` | Somebody is attacking a real account. Tell the account holder; consider forcing a reset. |
+| Many `auth.failed`, many emails, `user_exists: false` | A scanner working a leaked address list. Noise, unless it persists. |
+| Any `auth.lockout` | Five attempts in a minute. No one mistypes their own password five times in a minute. |
+| `auth.password_reset` nobody requested | Treat as an account takeover in progress. The mailbox is the weak point, not the panel. |
+
+### 11.4 Things that are deliberate, so do not "fix" them
+
+- **No strict CSP on `/admin`.** Livewire and Alpine build functions at runtime, so it would need `'unsafe-eval'` — most of the appearance of protection, little of the substance. The panel is defended by auth, mandatory 2FA, the IP allowlist, a non-default path and `frame-ancestors`.
+- **`style-src` allows `'unsafe-inline'`, `script-src` does not.** Angular sets style attributes during hydration and hashes cannot cover those. Inline style is a defacement risk; inline script is code execution.
+- **HSTS is sent with `preload`.** Do not submit the domain to the preload list until every subdomain is on HTTPS — removal takes months.
