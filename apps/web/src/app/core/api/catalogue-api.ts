@@ -28,6 +28,8 @@ export type Product = components['schemas']['Product'];
 export type ProductCard = components['schemas']['ProductCard'];
 export type Image = components['schemas']['Image'];
 export type SpecificationGroup = components['schemas']['SpecificationGroup'];
+export type Basket = components['schemas']['Basket'];
+export type BasketLine = components['schemas']['BasketLine'];
 export type ApiError = components['schemas']['Error'];
 
 export interface NavigationNode {

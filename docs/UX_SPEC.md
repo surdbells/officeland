@@ -151,9 +151,15 @@ Search box plus department links. `noindex`, and the server returns a **real 404
 
 `noindex, follow`. Exact SKU/MPN match short-circuits straight to the product. Zero-result pages show synonym suggestions and the nearest category, never a dead end.
 
-### 3.7 Quote basket and form ⬜ *Phase 9*
+### 3.7 Quote basket and request form ✅ `ol-basket-page`, `ol-quote-request-page`
 
-Three fields only — **email, phone, optional message** — per the client's decision. No accounts, no addresses, no priced-quote cycle. The customer receives an HTML email receipt with the full quote detail; there is no PDF (Dompdf is out).
+Three fields only — **email, phone, optional message** — per the client's decision. No accounts, no addresses, no priced-quote cycle.
+
+The basket is server-owned and identified by an opaque HttpOnly cookie (D-035). Quantities are coerced up to what each product allows rather than rejected (D-036), free-text lines cover what the catalogue does not list, and the list exports as CSV (D-006) because the buyer's next step is usually a spreadsheet.
+
+Anti-abuse is invisible: a honeypot, a timing floor, and per-IP and per-email limits. A rejection is always shown — accepting and discarding would leave a real buyer waiting for a reply nobody knows to send (D-037).
+
+The customer receives an HTML email receipt with the full quote detail; there is no PDF (Dompdf is out). **That email is Phase 10** — until it ships, the confirmation page's promise of a copy by email is not yet true.
 
 ---
 
@@ -206,7 +212,7 @@ Two entries carry disproportionate weight for this market and are called out del
 | Product image | ✅ | `<picture>` over Phase 4 derivatives, intrinsic dimensions |
 | Gallery | ⬜ P8 | Multi-image PDP gallery with thumbnails |
 | Typeahead | ⬜ P8 | Progressive enhancement over the existing form |
-| Quote basket + form | ⬜ P9 | Three fields |
+| Quote basket + form | ✅ | Three fields; CSV export; server-authoritative lines |
 | Delivery/lead-time checker | ⬜ P9 | |
 
 ---

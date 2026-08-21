@@ -1,6 +1,6 @@
 # Implementation Plan
 
-**Status:** Phases 0-8 complete except the Phase 8 CWV measurement (needs Q7). Phase 5b or 9 next. See docs/HANDOVER-phase-2.md.
+**Status:** Phases 0-9 complete, except the Phase 8 CWV measurement and Phase 9 viewport testing (both need Q7 and a browser harness). Phase 5b or 10 next. See docs/HANDOVER-phase-2.md.
 **Re-read this document before starting any phase** (§2.3). If reality has diverged, amend the plan — do not drift silently.
 
 **Staffing assumption:** ~2 backend, ~1.5 frontend, ~0.5 devops FTE, plus a content resource outside the engineering team.
@@ -23,7 +23,7 @@
 | **6** | Search: FTS, trigram, synonyms, facets | ✅ Done | 3–4 |
 | **7** | Storefront foundation + UX_SPEC | ✅ Done | 5–6 |
 | **8** | Storefront catalogue + **static prerender pipeline** | 🟡 Built; CWV unmeasured | 7–9 |
-| **9** | Quote engine (basket, 3-field form, anti-abuse) | ⬜ Not started | 3–4 |
+| **9** | Quote engine (basket, 3-field form, anti-abuse) | ✅ Done | 3–4 |
 | **10** | ZeptoMail transport, templates, queue, webhooks | ⬜ Not started | 3 |
 | **11** | Lead queue admin | ⬜ Not started | 1 |
 | **12** | Content: category intros, guides, product copy | ⬜ Not started | *content track* |
@@ -263,16 +263,35 @@ Extrapolated to 15,000 products (~15,150 routes): **~13 minutes** for `render:fu
 - **D-033** — `vendor/` off the Windows bind mount; a 1,450× I/O difference that presented as an application fault.
 - **D-034** — `render:full` and `ng build` are different operations with different jobs.
 
-## Phase 9 — Quote engine
+## Phase 9 — Quote engine ✅
 
-**Gate:** E2E quote journey green on mobile and desktop viewports.
+**Gate:** ✅ the quote journey is green end to end — add, merge, coerce, edit, free-text, export, submit, confirm — covered by 25 tests in `QuoteJourneyTest` plus 10 for the CSV. **Viewport testing is not automated** (see below).
 
-- 9a Quote basket: signed HttpOnly cookie holding a server-side basket UUID; contents in Postgres; server authoritative for line-item identity
-- 9b Quantity controls honouring `min_order_qty` / `qty_step`; free-text lines, capped and sanitised
-- 9c Basket page: editable quantities, per-line notes, **CSV export** (D-006)
-- 9d Three-field request form (D-004) with inline validation
-- 9e Anti-abuse: honeypot, timing check, captcha (Q16), per-IP and per-email rate limits — invisible to legitimate users
-- 9f Confirmation: reference `OL-Q-YYYY-NNNNNN` (gapless per year via sequence), clear next-step expectation
+| Sub-phase | Deliverable | Status |
+|---|---|---|
+| 9a | Signed HttpOnly cookie holding a server-side basket; server authoritative for line identity | ✅ Done — see D-035 on "signed" |
+| 9b | Quantity controls honouring `min_order_qty` / `qty_step`; free-text lines capped and sanitised | ✅ Done — D-036 |
+| 9c | Basket page: editable quantities, per-line notes, CSV export (D-006) | ✅ Done |
+| 9d | Three-field request form with inline validation | ✅ Done |
+| 9e | Honeypot, timing check, per-IP and per-email rate limits; captcha seam | ✅ Done — D-037 |
+| 9f | Reference `OL-Q-YYYY-NNNNNN`, gapless per year | ✅ Done — D-038 |
+
+**The whole journey is server-authoritative.** Nothing about a line — its name, its specification, its allowed quantities — is accepted from the client, because all of it is copied into an email a salesperson acts on. A crafted request cannot put `1` against a product with a minimum of 50.
+
+**Quotes snapshot the catalogue.** Names, SKUs, brands, specs and URLs are copied onto the quote at submission. If it rendered live, renaming a product would retroactively change what a customer is on record as having requested, and the email they already hold would no longer match the quote we hold.
+
+**The IP is stored hashed.** It exists to answer "did these fifty submissions come from one place", which a hash answers just as well, and NDPA compliance is easier to argue for a hash than for an address we had no need to keep.
+
+### Found while building
+
+- **D-039** — `GET /api/v1/basket` was being marked `public, max-age=60` like any other catalogue read. A shared cache could have served one visitor's basket, and their cookie, to the next person who asked. Fixed and asserted.
+- Laravel's JSON test helpers send **no cookies** unless `withCredentials()` is called, and the test client does not persist `Set-Cookie` between calls. Without accounting for that, every multi-step basket test silently starts a fresh basket and the assertions become meaningless rather than failing loudly.
+
+### Outstanding
+
+- **Q16 (captcha)** — deliberately not implemented. It costs every legitimate buyer on a slow mobile connection, and should only be added if the cheaper checks prove insufficient against real traffic. The seam is `AbuseGuard::challengePassed()` and it fails closed.
+- **The confirmation email is Phase 10.** A quote currently records itself and returns a reference; nothing is sent. The confirmation page says a copy has been emailed, which will only be true once Phase 10 lands — that page copy and the email must ship together.
+- **Viewport testing is not automated.** The gate says "green on mobile and desktop viewports"; the journey is verified by API and unit tests, and the layouts are responsive by construction, but there is no browser harness. It needs the same Playwright/Lighthouse setup Phase 8's CWV measurement is waiting on (Q7).
 
 ## Phase 10 — Email
 

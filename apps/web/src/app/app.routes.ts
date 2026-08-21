@@ -47,6 +47,20 @@ export const routes: Routes = [
     loadComponent: () => import('./features/search/search-page').then((m) => m.SearchPage),
   },
   {
+    /*
+     * The basket and the request form are per-visitor and noindex. They are
+     * prerendered as shells so the URLs resolve to files on a static host;
+     * their contents arrive client side from the basket cookie.
+     */
+    path: 'quote',
+    loadComponent: () => import('./features/quote/basket-page').then((m) => m.BasketPage),
+  },
+  {
+    path: 'quote/request',
+    loadComponent: () =>
+      import('./features/quote/quote-request-page').then((m) => m.QuoteRequestPage),
+  },
+  {
     // Flat product URLs (D-008): one product, one URL, whatever its categories.
     path: 'p/:slug',
     loadComponent: () =>

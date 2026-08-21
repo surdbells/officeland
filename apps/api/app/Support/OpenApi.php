@@ -242,6 +242,55 @@ use OpenApi\Attributes as OA;
     ],
     type: 'object',
 )]
+#[OA\Schema(
+    schema: 'BasketLine',
+    description: 'One line of a quote basket. The quantity rules travel with the line so the storefront stepper cannot offer a quantity the server would silently change.',
+    required: ['id', 'qty', 'name', 'is_free_text'],
+    properties: [
+        new OA\Property(property: 'id', description: 'Addressed by every mutation, and scoped to the caller'.'"'.'s own basket server-side.', type: 'string'),
+        new OA\Property(property: 'qty', type: 'integer', minimum: 1),
+        new OA\Property(property: 'note', type: 'string', nullable: true),
+        new OA\Property(property: 'min_order_qty', type: 'integer', minimum: 1),
+        new OA\Property(property: 'qty_step', type: 'integer', minimum: 1),
+        new OA\Property(property: 'quantity_note', type: 'string', nullable: true, example: 'Minimum 4, in multiples of 5'),
+        new OA\Property(property: 'is_free_text', description: 'A request for something the catalogue does not list.', type: 'boolean'),
+        new OA\Property(property: 'name', type: 'string'),
+        new OA\Property(property: 'url', type: 'string', nullable: true),
+        new OA\Property(property: 'sku', type: 'string', nullable: true),
+        new OA\Property(property: 'mpn', type: 'string', nullable: true),
+        new OA\Property(property: 'brand', type: 'string', nullable: true),
+        new OA\Property(property: 'availability', type: 'string', nullable: true),
+        new OA\Property(property: 'lead_time_days', type: 'integer', nullable: true),
+    ],
+    type: 'object',
+)]
+#[OA\Schema(
+    schema: 'Basket',
+    description: 'The quote basket. No prices and no total anywhere (D-002). An absent basket is returned as an empty one, so the storefront needs one code path rather than two.',
+    required: ['items', 'line_count', 'unit_count'],
+    properties: [
+        new OA\Property(property: 'uuid', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'items', type: 'array', items: new OA\Items(ref: '#/components/schemas/BasketLine')),
+        new OA\Property(property: 'line_count', type: 'integer'),
+        new OA\Property(property: 'unit_count', type: 'integer'),
+        new OA\Property(property: 'max_lines', type: 'integer'),
+        new OA\Property(property: 'expires_at', type: 'string', format: 'date-time', nullable: true),
+    ],
+    type: 'object',
+)]
+#[OA\Schema(
+    schema: 'QuoteConfirmation',
+    description: 'What a buyer is shown after submitting. The reference is the string they quote on the phone.',
+    required: ['reference', 'email'],
+    properties: [
+        new OA\Property(property: 'reference', type: 'string', example: 'OL-Q-2026-000001'),
+        new OA\Property(property: 'email', type: 'string', format: 'email'),
+        new OA\Property(property: 'submitted_at', type: 'string', format: 'date-time', nullable: true),
+        new OA\Property(property: 'line_count', type: 'integer'),
+        new OA\Property(property: 'response_expectation', type: 'string', example: 'We respond within one business day.'),
+    ],
+    type: 'object',
+)]
 final class OpenApi
 {
     //

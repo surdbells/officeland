@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
 import { CatalogueApi } from './core/api/catalogue-api';
+import { BasketStore } from './core/quotes/basket-store';
 import { SiteFooter } from './core/layout/site-footer';
 import { SiteHeader } from './core/layout/site-header';
 import { SeoService } from './core/seo/seo.service';
@@ -32,7 +33,15 @@ export class App {
   private readonly api = inject(CatalogueApi);
   private readonly seo = inject(SeoService);
 
-  protected readonly quoteCount = signal(0);
+  /*
+   * The header badge mirrors the server-owned basket. Loaded once, in the
+   * browser only: during prerender there is no visitor and no cookie, and a
+   * fetch here would run once per route and bake one basket into every static
+   * page.
+   */
+  private readonly basket = inject(BasketStore);
+
+  protected readonly quoteCount = this.basket.unitCount;
 
   /**
    * Navigation failing must not take the page down. A category page without a
@@ -53,5 +62,7 @@ export class App {
      * sameAs is empty until the real social URLs arrive (Q17).
      */
     this.seo.setSiteStructuredData([organizationSchema(), webSiteSchema()]);
+
+    this.basket.load();
   }
 }

@@ -451,6 +451,116 @@ components:
             seo:
               $ref: '#/components/schemas/Seo'
           type: object
+    BasketLine:
+      description: 'One line of a quote basket. The quantity rules travel with the line so the storefront stepper cannot offer a quantity the server would silently change.'
+      required:
+        - id
+        - qty
+        - name
+        - is_free_text
+      properties:
+        id:
+          description: 'Addressed by every mutation, and scoped to the caller"s own basket server-side.'
+          type: string
+        qty:
+          type: integer
+          minimum: 1
+        note:
+          type:
+            - string
+            - 'null'
+        min_order_qty:
+          type: integer
+          minimum: 1
+        qty_step:
+          type: integer
+          minimum: 1
+        quantity_note:
+          type:
+            - string
+            - 'null'
+          example: 'Minimum 4, in multiples of 5'
+        is_free_text:
+          description: 'A request for something the catalogue does not list.'
+          type: boolean
+        name:
+          type: string
+        url:
+          type:
+            - string
+            - 'null'
+        sku:
+          type:
+            - string
+            - 'null'
+        mpn:
+          type:
+            - string
+            - 'null'
+        brand:
+          type:
+            - string
+            - 'null'
+        availability:
+          type:
+            - string
+            - 'null'
+        lead_time_days:
+          type:
+            - integer
+            - 'null'
+      type: object
+    Basket:
+      description: 'The quote basket. No prices and no total anywhere (D-002). An absent basket is returned as an empty one, so the storefront needs one code path rather than two.'
+      required:
+        - items
+        - line_count
+        - unit_count
+      properties:
+        uuid:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BasketLine'
+        line_count:
+          type: integer
+        unit_count:
+          type: integer
+        max_lines:
+          type: integer
+        expires_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+      type: object
+    QuoteConfirmation:
+      description: 'What a buyer is shown after submitting. The reference is the string they quote on the phone.'
+      required:
+        - reference
+        - email
+      properties:
+        reference:
+          type: string
+          example: OL-Q-2026-000001
+        email:
+          type: string
+          format: email
+        submitted_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        line_count:
+          type: integer
+        response_expectation:
+          type: string
+          example: 'We respond within one business day.'
+      type: object
 tags:
   -
     name: Navigation

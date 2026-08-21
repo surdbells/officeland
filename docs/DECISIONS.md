@@ -321,6 +321,65 @@ None of it looks like an I/O problem from the inside, which is why it was misrea
 **Extrapolation.** At 15,000 products the manifest is ~15,150 routes: **~13 minutes** for `render:full`, and 1.5–3 hours for a full `ng build` prerender. That is the floor on time-to-recover for any markup or global-SEO defect, and it is why it is in the runbook rather than in someone's head.
 **Status:** architect decision, measured on the development stack; re-measure on the production host (Q7).
 
+### D-035 — The basket cookie is an opaque token, not a signed payload
+**Decision:** the `ol_basket` cookie carries 64 random characters. The server stores only its SHA-256, and everything else lives in Postgres.
+
+§9a asks for a "signed HttpOnly cookie". The cookie is HttpOnly, SameSite=Lax and Secure outside local development, but it is **not signed** — and does not need to be, because signing provides integrity and integrity is already guaranteed by construction:
+
+- The value is ~380 bits of server-generated randomness, so it cannot be guessed.
+- It is compared against a stored hash, so a tampered value simply matches nothing and is treated as "no basket" — exactly the outcome a failed signature check would produce.
+- It carries no claims, so there is nothing for a signature to protect.
+
+Storing the **hash** rather than the token means a database leak does not hand anyone else's basket to an attacker. That matters because a basket is about to carry an email address and a phone number.
+
+**Note on encryption.** Laravel's `EncryptCookies` belongs to the `web` middleware group, and these are `api` routes, so the cookie is transmitted in plaintext. That is consistent with the above and is asserted by `QuoteJourneyTest`, which reads the cookie value directly.
+
+**SameSite=Lax, not Strict.** A buyer arriving from a Google result and adding an item in the same visit must keep one basket. Strict drops the cookie on that first cross-site navigation and silently starts them a second one.
+**Status:** architect decision; the spec's intent (the client cannot forge or tamper with basket identity) is met by a different mechanism.
+
+### D-036 — Quantities are coerced upward, never rejected
+**Decision:** a quantity that violates `min_order_qty` or `qty_step` is rounded **up** to the nearest allowed value, server-side, and the coerced value is returned.
+
+A buyer who types 7 against a product sold in multiples of 5 has not made an error worth an error message — they want about seven. Rounding to 10 and saying so is the behaviour that gets the quote sent; a validation error is the behaviour that loses it. Rounding **down** would silently give them less than they asked for, which they would not notice until delivery.
+
+Steps count **from the minimum**, not from zero: a product with a minimum of 4 sold in fives allows 4, 9, 14 — not 5, 10, 15, which would exclude the minimum the product itself declares.
+
+The storefront applies the same rules in its steppers, but that is a convenience. The server is authoritative (§9a), and quantity is exactly the field where a crafted request would otherwise put `1` against a product with a minimum of 50 — producing a quote a salesperson has to catch by eye.
+
+**Guarded by:** `QuoteJourneyTest`, which asserts coercion up, coercion to the minimum, and step-from-minimum.
+**Status:** architect decision.
+
+### D-037 — A rejected submission is always reported, never silently dropped
+**Decision:** every anti-abuse rejection returns an error the caller can see. Nothing is accepted-and-discarded.
+
+The tempting alternative — accept the request, return a confirmation, and quietly bin it — is the worst failure this form has. A real buyer whose submission tripped a heuristic believes their request was sent and waits for a reply that is never coming, and **nobody ever learns it happened**. A visible rejection at least sends them to the phone number.
+
+The checks are chosen to be invisible to legitimate users (§9e): a honeypot, a timing floor, and per-IP and per-email rate limits. All are optional server-side, so the form still works for a client that never ran JavaScript — traffic this site must not turn away.
+
+**Deliberately absent: a captcha (Q16).** It is a real cost to every legitimate buyer on a slow Nigerian mobile connection and should only be added if the cheaper checks prove insufficient against real traffic. The seam is `AbuseGuard::challengePassed()`, which **fails closed** if a provider is configured but unimplemented.
+
+The rate limiter is hit only on **success**, so a few typos do not consume a real buyer's allowance.
+**Status:** architect decision.
+
+### D-038 — Quote references are gapless, which is why they are not a sequence
+**Decision:** `OL-Q-YYYY-NNNNNN`, issued from a per-year counter row locked with `SELECT … FOR UPDATE` inside the submitting transaction.
+
+§9f asks for a reference that is "gapless per year via sequence". Those two requirements conflict: a PostgreSQL sequence is explicitly **not** gapless. `nextval()` is non-transactional by design — that is what makes it fast and lock-free — so a rolled-back submission burns its number permanently.
+
+A locked counter row is gapless: the number is consumed only if the quote commits. The cost is that submissions serialise against each other for the duration of one insert, which at lead volume — tens per day — is unmeasurable. It would be the wrong trade for orders; it is the right one here.
+
+`ReferenceGenerator` **throws** if called outside a transaction. That is not defensive decoration: without a surrounding transaction the lock lasts only for the statement, two callers read the same value, and the unique index turns that into a failed submission for a real customer.
+**Status:** architect decision; the spec's mechanism is contradicted, its intent is met.
+
+### D-039 — Basket responses must never enter a shared cache
+**Decision:** `SetCachePolicy` marks `api/*/basket` and `api/*/basket/*` as `private, no-store`.
+
+Found during Phase 9. `GET /api/v1/basket` is a 200 GET that looks exactly like a cacheable catalogue read, and the middleware's private-path list only covered `quote*`. Left as it was, a shared cache could have stored one visitor's basket — and the `Set-Cookie` header issuing their basket token — and served it to the next person who asked.
+
+**Guarded by:** `QuoteJourneyTest::test_the_basket_is_never_publicly_cacheable`.
+**Status:** architect finding, fixed and asserted.
+
+
 
 
 

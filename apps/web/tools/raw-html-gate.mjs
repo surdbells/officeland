@@ -127,6 +127,7 @@ const templateOf = (url) => {
   if (url === '/c/') return 'category-index';
   if (url === '/brands/') return 'brand-index';
   if (url === '/search/') return 'search';
+  if (url === '/quote/' || url === '/quote/request/') return 'quote';
   if (url === '/404/') return 'error';
   if (url.startsWith('/p/')) return 'product';
   if (url.startsWith('/brands/')) return 'brand';
@@ -142,7 +143,7 @@ const BREADCRUMBED = new Set(['category', 'category-index', 'product', 'brand', 
  * must not demand a description or structured data from them — and must fail
  * if they ever become indexable.
  */
-const NOINDEX_BY_DESIGN = new Set(['search', 'error']);
+const NOINDEX_BY_DESIGN = new Set(['search', 'error', 'quote']);
 
 // ── the assertions ─────────────────────────────────────────────────────────
 
@@ -370,7 +371,7 @@ async function main() {
     notes.push(`${template}: ${take} of ${pages.length}`);
   }
 
-  for (const required of ['home', 'product', 'category', 'brand', 'brand-index', 'search']) {
+  for (const required of ['home', 'product', 'category', 'brand', 'brand-index', 'search', 'quote']) {
     if (!byTemplate.has(required)) {
       failures.push(`no ${required} pages were rendered at all`);
     }

@@ -11,8 +11,8 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Strong ETags and cache headers on API reads (MASTER BUILD PROMPT 8.3).
  *
- * Catalogue reads:  public, max-age=60, stale-while-revalidate=600
- * Quote endpoints:  private, no-store
+ * Catalogue reads:      public, max-age=60, stale-while-revalidate=600
+ * Basket and quotes:    private, no-store
  *
  * The ETag matters more here than the max-age. Under D-009 the storefront is
  * prerendered, so these endpoints are consumed mostly by the render worker and
@@ -71,9 +71,18 @@ final class SetCachePolicy
         return $response;
     }
 
+    /**
+     * Per-visitor endpoints, which must never enter a shared cache.
+     *
+     * The basket is the important one and the easiest to miss: it is a GET, it
+     * returns 200, and its response carries a Set-Cookie. Without this it
+     * would be marked `public, max-age=60` like any other catalogue read, and
+     * a shared cache could hand one visitor's basket — and their cookie — to
+     * the next person who asked.
+     */
     private function isPrivate(Request $request): bool
     {
-        return $request->is('api/*/quote*', 'api/*/quotes*');
+        return $request->is('api/*/quote*', 'api/*/quotes*', 'api/*/basket', 'api/*/basket/*');
     }
 
     /**

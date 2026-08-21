@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\BasketController;
 use App\Http\Controllers\Api\V1\BrandController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\NavigationController;
 use App\Http\Controllers\Api\V1\ProductController;
+use App\Http\Controllers\Api\V1\QuoteController;
 use App\Http\Controllers\Api\V1\RenderManifestController;
 use App\Http\Controllers\Api\V1\SearchController;
 use Illuminate\Support\Facades\Route;
@@ -40,6 +42,22 @@ Route::prefix('v1')->name('api.')->group(function (): void {
     Route::get('render/manifest', RenderManifestController::class)->name('render.manifest');
 
     Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
+
+    /*
+     * Quote basket and submission (Phase 9).
+     *
+     * The only WRITE surface on the public API, and the only one that is not
+     * cacheable: identity comes from a signed HttpOnly cookie, and the server
+     * is authoritative for every line (section 9a).
+     */
+    Route::get('basket', [BasketController::class, 'show'])->name('basket.show');
+    Route::post('basket/items', [BasketController::class, 'addProduct'])->name('basket.add');
+    Route::post('basket/items/free-text', [BasketController::class, 'addFreeText'])->name('basket.add-free-text');
+    Route::patch('basket/items/{item}', [BasketController::class, 'updateItem'])->name('basket.update');
+    Route::delete('basket/items/{item}', [BasketController::class, 'removeItem'])->name('basket.remove');
+    Route::delete('basket', [BasketController::class, 'clear'])->name('basket.clear');
+
+    Route::post('quotes', [QuoteController::class, 'store'])->name('quotes.store');
 
     // Search results are noindex (SEO_SPEC.md section 2) and client-rendered,
     // so these are the one catalogue surface consumed at request time rather

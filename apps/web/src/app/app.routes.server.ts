@@ -57,6 +57,16 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Prerender,
   },
   {
+    // Shells only: the basket belongs to the browser and the page is noindex,
+    // but the URL still has to resolve to a file on a static host.
+    path: 'quote',
+    renderMode: RenderMode.Prerender,
+  },
+  {
+    path: 'quote/request',
+    renderMode: RenderMode.Prerender,
+  },
+  {
     path: 'p/:slug',
     renderMode: RenderMode.Prerender,
     getPrerenderParams: async () => {

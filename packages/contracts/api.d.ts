@@ -247,6 +247,49 @@ export interface components {
             };
             seo?: components["schemas"]["Seo"];
         };
+        /** @description One line of a quote basket. The quantity rules travel with the line so the storefront stepper cannot offer a quantity the server would silently change. */
+        BasketLine: {
+            /** @description Addressed by every mutation, and scoped to the caller"s own basket server-side. */
+            id: string;
+            qty: number;
+            note?: string | null;
+            min_order_qty?: number;
+            qty_step?: number;
+            /** @example Minimum 4, in multiples of 5 */
+            quantity_note?: string | null;
+            /** @description A request for something the catalogue does not list. */
+            is_free_text: boolean;
+            name: string;
+            url?: string | null;
+            sku?: string | null;
+            mpn?: string | null;
+            brand?: string | null;
+            availability?: string | null;
+            lead_time_days?: number | null;
+        };
+        /** @description The quote basket. No prices and no total anywhere (D-002). An absent basket is returned as an empty one, so the storefront needs one code path rather than two. */
+        Basket: {
+            /** Format: uuid */
+            uuid?: string | null;
+            items: components["schemas"]["BasketLine"][];
+            line_count: number;
+            unit_count: number;
+            max_lines?: number;
+            /** Format: date-time */
+            expires_at?: string | null;
+        };
+        /** @description What a buyer is shown after submitting. The reference is the string they quote on the phone. */
+        QuoteConfirmation: {
+            /** @example OL-Q-2026-000001 */
+            reference: string;
+            /** Format: email */
+            email: string;
+            /** Format: date-time */
+            submitted_at?: string | null;
+            line_count?: number;
+            /** @example We respond within one business day. */
+            response_expectation?: string;
+        };
     };
     responses: never;
     parameters: never;

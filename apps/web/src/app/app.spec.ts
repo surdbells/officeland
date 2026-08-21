@@ -54,6 +54,16 @@ describe('App', () => {
 
     const http = TestBed.inject(HttpTestingController);
     http.expectOne('/api/v1/navigation').error(new ProgressEvent('network error'));
+
+    /*
+     * The shell also loads the basket for the header badge. It is answered
+     * with an empty basket rather than left open, because verify() treats an
+     * outstanding request as a leak — and this one is expected.
+     */
+    http.expectOne('/api/v1/basket').flush({
+      data: { items: [], line_count: 0, unit_count: 0 },
+    });
+
     fixture.detectChanges();
 
     const host = fixture.nativeElement as HTMLElement;
