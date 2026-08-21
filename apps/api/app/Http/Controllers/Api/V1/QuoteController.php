@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Mail\QuoteMailer;
 use App\Quotes\AbuseGuard;
 use App\Quotes\BasketSession;
 use App\Quotes\QuoteSubmitter;
@@ -25,6 +26,7 @@ final class QuoteController extends Controller
         private readonly BasketSession $session,
         private readonly QuoteSubmitter $submitter,
         private readonly AbuseGuard $guard,
+        private readonly QuoteMailer $mailer,
     ) {}
 
     public function store(Request $request): JsonResponse
@@ -88,6 +90,13 @@ final class QuoteController extends Controller
         }
 
         $this->guard->record($request, $data['email']);
+
+        /*
+         * After the quote is committed, never before. Both emails are queued
+         * (section 10c), so a provider outage delays a receipt rather than
+         * failing a submission we have already captured.
+         */
+        $this->mailer->sendForQuote($quote);
 
         /*
          * The basket cookie is cleared: the basket is submitted, and a buyer

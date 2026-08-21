@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\BasketController;
 use App\Http\Controllers\Api\V1\BrandController;
 use App\Http\Controllers\Api\V1\CategoryController;
+use App\Http\Controllers\Api\V1\MailWebhookController;
 use App\Http\Controllers\Api\V1\NavigationController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\QuoteController;
@@ -58,6 +59,16 @@ Route::prefix('v1')->name('api.')->group(function (): void {
     Route::delete('basket', [BasketController::class, 'clear'])->name('basket.clear');
 
     Route::post('quotes', [QuoteController::class, 'store'])->name('quotes.store');
+
+    /*
+     * ZeptoMail bounce and complaint webhooks (section 10d).
+     *
+     * Unauthenticated by design — the caller is ZeptoMail, which cannot hold
+     * our credentials — and therefore verified by HMAC signature inside the
+     * controller. An unverified webhook could suppress an arbitrary address,
+     * so the check is the whole security boundary here.
+     */
+    Route::post('webhooks/mail', MailWebhookController::class)->name('webhooks.mail');
 
     // Search results are noindex (SEO_SPEC.md section 2) and client-rendered,
     // so these are the one catalogue surface consumed at request time rather

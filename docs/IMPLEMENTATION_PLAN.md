@@ -1,6 +1,6 @@
 # Implementation Plan
 
-**Status:** Phases 0-9 complete, except the Phase 8 CWV measurement and Phase 9 viewport testing (both need Q7 and a browser harness). Phase 5b or 10 next. See docs/HANDOVER-phase-2.md.
+**Status:** Phases 0-10 built. Three gates remain open on external inputs: Phase 8 CWV (Q7 + a browser harness), Phase 9 viewport testing (same), and Phase 10 real sends (Q18 credentials). Phase 5b or 11 next. See docs/HANDOVER-phase-2.md.
 **Re-read this document before starting any phase** (§2.3). If reality has diverged, amend the plan — do not drift silently.
 
 **Staffing assumption:** ~2 backend, ~1.5 frontend, ~0.5 devops FTE, plus a content resource outside the engineering team.
@@ -24,7 +24,7 @@
 | **7** | Storefront foundation + UX_SPEC | ✅ Done | 5–6 |
 | **8** | Storefront catalogue + **static prerender pipeline** | 🟡 Built; CWV unmeasured | 7–9 |
 | **9** | Quote engine (basket, 3-field form, anti-abuse) | ✅ Done | 3–4 |
-| **10** | ZeptoMail transport, templates, queue, webhooks | ⬜ Not started | 3 |
+| **10** | ZeptoMail transport, templates, queue, webhooks | 🟡 Built; needs Q18 to send | 3 |
 | **11** | Lead queue admin | ⬜ Not started | 1 |
 | **12** | Content: category intros, guides, product copy | ⬜ Not started | *content track* |
 | **13** | Hardening: security, load, a11y, backup drill | ⬜ Not started | 4–5 |
@@ -293,18 +293,37 @@ Extrapolated to 15,000 products (~15,150 routes): **~13 minutes** for `render:fu
 - **The confirmation email is Phase 10.** A quote currently records itself and returns a reference; nothing is sent. The confirmation page says a copy has been emailed, which will only be true once Phase 10 lands — that page copy and the email must ship together.
 - **Viewport testing is not automated.** The gate says "green on mobile and desktop viewports"; the journey is verified by API and unit tests, and the layouts are responsive by construction, but there is no browser harness. It needs the same Playwright/Lighthouse setup Phase 8's CWV measurement is waiting on (Q7).
 
-## Phase 10 — Email
+## Phase 10 — Email 🟡
 
-**Gate:** real send to real inboxes; failure and retry path proven; bounce webhook verified.
-**Blocked by:** Q18 (ZeptoMail region, sending domain, SPF/DKIM/DMARC status, and an inventory of what `hostinger-reach` currently sends).
+**Gate:** ⏳ **not met, and cannot be without Q18.** The gate is "real send to real inboxes; failure and retry path proven; bounce webhook verified", and all three need live ZeptoMail credentials that the client holds on their own server. Everything up to that boundary is built and tested against the verified API contract; the procedure to close the gate is `RUNBOOK.md` §8.6.
 
-- 10a `ZeptoMailApiTransport implements TransportInterface`, registered via `Mail::extend`. **Verify endpoint, headers and payload schema against live ZeptoMail documentation before implementing** (§13.2).
-- 10b Full mapping: to/cc/bcc/reply-to, html/text bodies, custom headers, `client_reference` set to the quote reference
-- 10c All mail queued via Redis — never inline in a web request. Exponential backoff, 5 attempts, dead-letter queue, Filament failed-send view with retry.
-- 10d Bounce and complaint webhooks with signature verification; suppression list enforced and visible in admin
-- 10e Templates: quote received (internal) · **quote confirmation receipt (customer, full details, HTML body only per D-006)** · contact form · admin invite / password reset. Responsive HTML + plain-text alternative, dark-mode safe, tested in Gmail/Outlook/Apple Mail.
-- 10f Per-send logging: message id, recipient, template, quote reference, status, provider response
-- 10g SPF/DKIM/DMARC documented in `RUNBOOK.md` as a **go-live blocker**
+| Sub-phase | Deliverable | Status |
+|---|---|---|
+| 10a | `ZeptoMailApiTransport implements TransportInterface`, via `Mail::extend` | ✅ Done — API verified against live docs first |
+| 10b | Full mapping: to/cc/bcc/reply-to, html/text, headers, `client_reference` | ✅ Done — 11 tests |
+| 10c | Queued via Redis, exponential backoff, 5 attempts, failed-send view | ✅ Done |
+| 10d | Bounce/complaint webhooks with signature verification; suppression enforced and visible | ✅ Done — 14 tests |
+| 10e | Templates: confirmation receipt (HTML body, D-006) and internal notification | 🟡 Built; **not yet tested in Gmail/Outlook/Apple Mail** |
+| 10f | Per-send logging: request id, recipient, template, reference, status | ✅ Done |
+| 10g | SPF/DKIM/DMARC documented as a go-live blocker | ✅ Done — `RUNBOOK.md` §8.1 |
+
+**The API contract was verified before implementation, as §10a demands.** That mattered: `Authorization: zoho-enczapikey <token>` is not `Bearer`, recipients nest inside an `email_address` object, and the bodies are `htmlbody`/`textbody`. ZeptoMail accepts a structurally wrong request with a **200 and delivers nothing** — so every field name is asserted (D-040).
+
+**The whole chain is proven at the wire.** `QuoteMailDeliveryTest` submits a real quote through the real endpoints and asserts the exact JSON that would reach ZeptoMail: subject, `client_reference`, both bodies, the product name in the receipt, and reply-to. Submission → mailer → mailable → Blade → transport → payload.
+
+**Two emails, opposite reply-to.** The customer's receipt replies to sales; the sales notification replies to **the customer**, so a lead is answered by hitting reply rather than copying an address out of the body.
+
+### Judgements worth knowing about
+
+- **D-041** — soft bounces do not suppress, and a suppressed customer still produces a sales notification. A bad email address must not become a lost order.
+- **D-042** — the webhook signature is the entire security boundary and fails closed. An unverified webhook could suppress any address an attacker names.
+- **D-043** — open and click tracking are off. A tracking pixel on a transactional receipt is a privacy cost the customer never agreed to, and rewritten links get receipts flagged as phishing.
+
+### Outstanding
+
+- **Q18 is now blocking.** Needed: the ZeptoMail **region** (a EU tenant on the `.com` endpoint returns a 401 that reads exactly like a bad key), the sending domain, SPF/DKIM/DMARC status, and **an inventory of what `hostinger-reach` currently sends** — anything still live starts failing the moment DMARC is enforced, and it will look like a ZeptoMail fault.
+- **Email client testing.** The templates are Laravel markdown mail, so they compile to the table-based inlined-CSS HTML Outlook needs and generate the plain-text alternative from one source. They have not been opened in Gmail, Outlook or Apple Mail, in light or dark mode. That is a manual step and belongs with the first real send.
+- **SPF/DKIM/DMARC are a go-live blocker.** Not a hardening task for afterwards: without them, confirmations land in spam, the customer concludes we never replied, and **nobody involved learns the email was the problem**.
 
 ## Phase 11 — Lead queue admin (D-005)
 

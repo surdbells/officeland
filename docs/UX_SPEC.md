@@ -159,7 +159,9 @@ The basket is server-owned and identified by an opaque HttpOnly cookie (D-035). 
 
 Anti-abuse is invisible: a honeypot, a timing floor, and per-IP and per-email limits. A rejection is always shown — accepting and discarding would leave a real buyer waiting for a reply nobody knows to send (D-037).
 
-The customer receives an HTML email receipt with the full quote detail; there is no PDF (Dompdf is out). **That email is Phase 10** — until it ships, the confirmation page's promise of a copy by email is not yet true.
+The customer receives an HTML email receipt with the full quote detail; there is no PDF (Dompdf is out), so the email body IS the record they keep.
+
+That email is built and queued (Phase 10). It will not actually leave the building until **Q18** supplies ZeptoMail credentials and SPF/DKIM/DMARC are published — so the confirmation page's promise of "a copy has gone to your email" becomes true at go-live configuration, not at deploy. See `RUNBOOK.md` §8.1: this is a go-live blocker.
 
 ---
 

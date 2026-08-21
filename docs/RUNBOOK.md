@@ -159,3 +159,105 @@ PgBouncer runs in **transaction pooling** mode. Two settings are load-bearing an
 Neither is a tuning knob. `PgBouncerConcurrencyTest` fails if either changes.
 
 Migrations use `pgsql_direct` and bypass the pooler entirely: DDL and long transactions do not behave correctly through a transaction pooler.
+
+---
+
+## 8. Email
+
+Transactional email goes through **ZeptoMail's HTTP API** (§13.2), not SMTP. Every message is queued through Redis; nothing is sent inline in a web request.
+
+### 8.1 GO-LIVE BLOCKER: SPF, DKIM and DMARC
+
+**The site must not go live until all three are published and verified.** This is not a hardening task to schedule afterwards.
+
+Without them, quote confirmations land in spam or are rejected outright. The customer concludes we never replied, the salesperson concludes the customer went quiet, and **nobody involved learns that the email was the problem**. It is the single most damaging failure available to this system, and it is invisible from every side.
+
+| Record | Where | What |
+|---|---|---|
+| **SPF** | `TXT` on the sending domain | Must include ZeptoMail's sender. One SPF record only — two is a permanent fail, not a merge. |
+| **DKIM** | `TXT` on the selector ZeptoMail issues | Published exactly as given; a re-wrapped or truncated key fails silently. |
+| **DMARC** | `TXT` on `_dmarc.<domain>` | Start at `p=none` with `rua=` reporting, and only tighten once the reports are clean. |
+
+**Verify before launch, not after:**
+
+```bash
+dig +short TXT officelandng.com | grep spf
+dig +short TXT <selector>._domainkey.officelandng.com
+dig +short TXT _dmarc.officelandng.com
+```
+
+Then send to a real Gmail address and inspect **Show original**: SPF, DKIM and DMARC must all read PASS. A test send that arrives is not evidence — it may have arrived *despite* a failure, and the next one may not.
+
+> **Do not start at `p=reject`.** The legacy site sends through `hostinger-reach`, and **Q18 asks for an inventory of what that currently sends**. Any of it still in use — order notifications, contact forms, password resets — starts failing the moment DMARC is enforced, and the failure will look like a ZeptoMail problem.
+
+### 8.2 Configuration
+
+Set on the client's own server. **The development team never holds these values.**
+
+| Variable | Notes |
+|---|---|
+| `MAIL_MAILER=zeptomail` | |
+| `ZEPTOMAIL_TOKEN` | The *send* token, from the Mail Agent's SMTP/API tab. |
+| `ZEPTOMAIL_ENDPOINT` | Defaults to `https://api.zeptomail.com/v1.1/email`. **EU tenants must use `https://api.zeptomail.eu/v1.1/email`** — see below. |
+| `ZEPTOMAIL_WEBHOOK_SECRET` | The webhook Authentication Key. A **different** secret from the send token. |
+| `MAIL_SALES_ADDRESS` | Where quote notifications land. |
+| `MAIL_FROM_ADDRESS` | Must be a verified sender on the ZeptoMail domain. |
+
+**Region (Q18).** A EU-hosted ZeptoMail tenant answers only on `api.zeptomail.eu`. Sending a EU token to the `.com` endpoint returns a **401** that reads exactly like a bad key, and the natural response — reissuing the token — does not help. Confirm the region before touching the token.
+
+**Two different secrets.** Using the send token as the webhook secret verifies nothing: every webhook is rejected, bounces never reach the suppression list, and the only symptom is a slowly worsening sender reputation.
+
+### 8.3 What gets sent
+
+| Template | To | Reply-to | Trigger |
+|---|---|---|---|
+| `quote.confirmation` | the customer | sales | quote submitted |
+| `quote.received` | sales | **the customer** | quote submitted |
+
+The customer receipt carries the **full quote detail in the HTML body** — D-006 removed the PDF, so the email *is* the record the customer keeps.
+
+The internal notification's reply-to is the customer, so a salesperson answers a lead by hitting reply rather than copying an address out of the body.
+
+### 8.4 Retries and failures
+
+Five attempts, backing off `10s → 60s → 5m → 15m`. The later delays are deliberately long: a provider blip clears in seconds, but a DNS or reputation problem takes minutes, and five fast retries burn every attempt before the problem can clear.
+
+```bash
+docker compose exec api php artisan queue:failed          # exhausted sends
+docker compose exec api php artisan queue:retry <id>      # after fixing the cause
+```
+
+**Check the cause before retrying.** A send that failed five times because DKIM is wrong will fail a sixth time, and each attempt adds to the reputation damage.
+
+Every send is logged as `mail.sent` with the request id, recipient, subject, quote reference and provider status. `client_reference` carries the quote reference into ZeptoMail's own logs, so *"was `OL-Q-2026-000042` ever sent"* is answerable from their dashboard alone.
+
+### 8.5 Bounces and the suppression list
+
+`POST /api/v1/webhooks/mail`, configured in ZeptoMail's webhook settings.
+
+Verified by HMAC-SHA256 over the raw body, from the `producer-signature` header. The endpoint is unauthenticated by necessity — the caller cannot hold our credentials — so **the signature is the entire security boundary**: an unverified webhook could suppress any address an attacker names, which is a denial of service against our own customers delivered through our own bounce handling.
+
+It **fails closed**: with no secret configured, every webhook is rejected.
+
+| Event | Action |
+|---|---|
+| hard bounce | suppressed permanently |
+| spam complaint | suppressed permanently |
+| soft bounce | logged only |
+| opens, clicks | ignored |
+
+A **soft** bounce is not suppressed. A full mailbox clears on its own, and suppressing on the first one would permanently stop writing to a customer whose inbox was briefly full — losing orders to fix a problem that fixed itself.
+
+Suppressions are visible and releasable at **Quotes → Email suppressions**. Releasing is deliberate and records who did it. Only release when you know the mailbox works: sending to a dead address re-earns the bounce, and repeated bounces to the same address are what damage the sending domain.
+
+**A suppressed customer still generates a sales notification.** They get no receipt — recorded on the quote as `confirmation_suppressed` — so sales phones instead. A bad email address must not become a lost order.
+
+### 8.6 Verifying a real send
+
+The Phase 10 gate — *real send to real inboxes, failure and retry path proven, bounce webhook verified* — **requires Q18 credentials and cannot be completed without them.** Once they exist:
+
+1. Publish SPF/DKIM/DMARC (§8.1) and confirm all three PASS in Gmail's *Show original*.
+2. Submit a real quote and confirm both emails arrive.
+3. Send to a known-invalid address on the sending domain, confirm the webhook fires and the address appears in the suppression list.
+4. Break the token deliberately, confirm the job retries and lands in `queue:failed`, then fix it and `queue:retry`.
+5. Render both templates in Gmail, Outlook and Apple Mail, in light and dark mode.

@@ -379,6 +379,58 @@ Found during Phase 9. `GET /api/v1/basket` is a 200 GET that looks exactly like 
 **Guarded by:** `QuoteJourneyTest::test_the_basket_is_never_publicly_cacheable`.
 **Status:** architect finding, fixed and asserted.
 
+### D-040 — The ZeptoMail payload shape is asserted field by field, because a wrong one succeeds
+**Decision:** `ZeptoMailTransportTest` asserts every field name against the live API documentation rather than against the implementation.
+
+Verified before implementing, as §10a requires:
+
+| | |
+|---|---|
+| Endpoint | `POST https://api.zeptomail.com/v1.1/email` (EU: `api.zeptomail.eu`) |
+| Authorization | `zoho-enczapikey <token>` — **not** `Bearer`; the prefix is part of the value |
+| Recipients | `to[].email_address.{address,name}` — **nested**, not flat |
+| Bodies | `htmlbody` / `textbody` — one word, no separator |
+| Reference | `client_reference` |
+
+**Why this needs tests rather than care.** ZeptoMail accepts a structurally wrong request with a **200** and delivers nothing. A flat `{address,name}` recipient, or `html_body` instead of `htmlbody`, produces a success response and silence. On the quote pipeline, silence is the failure the entire project exists to avoid — the customer believes they were answered, sales believes the customer went quiet, and nobody learns otherwise.
+
+Two of these are actively misleading: `Bearer` returns a **401 that reads exactly like a bad token**, and a EU tenant hit on the `.com` endpoint returns the *same* 401. The natural response to both — reissue the token — does not help.
+**Status:** architect decision; API shape verified against live documentation on implementation day.
+
+### D-041 — Soft bounces do not suppress
+**Decision:** only hard bounces and spam complaints add to the suppression list. Soft bounces are logged and otherwise ignored.
+
+A soft bounce is a full mailbox or a temporary server failure, and it clears on its own. Suppressing on the first one would permanently stop writing to a customer whose inbox was briefly full — losing orders to fix a problem that had already fixed itself. Opens and clicks are ignored entirely: tracking is off by default, and we do not want a record of who read what.
+
+**A suppressed customer still generates a sales notification.** The two messages have different recipients and different consequences: if a customer's address hard-bounced, sales must still be told the lead exists, because they can phone. Dropping both would turn a bad email address into a lost order. The suppressed receipt is recorded on the quote as `confirmation_suppressed`, so the salesperson knows to call rather than ask "did you not see my email?".
+
+Releasing a suppression is manual and attributed, never an automatic expiry: an expiry quietly resumes sending to a dead address, re-earns the bounce, and repeated bounces to one address are exactly what damages a sending domain.
+**Status:** architect decision.
+
+### D-042 — Webhook signature verification is the entire security boundary, and fails closed
+**Decision:** HMAC-SHA256 over the **raw request body**, from the `producer-signature` header, with a five-minute freshness window and constant-time comparison. No secret configured means every webhook is rejected.
+
+The endpoint is unauthenticated by necessity — ZeptoMail cannot hold our credentials — so the signature is not a formality. An unverified webhook could suppress **any address an attacker names**: a denial of service against our own customers, delivered through our own bounce handling.
+
+Four details are load-bearing and each fails silently if got wrong:
+
+- **The raw body, not the decoded array.** JSON decode/re-encode does not round-trip byte-for-byte — key order, unicode escaping and number formatting all change — so the bytes that arrived are the bytes that must be hashed.
+- **Split on the first `=` only.** A base64 signature is frequently `=`-padded, and splitting on every `=` truncates it.
+- **A freshness window.** Without it a captured webhook can be replayed indefinitely to suppress an address on demand.
+- **`hash_equals`.** A fast comparison leaks how much of the signature matched, which is enough to forge one byte at a time.
+
+**The webhook secret is a different secret from the send token.** They are issued independently by ZeptoMail. Reusing one for the other verifies nothing, rejects every webhook, and the only symptom is bounces never reaching the suppression list while the sender reputation slowly degrades.
+**Status:** architect decision; webhook contract verified against live documentation.
+
+### D-043 — Open and click tracking are off by default
+**Decision:** `track_opens` and `track_clicks` are omitted unless explicitly enabled per mailer.
+
+An open pixel and rewritten links on a **transactional receipt** are a privacy cost the customer never agreed to — they asked for a quote, not to be measured. Rewritten links are also a common reason a receipt is flagged as phishing, which costs delivery of the exact message that matters most.
+
+Configurable rather than removed, because a future marketing mailer may legitimately want them; the default belongs on the side of the customer.
+**Status:** architect decision.
+
+
 
 
 

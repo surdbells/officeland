@@ -18,6 +18,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Send log channel (section 10f)
+    |--------------------------------------------------------------------------
+    |
+    | Per-send records go here: request id, recipient, template, quote
+    | reference, status and the provider response. Separate from the
+    | application log because "was this quote emailed" is an operational
+    | question asked under pressure, and answering it should not mean grepping
+    | past every other log line.
+    |
+    */
+    'log_channel' => env('MAIL_LOG_CHANNEL'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sales inbox
+    |--------------------------------------------------------------------------
+    |
+    | Where quote notifications land, and the reply-to on the customer's
+    | receipt. A customer replying to their receipt reaches a person.
+    |
+    */
+    'sales_address' => env('MAIL_SALES_ADDRESS', 'sales@officelandng.com'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Mailer Configurations
     |--------------------------------------------------------------------------
     |
@@ -36,6 +61,43 @@ return [
     */
 
     'mailers' => [
+
+        /*
+        |----------------------------------------------------------------------
+        | ZeptoMail (section 13.2)
+        |----------------------------------------------------------------------
+        |
+        | The transactional sender. Credentials are entered by the client on
+        | their own server and are never held by the development team, so
+        | everything here comes from the environment and nothing is defaulted
+        | to a working value.
+        |
+        | REGION MATTERS (Q18). A EU-hosted ZeptoMail tenant answers only on
+        | api.zeptomail.eu; sending to the .com endpoint with a EU token
+        | returns a 401 that reads exactly like a bad key, which is a slow and
+        | miserable thing to debug at go-live.
+        |
+        */
+        'zeptomail' => [
+            'transport' => 'zeptomail',
+            'token' => env('ZEPTOMAIL_TOKEN'),
+            'endpoint' => env('ZEPTOMAIL_ENDPOINT', 'https://api.zeptomail.com/v1.1/email'),
+            'timeout' => (int) env('ZEPTOMAIL_TIMEOUT', 15),
+
+            // Off by default: an open pixel and rewritten links on a
+            // transactional receipt are a privacy cost the customer did not
+            // agree to, and rewritten links get receipts flagged as phishing.
+            'track_opens' => (bool) env('ZEPTOMAIL_TRACK_OPENS', false),
+            'track_clicks' => (bool) env('ZEPTOMAIL_TRACK_CLICKS', false),
+
+            /*
+             * Shared secret for webhook signature verification (section 10d).
+             * Separate from the send token: they are issued independently by
+             * ZeptoMail, and reusing one for the other silently fails to
+             * verify every webhook.
+             */
+            'webhook_secret' => env('ZEPTOMAIL_WEBHOOK_SECRET'),
+        ],
 
         'smtp' => [
             'transport' => 'smtp',
