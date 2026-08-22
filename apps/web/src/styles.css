@@ -71,9 +71,78 @@
   --font-heading: "Montserrat", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
 
+  /* --- Display type ------------------------------------------------------
+     A modular scale for headline sizes, so display type is chosen from a
+     ramp rather than reached for ad hoc. The "premium" quality in a
+     reference like pixfort is mostly this: a small number of deliberate
+     sizes, tight tracking as they grow, and generous leading on body text.
+
+     Negative tracking above ~30px is doing most of the work. Large type set
+     at default tracking reads loose and cheap; the bigger it gets, the
+     tighter it needs to be. */
+  --text-display-sm: 1.875rem;
+  --text-display-sm--line-height: 1.15;
+  --text-display-sm--letter-spacing: -0.015em;
+  --text-display: 2.5rem;
+  --text-display--line-height: 1.1;
+  --text-display--letter-spacing: -0.02em;
+  --text-display-lg: 3.25rem;
+  --text-display-lg--line-height: 1.05;
+  --text-display-lg--letter-spacing: -0.025em;
+  --text-display-xl: 4rem;
+  --text-display-xl--line-height: 1;
+  --text-display-xl--letter-spacing: -0.03em;
+
+  /* --- Elevation ---------------------------------------------------------
+     Two-layer shadows: a tight contact shadow plus a wider ambient one.
+
+     A single large blur is what makes a card look like a 2012 bootstrap
+     panel. Real objects cast a sharp shadow where they meet the surface and
+     a soft one further out, and reproducing that is most of the difference
+     between "has a box-shadow" and "looks considered".
+
+     Low opacity and a blue-black tint rather than pure black -- shadows on a
+     white page pick up the ambient colour, and neutral grey reads muddy. */
+  --shadow-xs: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 1px rgb(16 24 40 / 0.03);
+  --shadow-sm: 0 1px 3px rgb(16 24 40 / 0.06), 0 1px 2px rgb(16 24 40 / 0.04);
+  --shadow-md: 0 4px 8px -2px rgb(16 24 40 / 0.08), 0 2px 4px -2px rgb(16 24 40 / 0.04);
+  --shadow-lg: 0 12px 16px -4px rgb(16 24 40 / 0.08), 0 4px 6px -2px rgb(16 24 40 / 0.03);
+  --shadow-xl: 0 20px 24px -4px rgb(16 24 40 / 0.08), 0 8px 8px -4px rgb(16 24 40 / 0.03);
+
+  /* A tinted lift for brand-coloured surfaces. A neutral shadow under a
+     saturated blue card reads grey and dirty. */
+  --shadow-brand: 0 12px 24px -6px rgb(0 70 191 / 0.25);
+
+  /* --- Radius ------------------------------------------------------------
+     One step larger than Tailwind's defaults throughout. Softer corners are
+     the single cheapest signal of a considered interface, and the ramp stays
+     proportional so a small control and a large panel look related. */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.75rem;
+
+  /* --- Motion ------------------------------------------------------------
+     Named easings so movement is consistent rather than whatever each
+     component reached for. `--ease-out-soft` decelerates hard at the end,
+     which is what makes a hover feel responsive rather than floaty.
+
+     Everything here is overridden to ~0 by the prefers-reduced-motion block
+     at the foot of this file. */
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+
   /* --- Layout ----------------------------------------------------------- */
   --spacing-gutter: 1rem;
   --container-page: 80rem;
+
+  /* Vertical rhythm between page sections. Named rather than picked per
+     section, because inconsistent section padding is the thing that most
+     reliably makes a long page feel assembled rather than designed. */
+  --spacing-section: 4rem;
+  --spacing-section-lg: 6rem;
 
   /* Section 15.3: mobile-first, 320px upward. Most Nigerian traffic is mobile
      on constrained data, so the small end is the design target, not an
@@ -103,7 +172,26 @@
   h1, h2, h3, h4 {
     font-family: var(--font-heading);
     color: var(--color-ink-900);
+    /* Stops a heading leaving one orphaned word on the last line. */
     text-wrap: balance;
+    /* Headings are set tight; the display ramp tightens further as it grows. */
+    letter-spacing: -0.011em;
+  }
+
+  /* Body copy set slightly looser than the browser default. Long
+     specification prose at 1.5 is dense to scan; 1.65 is the difference
+     between a paragraph somebody reads and one they skip. */
+  p {
+    line-height: 1.65;
+    /* Avoids a single word alone on the final line of a paragraph. */
+    text-wrap: pretty;
+  }
+
+  /* Numerals align in columns wherever they appear in a list of figures --
+     product counts, page numbers, quantities. Proportional digits make a
+     column of numbers look ragged. */
+  table, .tabular {
+    font-variant-numeric: tabular-nums;
   }
 
   /* WCAG 2.2 AA requires a visible focus indicator (section 14.8). Browsers

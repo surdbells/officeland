@@ -68,10 +68,10 @@ import { SeoService } from '../../core/seo/seo.service';
     -->
     <section aria-label="Featured" class="border-b border-ink-100 bg-white">
       <div class="mx-auto grid max-w-(--container-page) gap-4 px-(--spacing-gutter) py-6 lg:grid-cols-[65fr_35fr]">
-        <div class="relative overflow-hidden rounded-xl bg-brand-50">
+        <div class="relative overflow-hidden rounded-2xl bg-brand-50 shadow-sm">
           <a routerLink="/bulk-supply/" class="block h-full">
             <div class="ol-hero-slide flex h-full flex-col justify-end p-8 sm:p-12">
-              <h1 class="font-heading text-3xl font-bold text-ink-900 sm:text-5xl">
+              <h1 class="font-heading text-display-sm font-bold text-ink-900 sm:text-display-lg">
                 Nigeria&rsquo;s office supply partner
               </h1>
               <p class="mt-4 max-w-2xl text-lg text-ink-600">
@@ -79,10 +79,10 @@ import { SeoService } from '../../core/seo/seo.service';
                 Two Victoria Island showrooms, nationwide delivery and installation.
               </p>
               <p class="mt-6 flex flex-wrap gap-3">
-                <span class="rounded-lg bg-brand-600 px-6 py-3 font-semibold text-white">
+                <span class="rounded-xl bg-brand-600 px-6 py-3 font-semibold text-white shadow-brand">
                   Browse the catalogue
                 </span>
-                <span class="rounded-lg border border-brand-600 bg-white px-6 py-3 font-semibold text-brand-600">
+                <span class="rounded-xl border border-brand-600 bg-white px-6 py-3 font-semibold text-brand-600 shadow-sm">
                   Send a requisition list
                 </span>
               </p>
@@ -98,7 +98,7 @@ import { SeoService } from '../../core/seo/seo.service';
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
           <a
             routerLink="/bulk-supply/"
-            class="ol-banner flex flex-col justify-end rounded-xl bg-ink-900 p-6 text-white hover:bg-ink-800"
+            class="ol-banner flex flex-col justify-end rounded-2xl bg-ink-900 p-6 text-white shadow-md transition-colors hover:bg-ink-800"
           >
             <!--
               text-white on the heading itself, not just the parent. The base
@@ -114,7 +114,7 @@ import { SeoService } from '../../core/seo/seo.service';
 
           <a
             routerLink="/locations/"
-            class="ol-banner flex flex-col justify-end rounded-xl bg-accent-500 p-6 text-ink-900 hover:bg-accent-600"
+            class="ol-banner flex flex-col justify-end rounded-2xl bg-accent-500 p-6 text-ink-900 shadow-md transition-colors hover:bg-accent-600"
           >
             <h2 class="font-heading text-xl font-semibold">Visit a showroom</h2>
             <p class="mt-1 text-sm text-ink-900/80">
@@ -182,7 +182,7 @@ import { SeoService } from '../../core/seo/seo.service';
                     admits it is a placeholder.
                   -->
                   <span
-                    class="flex aspect-square items-center justify-center rounded-xl bg-brand-50 p-4 text-center font-heading text-sm font-semibold text-brand-700 group-hover:bg-brand-100"
+                    class="flex aspect-square items-center justify-center rounded-2xl bg-brand-50 transition-colors p-4 text-center font-heading text-sm font-semibold text-brand-700 group-hover:bg-brand-100"
                     aria-hidden="true"
                   >{{ department.name }}</span>
                   <span class="mt-2 block text-sm font-medium text-ink-900 group-hover:text-brand-600">
@@ -200,6 +200,65 @@ import { SeoService } from '../../core/seo/seo.service';
     }
 
     <!--
+      WPC Doors & Interiors.
+
+      A separate DIVISION, not a product category — kitchens, wardrobes,
+      furniture and interiors, sold on material properties rather than on a
+      catalogue listing. It gets its own band with its own visual treatment
+      for that reason: folding it into the department rail would file a
+      fit-out business under "office supplies" and lose it.
+
+      Note it is absent from the Phase 0 taxonomy (124 categories, 7
+      departments). That is a real gap, not a styling one — see the handover.
+
+      Scroll-snap again, not a JS carousel: same reasoning as the department
+      rail, and it keeps the JS budget for the parts of the site that need it.
+    -->
+    <section aria-labelledby="wpc-heading" class="bg-ink-900 text-white">
+      <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-16 sm:py-20">
+        <div class="max-w-3xl">
+          <p class="font-heading text-sm font-semibold uppercase tracking-[0.2em] text-accent-400">
+            OfficeLand WPC &mdash; Doors &amp; Interiors
+          </p>
+          <h2 id="wpc-heading" class="mt-4 font-heading text-display-sm font-bold text-white sm:text-display">
+            The beauty you see. The strength you don&rsquo;t.
+          </h2>
+          <p class="mt-5 text-lg text-white/75">
+            Wood-plastic composite boards that build stunning interiors and stand
+            strong inside out. Specified for kitchens, wardrobes, furniture and
+            full interior fit-outs across Lagos.
+          </p>
+        </div>
+
+        <!--
+          The six properties are the entire sales argument for WPC over MDF or
+          plywood in this climate. Termite and moisture resistance is not a
+          feature list here — it is why the material exists.
+        -->
+        <ul class="mt-10 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 lg:grid-cols-6">
+          @for (property of wpcProperties; track property.name) {
+            <li class="border-t border-white/15 pt-4">
+              <h3 class="font-heading text-sm font-semibold text-white">{{ property.name }}</h3>
+              <p class="mt-1 text-sm text-white/60">{{ property.detail }}</p>
+            </li>
+          }
+        </ul>
+
+        <div class="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <a
+            routerLink="/quote/"
+            class="rounded-xl bg-accent-500 px-6 py-3 font-semibold text-ink-900 shadow-lg transition-colors hover:bg-accent-400"
+          >
+            Request a WPC quote
+          </a>
+          <p class="text-sm text-white/60">
+            Kitchens &middot; Wardrobes &middot; Furniture &middot; Interiors
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!--
       The B2G/B2B path. Institutional buyers are the highest-value segment
       here and the one a consumer-retail layout has no equivalent for.
     -->
@@ -214,7 +273,7 @@ import { SeoService } from '../../core/seo/seo.service';
         </div>
         <a
           routerLink="/bulk-supply/"
-          class="shrink-0 rounded-lg bg-brand-600 px-6 py-3 font-semibold text-white hover:bg-brand-700"
+          class="shrink-0 rounded-xl bg-brand-600 px-6 py-3 font-semibold text-white shadow-brand transition-colors hover:bg-brand-700"
         >
           Bulk &amp; tender supply
         </a>
@@ -276,6 +335,26 @@ export class HomePage {
   );
 
   protected readonly departments = computed(() => this.navigation()?.departments ?? []);
+
+  /**
+   * WPC's material properties.
+   *
+   * Hardcoded rather than pulled from attributes because these describe a
+   * DIVISION, not a product — there is no WPC product in the catalogue to
+   * carry them, and inventing one to hold six marketing claims would put
+   * copy into the catalogue where the content floor (D-048) expects
+   * specifications.
+   *
+   * They move into the CMS with the WPC landing page.
+   */
+  protected readonly wpcProperties = [
+    { name: '100% waterproof', detail: 'Kitchens and wet areas without swelling.' },
+    { name: 'Termite proof', detail: 'The failure mode that ends timber here.' },
+    { name: 'Fire retardant', detail: 'Slows ignition and spread.' },
+    { name: 'High density core', detail: 'Holds a screw and takes a load.' },
+    { name: 'Eco friendly', detail: 'No felled hardwood in the board.' },
+    { name: 'Low maintenance', detail: 'Wipes clean; no sealing or refinishing.' },
+  ] as const;
 
   constructor() {
     /*
