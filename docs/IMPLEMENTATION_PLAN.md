@@ -29,7 +29,7 @@
 | **10** | ZeptoMail transport, templates, queue, webhooks | 🟡 Built; needs Q18 to send | 3 |
 | **11** | Lead queue admin | 🟡 Built; awaiting UAT | 1 |
 | **12** | Content: category intros, guides, product copy | 🟡 Pipeline built; writing blocked on Q-B | *content track* |
-| **13** | Hardening: security, load, a11y, backup drill | 🟡 13a + 13d done; 13b/13c/13e open | 4–5 |
+| **13** | Hardening: security, load, a11y, backup drill | 🟡 13a + 13d done, 13e partly; 13b/13c open | 4–5 |
 | **14** | Cutover: redirects, sitemaps, 30-day watch | ⬜ Not started | 3–4 |
 
 **Critical path:** 0 → 2 → 3 → 7 → 8 → 14. Phases 4, 5, 5b and 6 parallelise against 7/8. Phase 12 runs continuously from Phase 5.
@@ -420,7 +420,7 @@ docker compose exec api php artisan content:draft
 | 13b | k6 load test on search and facets; p95/p99 and breaking point | ⬜ Not started |
 | 13c | axe-core clean; WCAG 2.2 AA verified | ⬜ Not started |
 | 13d | **Backup and restore drill**, timed | ✅ Done — D-055, drill run and verified against its own failure modes |
-| 13e | Observability: Sentry, metrics, synthetic quote submission | ⬜ Not started |
+| 13e | Observability: Sentry, metrics, synthetic quote submission | 🟡 Canary + backup heartbeat + schedule done; Sentry needs a DSN |
 | 13f | Read replica for DR (D-018) | ⬜ Open on Q7 |
 | 13g | `RUNBOOK.md` complete | 🟡 §11 security and §12 backup added; completes with the rest of 13 |
 
@@ -446,7 +446,8 @@ Four findings, all fixed. **Two were serious, and both were absences rather than
 - **13b needs a decision about where to measure.** Numbers from this development machine are worthless — D-033 records bind-mount reads at ~29 ms, a factor of 1,450 slower than container-local. The k6 scripts can be written and exercised here; the p95/p99 and breaking point that go in a document have to come from the production host (**Q7**).
 - **13c needs a browser harness**, the same gap that blocks the Phase 8 CWV budgets and Phase 9 viewport testing. A useful subset of axe-core rules runs against prerendered HTML under jsdom without a browser; colour contrast does not, because it needs real rendering.
 - **13d is done** — the drill runs in 12s on the development dataset and is verified against its own failure modes (RUNBOOK §12.5). What is still open is where the offsite copy goes, its retention, and the RPO/RTO it is meant to meet — all **Q21**. Media *restore* is also untested: the copy is verified, pulling it back and serving a page from it is not.
-- **13e needs a Sentry DSN** (client credential). The integration and the synthetic quote monitor can be built and unit-tested without one; verifying that events actually arrive cannot.
+- **13e is partly done.** The synthetic quote canary, the backup heartbeat and the schedule are built and tested (RUNBOOK §13). What is left needs a **Sentry DSN** — and when it is wired, quote payloads must be scrubbed first: `email`, `phone` and `message` are customer PII, so shipping them to a third party is an NDPA question rather than a config one.
+- **Nothing routes the alerts anywhere yet.** `critical` reaching a log file is not an alert. Choosing what watches — Sentry, a log drain, a cron mailer — is the remaining piece.
 
 ## Phase 14 — Cutover
 

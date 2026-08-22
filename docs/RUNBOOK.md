@@ -518,3 +518,67 @@ The drill was proven to catch what it claims to catch, not just to exit zero:
 - **Where the offsite copy goes (Q21).** Every script takes a destination and none of them has one. It must be a different **host** — a copy on the same machine survives a bad `rm` and nothing else, not a failed disk and not ransomware. Q21 also has to settle retention and the RPO/RTO these are meant to meet.
 - **Media restore is untested.** The copy is verified; pulling it back and serving a page from it is not. That belongs with the first real staging restore.
 - **Nothing is scheduled.** These are scripts, not cron entries. Scheduling, and alerting when a run does not happen, is Phase 13e.
+
+---
+
+## 13. Monitoring and alerting
+
+### 13.1 The one cron entry everything depends on
+
+```bash
+* * * * * cd /srv/officeland && docker compose exec -T api php artisan schedule:run
+```
+
+Without it every scheduled check is **inert** — and inert in the quietest way available. Nothing errors, nothing logs, the quote canary simply never runs, and the absence of alerts reads as health.
+
+Install `infra/cron/officeland.cron` on the database host; it carries this line plus the backup entries.
+
+### 13.2 What runs, and what it is really watching
+
+| Check | Cadence | Watches for |
+|---|---|---|
+| `monitor:quote` | every 15 min | the lead pipeline silently not accepting quotes |
+| `monitor:backups` | daily 09:00 | backups that **stopped happening**, and WAL archiving failures |
+| `media:reap --apply` | weekly | derivative sprawl |
+| base backup / logical dump / restore drill | host cron | see §12 |
+
+### 13.3 The quote canary
+
+```bash
+docker compose exec api php artisan monitor:quote
+```
+
+Submits a synthetic quote through the real `QuoteSubmitter` — basket, quantity rules, reference allocation, snapshotting, the event trail — then **rolls the whole thing back**.
+
+Three properties matter, and all three are asserted in `QuotePipelineMonitorTest`:
+
+- **It leaves nothing behind.** A synthetic lead arriving four times an hour would train sales to ignore the queue, destroying what Phase 11 protects.
+- **It burns no reference numbers.** References are gapless per year (D-038); an un-rolled-back monitor would consume ~35,000 a year.
+- **It sends no mail.** The submitter writes, the *controller* mails. Move the mailer inside `submit()` and the monitor starts notifying sales every fifteen minutes — which is why the absence is a test, not a comment.
+
+`monitor.quote.failed` is logged at **critical**. That is the one to page on: the business's inbound enquiries are not being accepted, and every minute is leads arriving nowhere.
+
+Use `--keep` to commit a synthetic quote when debugging by hand. Delete it afterwards.
+
+### 13.4 The backup heartbeat
+
+```bash
+docker compose exec api php artisan monitor:backups
+```
+
+Catches the failure that backup scripts cannot catch about themselves: **the backup that silently stopped running.** A cron entry never installed on a new server, a renamed container, a full disk — all of them leave the existing backups sitting there looking healthy.
+
+It checks two things:
+
+- **`pg_stat_archiver.failed_count`.** A failing `archive_command` is retried forever while `pg_wal` grows; the first symptom is the disk filling and the database stopping, by which point the archive has a hole and PITR is broken for that window.
+- **Age of the newest base backup**, default limit 36h.
+
+> The age check is **skipped**, not failed, when the backup volume is not visible — the API container does not mount it, and a daily false alarm is how a real one gets ignored.
+
+**This is deliberately not part of `/health/ready`.** A stale backup must page somebody; it must not deregister the instance. Failing readiness over an old backup is a self-inflicted outage in response to a problem that has not caused one.
+
+### 13.5 Not built yet
+
+- **Sentry** (release tagging, source maps) needs a DSN — a client credential. When it is wired, quote payloads must be scrubbed before they leave: `email`, `phone` and `message` are customer PII, and shipping them to a third party is an NDPA question, not just a config one.
+- **Nothing routes these logs anywhere.** `critical` reaching a log file is not an alert. Whatever watches — Sentry, a log drain, a cron mailer — still has to be chosen and pointed at `monitor.quote.failed` and `backup.monitor.failed`.
+- **k6 load testing (13b)** and **axe-core (13c)** remain open; both need inputs this environment cannot supply (Q7, and a browser harness).

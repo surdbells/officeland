@@ -1,0 +1,61 @@
+# OfficeLand host cron (Phase 13d/13e).
+#
+# Install on the DATABASE HOST:
+#   sudo cp infra/cron/officeland.cron /etc/cron.d/officeland
+#   sudo chmod 644 /etc/cron.d/officeland
+#
+# ── Why the backups are here and not in Laravel's scheduler ──────────────
+# They have to run where Postgres lives. The API container has neither the
+# Postgres client tools nor these scripts mounted, so scheduling them in
+# `routes/console.php` would fail every night — and fail in the quietest way
+# available, because a backup that never runs looks exactly like one that runs
+# fine.
+#
+# The application's job is to NOTICE they stopped: `monitor:backups` runs on
+# Laravel's schedule and alerts on a stale base backup or a failing archiver.
+# That check is what catches the most common backup failure of all — this file
+# never being installed on a new server.
+#
+# ── Times are UTC unless CRON_TZ says otherwise ─────────────────────────
+# Stated explicitly for the same reason the SLA clock states its timezone
+# (D-044): a server that moves region must not silently change when the
+# backups happen.
+
+CRON_TZ=Africa/Lagos
+SHELL=/bin/sh
+PATH=/usr/local/bin:/usr/bin:/bin
+
+# Adjust to wherever the compose project lives.
+OL=/srv/officeland
+
+# ── The single entry Laravel's scheduler needs ──────────────────────────
+# Without this line, every Schedule:: entry in routes/console.php is inert:
+# the quote-pipeline canary never runs, and nothing reports that it isn't.
+* * * * * root cd $OL && docker compose exec -T api php artisan schedule:run >> /var/log/officeland-schedule.log 2>&1
+
+# ── Postgres: nightly base backup ───────────────────────────────────────
+# 02:15, after any midnight batch work and before the working day.
+15 2 * * * root cd $OL && docker compose exec -T -u postgres -e PGUSER=officeland postgres sh -s < scripts/backup/pg-base-backup.sh >> /var/log/officeland-backup.log 2>&1
+
+# ── Postgres: weekly logical dump ───────────────────────────────────────
+# Survives what a physical backup cannot — a corrupt page, a bad UPDATE from
+# weeks ago, a major-version upgrade that goes wrong (D-055).
+0 3 * * 0 root cd $OL && docker compose exec -T -u postgres -e PGUSER=officeland postgres sh -s < scripts/backup/pg-logical-dump.sh >> /var/log/officeland-backup.log 2>&1
+
+# ── The restore drill, weekly ───────────────────────────────────────────
+# "An untested backup is not a backup" only stays true while the test keeps
+# running. Safe to schedule: it restores into a throwaway cluster on port 5499
+# and never touches the live instance.
+#
+# Non-zero exit is the alert. Wire the log into whatever watches (13e).
+0 4 * * 0 root cd $OL && docker compose exec -T -u postgres -e PGUSER=officeland postgres sh -s < scripts/backup/pg-restore-drill.sh >> /var/log/officeland-drill.log 2>&1
+
+# ── Media offsite ───────────────────────────────────────────────────────
+# DESTINATION IS NOT SET — see Q21. This line is commented out because a
+# backup script pointed at nowhere is worse than none: it would appear in the
+# crontab, look scheduled, and copy nothing.
+#
+# It must be a different HOST. A copy on this machine survives a mistaken rm
+# and nothing else.
+#
+# 30 2 * * * root cd $OL && docker compose exec -T api sh -s backup@REPLACE-ME:/srv/officeland/media < scripts/backup/media-backup.sh >> /var/log/officeland-backup.log 2>&1

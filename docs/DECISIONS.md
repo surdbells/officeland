@@ -588,6 +588,34 @@ Registered explicitly rather than by auto-discovery: these are the events an inv
 Proven rather than asserted: a row inserted *after* the base backup was recovered through the archive (124 categories in the backup, 125 restored), and a truncated artefact fails with exit 1.
 **Status:** architect decision. Timings in `RUNBOOK.md` §12.4 are development-scale and must be re-measured on the production host (**Q7**). The offsite destination, retention and RPO/RTO remain open (**Q21**).
 
+### D-056 — The quote pipeline gets a synthetic canary; it rolls back and sends no mail
+**Decision:** `monitor:quote` submits a real quote through `QuoteSubmitter` every 15 minutes, asserts it landed, and rolls the whole thing back.
+
+**Because this pipeline fails silently.** A broken storefront is reported within minutes by anyone who looks at it. A quote pipeline that stopped writing rows looks exactly like a quiet week — and a business's own explanation for a quiet week is never "our software is broken". By the time somebody asks, the leads are gone and unrecoverable. Every other check in the system is a proxy for something; this one exercises the actual thing.
+
+**It calls the service, not the HTTP endpoint.** Posting to `/api/v1/quotes` would drag in `AbuseGuard`, and a monitor running four times an hour from one address is precisely what that guard exists to stop — the monitor would either trip the limiter or force us to weaken it. Everything that can genuinely break lives below that layer.
+
+Three properties are load-bearing, and each is a test rather than a comment:
+
+- **It leaves nothing behind.** A synthetic lead arriving every fifteen minutes would train the sales team to ignore the queue, destroying exactly what Phase 11 was built to protect.
+- **It burns no reference numbers.** D-038 makes references gapless per year; an un-rolled-back monitor would consume roughly 35,000 annually and make the sequence meaningless.
+- **It sends no mail.** `submit()` writes and the *controller* mails, so the monitor stops short of the mailer. That is a property of where the seam sits, not of luck — moving the mailer inside `submit()` would silently start notifying sales four times an hour, so the absence is asserted.
+
+Failures log at **critical**, which is the level that should page: the business's inbound enquiries are not being accepted.
+**Status:** architect decision.
+
+### D-057 — Backups run from host cron; the application only watches them
+**Decision:** `pg-base-backup.sh`, `pg-logical-dump.sh` and `pg-restore-drill.sh` are scheduled in `infra/cron/officeland.cron` on the database host, **not** in Laravel's scheduler. The application runs `monitor:backups` instead.
+
+The first attempt put them in `routes/console.php`. That was wrong and would have failed every night: the API container has neither the Postgres client tools nor the scripts mounted. Worse, it would have failed in the quietest way available — a backup that never runs looks exactly like one that runs fine.
+
+**What the application can usefully do is notice they stopped.** That is a different job from running them, and it catches the failure the scripts cannot catch about themselves: a cron entry never installed on a new server, a renamed container, a full disk. All of those leave the existing backups sitting there looking healthy while the recovery point silently ages.
+
+`monitor:backups` checks `pg_stat_archiver.failed_count` — a failing `archive_command` is retried forever while `pg_wal` grows, and the first symptom is the disk filling and the database stopping, by which point the archive has a hole in it — and the age of the newest base backup.
+
+**It is deliberately not part of `/health/ready`.** A stale backup must page somebody; it must not deregister the instance. Failing readiness over an old backup is a self-inflicted outage in response to a problem that has not caused one. For the same reason the age check is *skipped* rather than failed where the backup volume is not visible: a daily false alarm is how a real one gets ignored.
+**Status:** architect decision.
+
 ## Open
 
 ### Q-A — Icecat subscription tier
