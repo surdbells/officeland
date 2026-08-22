@@ -6,4 +6,4 @@
 # `node tools/csp-hashes.mjs --check` and fails if this file has drifted.
 #
 # Regenerate with:  node tools/csp-hashes.mjs --write
-header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-IFBbB5GEz8prgL4c4ncYDI8Hvk2cQKNrqVETYoYi6h4=' 'sha256-VM2mZqyEQZoLzoTrp5EigFvzQ0+f1wSeBuoOn95WHCg=' 'sha256-qIXHtNjsJfScNr8folzlTmXt379ftPwbRRLEd/iO83k='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-hashes' 'sha256-IFBbB5GEz8prgL4c4ncYDI8Hvk2cQKNrqVETYoYi6h4=' 'sha256-MhtPZXr7+LpJUY5qtMutB+qWfQtMaPccfe7QXtCcEYc=' 'sha256-VM2mZqyEQZoLzoTrp5EigFvzQ0+f1wSeBuoOn95WHCg=' 'sha256-qIXHtNjsJfScNr8folzlTmXt379ftPwbRRLEd/iO83k='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"

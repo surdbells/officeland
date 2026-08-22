@@ -30,8 +30,7 @@
             "server": "src/main.server.ts",
             "outputMode": "server",
             "security": {
-              "allowedHosts": ["render", "localhost", "127.0.0.1"],
-              "autoCsp": true
+              "allowedHosts": ["render", "localhost", "127.0.0.1"]
             },
             "ssr": {
               "entry": "src/server.ts"

@@ -40,7 +40,16 @@
   --color-ink-50: #f7f8f9;
   --color-ink-100: #eceef1;
   --color-ink-200: #d5d9df;
-  --color-ink-400: #8b95a3;
+  /* Darkened from #8b95a3 after WCAG 2.2 AA contrast testing in a real
+     browser (Phase 13c): the old value was 3.03:1 on white and 2.85:1 on
+     ink-50, against a 4.5:1 requirement. It carries product codes, spec
+     labels and the footer — small text that is exactly where contrast
+     matters most.
+
+     The binding constraint is ink-50, NOT white. A value tuned only against
+     white passes the obvious check and still fails in the footer: #6b7480 is
+     4.74:1 on white but 4.45:1 on ink-50. This is 4.94:1 and 4.65:1. */
+  --color-ink-400: #68717d;
   --color-ink-600: #4d5661;
   --color-ink-800: #262c34;
   --color-ink-900: #161a1f;

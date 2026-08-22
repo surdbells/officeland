@@ -57,16 +57,37 @@ A **failed** full build leaves the site in a mixed state — some pages new, som
    ```bash
    docker compose exec render npx ng build
    ```
-3. If step 2 was skipped because only data changed, run a full render instead:
+3. **Publish the build.** `ng build` writes to `dist/`; the static root is a
+   separate volume, and only the render container's entrypoint rsyncs one to
+   the other. Restarting it is what publishes:
+   ```bash
+   docker compose restart render
+   ```
+4. If step 2 was skipped because only data changed, run a full render instead:
    ```bash
    docker compose exec api php artisan render:full
    ```
-4. Verify before considering it done:
+5. Regenerate the CSP if anything about the build changed (§11.1), then restart
+   the edge so Caddy re-reads it:
    ```bash
-   docker compose exec render sh -lc 'cd /repo/apps/web && node tools/raw-html-gate.mjs'
+   cd apps/web && node tools/csp-hashes.mjs --write && docker compose restart api
+   ```
+6. Verify before considering it done:
+   ```bash
+   docker compose exec render sh -lc 'cd /repo/apps/web && npm run gate'
    ```
 
-> **Any template change requires step 2 or step 3.** See §1.
+> **Any template change requires step 2 or step 4.** See §1.
+
+> **Step 3 is easy to miss and fails confusingly.** Skipping it leaves the new
+> `dist/` unpublished, so the site keeps serving the previous CSS and JS while
+> the source, the build and every local check all show the new version. It
+> looks like a caching problem and is not one — it was found exactly that way
+> during browser testing, chasing a colour change that had built correctly and
+> simply never been published.
+>
+> `render:full` does **not** cover it: that renders HTML through the render
+> worker and writes pages, but the worker republishes assets only at start-up.
 
 ---
 

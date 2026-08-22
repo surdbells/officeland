@@ -54,9 +54,28 @@ function attribute(attributes, name) {
   return match ? match[1].trim().toLowerCase() : '';
 }
 
-/** @returns {Set<string>} the CSP hash sources for one document */
+/**
+ * Inline event handlers: `<link onload="this.media='all'">` and friends.
+ *
+ * ── Why this is a separate pass, and why it was missed ───────────────────
+ * The first version of this tool scanned `<script>` blocks only. That policy
+ * shipped and a real browser immediately rejected Angular's deferred-stylesheet
+ * promoter, leaving the full stylesheet pinned at `media="print"` — 44 rules
+ * that never applied. The page still LOOKED right, because Angular inlines the
+ * critical CSS, which is exactly why hashing bytes could not catch it and only
+ * loading the page could.
+ *
+ * Handlers need `'unsafe-hashes'` in addition to their hash. The keyword reads
+ * alarming and is narrower than it sounds: it does not permit arbitrary inline
+ * script, only allows the hashes already listed to match handler attributes.
+ * The alternative — `'unsafe-inline'` — would permit any injected script at all.
+ */
+const EVENT_HANDLER = /\s(on[a-z]+)\s*=\s*"([^"]*)"/gi;
+
+/** @returns {{hashes: Set<string>, handlers: Set<string>}} for one document */
 function hashesIn(html) {
   const hashes = new Set();
+  const handlers = new Set();
 
   for (const [, attributes, body] of html.matchAll(SCRIPT)) {
     // An external script is covered by 'self', not by a hash.
@@ -69,7 +88,18 @@ function hashesIn(html) {
     hashes.add(`'sha256-${createHash('sha256').update(body, 'utf8').digest('base64')}'`);
   }
 
-  return hashes;
+  /*
+   * Handlers are hashed on the attribute VALUE alone — the code the browser
+   * would run — with no surrounding quotes or attribute name.
+   */
+  for (const [, , code] of html.matchAll(EVENT_HANDLER)) {
+    const hash = `'sha256-${createHash('sha256').update(code, 'utf8').digest('base64')}'`;
+
+    hashes.add(hash);
+    handlers.add(hash);
+  }
+
+  return { hashes, handlers };
 }
 
 async function* htmlFiles(directory) {
@@ -105,9 +135,11 @@ if (perFile.size === 0) {
  * is why the number is printed and gated below rather than taken on trust.
  */
 const union = new Set();
+const handlerHashes = new Set();
 
-for (const set of perFile.values()) {
-  for (const hash of set) union.add(hash);
+for (const { hashes, handlers } of perFile.values()) {
+  for (const hash of hashes) union.add(hash);
+  for (const hash of handlers) handlerHashes.add(hash);
 }
 
 /*
@@ -126,7 +158,14 @@ if (union.size > CEILING) {
   process.exit(1);
 }
 
-const scriptSrc = `'self' ${[...union].sort().join(' ')}`.trim();
+/*
+ * `'unsafe-hashes'` only when a handler actually needs it, so the keyword
+ * disappears from the policy the day Angular stops emitting one rather than
+ * lingering as a permission nobody remembers granting.
+ */
+const unsafeHashes = handlerHashes.size > 0 ? " 'unsafe-hashes'" : '';
+
+const scriptSrc = `'self'${unsafeHashes} ${[...union].sort().join(' ')}`.trim();
 
 /*
  * The full policy, emitted as a Caddy snippet so the header and the hashes it

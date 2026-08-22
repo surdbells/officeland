@@ -57,6 +57,23 @@ Basket writes were the second problem: `POST /api/v1/basket/items` inserts rows,
 
 ### F3 — No Content-Security-Policy and no framing protection (A05, Medium)
 
+> **Corrected 2026-08-22, after loading the site in a real browser.** The policy
+> as first shipped was incomplete: CSP hashes do **not** apply to inline event
+> handlers, and Angular emits one — the `onload` that promotes its deferred
+> stylesheet from `media="print"` to `media="all"`. The browser blocked it, so
+> the external stylesheet stayed inert and 44 CSS rules never applied.
+>
+> The page still *looked* correct, because Angular inlines the critical CSS.
+> That is exactly why hashing bytes could not catch this and loading the page
+> could — the verification I had was structurally incapable of seeing it.
+>
+> Fixed by hashing handler attributes too and emitting `'unsafe-hashes'`, which
+> is narrower than the name suggests: it lets the already-listed hashes match
+> handler attributes: it does not permit arbitrary inline script. The keyword is
+> emitted only when a handler is actually present, so it disappears from the
+> policy if Angular stops needing it rather than lingering as a permission
+> nobody remembers granting.
+
 **What was wrong.** The edge sent HSTS, `X-Content-Type-Options`, `Referrer-Policy` and `Permissions-Policy` — but no CSP and nothing preventing the site, including `/admin`, from being framed.
 
 **Why the obvious fix did not work.** Angular 22 ships `security.autoCsp`, which computes hashes for its own inline scripts. It refuses to run here: *"Cannot set both SSR and auto-CSP at the same time."* D-009 prerenders through the SSR builder, so auto-CSP is unavailable to this project.
@@ -107,3 +124,18 @@ Recorded because "we looked and it was fine" is the part of a review that is wor
 - **Dependency provenance.** `composer audit` catches *known* advisories. It says nothing about a package that has not been reported yet.
 - **The admin panel under a strict CSP.** Deliberately deferred, reasoning under F3.
 - **Rate limiting at the edge.** The limits here are per-process in Redis. A volumetric attack is absorbed upstream, not by PHP — that is a Cloudflare-or-equivalent decision, still open.
+
+---
+
+## Appendix — browser verification, 2026-08-22
+
+The review above was static. Loading the site in a real browser found things it structurally could not, which is worth recording as a lesson about the method rather than only as a list of fixes.
+
+| Found | How static analysis missed it |
+|---|---|
+| CSP blocked Angular's stylesheet promoter (F3 correction) | Hashes were computed over `<script>` blocks; the failure was in an `on*` attribute, and the page still rendered because critical CSS is inlined |
+| `angular.json` carried `autoCsp: true` from an abandoned experiment, breaking `ng build` | Nothing rebuilt between the change and the commit — every check ran against a stale `dist/` |
+| Six WCAG 2.2 AA contrast failures (3.03:1 and 2.85:1 against a 4.5:1 requirement) | Contrast needs computed styles against rendered backgrounds; no amount of source reading produces it |
+| `ng build` does not publish assets — only a render-container restart does | The build succeeded, the gates passed, and the site kept serving the previous CSS |
+
+**The common thread:** every one of these produced a *green* signal from the checks that existed. That is the argument for browser testing being a gate rather than a nicety, and it applies to Phase 8's CWV budgets and Phase 9's viewport testing for the same reason.
