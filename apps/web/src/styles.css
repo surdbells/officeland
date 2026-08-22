@@ -4,30 +4,34 @@
  * OfficeLand design tokens (MASTER BUILD PROMPT section 15.3).
  *
  * ─────────────────────────────────────────────────────────────────────────
- * PROVISIONAL BRAND VALUES — open question Q17.
+ * BRAND PRIMARY CONFIRMED 2026-08-23: #0046bf. Section 15.3's #0053E2 was a
+ * placeholder and is superseded.
  *
- * Section 15.3 gives primary blue #0053E2 and adds: "Verify the primary
- * against the current logo files before committing tokens." Those files have
- * not been supplied, so every value below marked (Q17) is a placeholder that
- * renders correctly and is expected to change. They are defined once, here,
- * so that change is a token edit rather than a search across components.
+ * Still outstanding from Q17: the logo FILES, the licensed Montserrat/Inter
+ * webfonts, and the social URLs. The wordmark currently renders as text.
  * ─────────────────────────────────────────────────────────────────────────
  *
  * Dark mode is deliberately absent (section 15.3: "out of scope unless
  * requested; don't spend budget there").
  */
 @theme {
-  /* --- Brand (Q17) ------------------------------------------------------ */
-  --color-brand-50: #eef4ff;
-  --color-brand-100: #d9e6ff;
-  --color-brand-200: #bcd3ff;
-  --color-brand-300: #8eb6ff;
-  --color-brand-400: #588eff;
-  --color-brand-500: #2f66f5;
-  --color-brand-600: #0053e2;
-  --color-brand-700: #0043b8;
-  --color-brand-800: #063a95;
-  --color-brand-900: #0b3475;
+  /* --- Brand ------------------------------------------------------------ */
+  /* Anchored on the confirmed brand primary #0046bf (Q17, 2026-08-23).
+     The ramp is that hue at 218 degrees held constant, lightness stepped.
+
+     brand-600 is 7.99:1 on white -- clears AAA for normal text, and better
+     than the #0053e2 placeholder it replaces (6.30:1). White on brand-600 is
+     the same 7.99:1, which is what makes the logo band legible. */
+  --color-brand-50: #f0f5ff;
+  --color-brand-100: #dce9fe;
+  --color-brand-200: #bad2fd;
+  --color-brand-300: #86b0f9;
+  --color-brand-400: #4787f5;
+  --color-brand-500: #055bf0;
+  --color-brand-600: #0046bf;
+  --color-brand-700: #003899;
+  --color-brand-800: #022e78;
+  --color-brand-900: #07275f;
 
   /* Warm accent reserved for calls to action, so the primary blue never has
      to compete with itself for attention (section 15.3). */

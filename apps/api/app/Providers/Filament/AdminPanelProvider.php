@@ -57,7 +57,7 @@ final class AdminPanelProvider extends PanelProvider
             ->colors([
                 // Section 15.3 brand blue. Pending verification against the
                 // real logo files (open question Q17).
-                'primary' => Color::hex('#0053E2'),
+                'primary' => Color::hex('#0046BF'),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
