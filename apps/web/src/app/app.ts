@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
 import { CatalogueApi } from './core/api/catalogue-api';
 import { BasketStore } from './core/quotes/basket-store';
+import { LocationsStrip } from './core/layout/locations-strip';
 import { SiteFooter } from './core/layout/site-footer';
 import { SiteHeader } from './core/layout/site-header';
 import { SeoService } from './core/seo/seo.service';
@@ -20,12 +21,13 @@ import { organizationSchema, webSiteSchema } from './core/seo/structured-data';
   selector: 'app-root',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, SiteHeader, SiteFooter],
+  imports: [RouterOutlet, SiteHeader, LocationsStrip, SiteFooter],
   template: `
     <ol-site-header [navigation]="navigation()" [quoteCount]="quoteCount()" />
     <main id="main" tabindex="-1">
       <router-outlet />
     </main>
+    <ol-locations-strip />
     <ol-site-footer />
   `,
 })

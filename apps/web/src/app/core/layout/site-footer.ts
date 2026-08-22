@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Icon } from '../../shared/icon';
 import { RouterLink } from '@angular/router';
 
 /**
@@ -18,7 +19,7 @@ import { RouterLink } from '@angular/router';
   selector: 'ol-site-footer',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, Icon],
   template: `
     <footer class="mt-16 border-t border-ink-100 bg-ink-50">
       <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-12">
@@ -69,12 +70,41 @@ import { RouterLink } from '@angular/router';
 
           <div>
             <h2 class="font-heading text-sm font-semibold uppercase tracking-wide">Contact</h2>
-            <address class="mt-3 space-y-2 text-sm not-italic text-ink-600">
-              <p>Century 21 Mall, 14B Idowu Martins Street,<br />Victoria Island, Lagos</p>
-              <!-- Plain text, machine-readable (legacy defect 4H). -->
-              <p><a href="mailto:sales@officelandng.com" class="hover:text-brand-600">sales&#64;officelandng.com</a></p>
-              <p><a href="tel:+2347074723165" class="hover:text-brand-600">+234 707 472 3165</a></p>
+            <address class="mt-3 space-y-3 text-sm not-italic text-ink-600">
+              <p class="flex items-start gap-2.5">
+                <ol-icon name="map-pin" [size]="18" class="mt-0.5 text-ink-400" />
+                <span>Century 21 Mall, 14B Idowu Martins Street,<br />Victoria Island, Lagos</span>
+              </p>
+              <!-- Plain text, machine-readable (legacy defect 4H). The icon is
+                   decorative; the address IS the label. -->
+              <p class="flex items-center gap-2.5">
+                <ol-icon name="mail" [size]="18" class="text-ink-400" />
+                <a href="mailto:sales@officelandng.com" class="hover:text-brand-600">sales&#64;officelandng.com</a>
+              </p>
+              <p class="flex items-center gap-2.5">
+                <ol-icon name="mail" [size]="18" class="text-ink-400" />
+                <a href="mailto:support@officelandng.com" class="hover:text-brand-600">support&#64;officelandng.com</a>
+              </p>
+              <p class="flex items-center gap-2.5">
+                <ol-icon name="phone" [size]="18" class="text-ink-400" />
+                <a href="tel:+2347074723165" class="hover:text-brand-600">+234 707 472 3165</a>
+              </p>
+              <p class="flex items-center gap-2.5">
+                <ol-icon name="message-circle" [size]="18" class="text-ink-400" />
+                <a href="https://wa.me/2347074723165" rel="noopener" class="hover:text-brand-600">WhatsApp us</a>
+              </p>
             </address>
+
+            <!--
+              SON certification. For government and institutional tenders this
+              is frequently a QUALIFICATION requirement rather than a trust
+              badge, which is why it is stated as text rather than shown as a
+              logo nobody can read at 40px.
+            -->
+            <p class="mt-5 flex items-start gap-2.5 rounded-xl bg-white p-3 text-sm text-ink-600 shadow-xs">
+              <ol-icon name="badge-check" [size]="18" class="mt-0.5 text-stock-in" />
+              <span>Certified by the <strong class="font-medium text-ink-900">Standards Organisation of Nigeria</strong></span>
+            </p>
             <!--
               Social profile links are intentionally absent until the real URLs
               are supplied (Q17). The legacy footer linked five platforms to
