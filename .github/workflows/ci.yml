@@ -262,6 +262,16 @@ jobs:
         working-directory: apps/web
         run: npm run gate:csp
 
+      # Phase 13c. axe-core over every prerendered page under jsdom. Catches
+      # the structural WCAG rules; colour-contrast and target-size need real
+      # rendering and are verified in a browser instead (docs/ACCESSIBILITY.md).
+      #
+      # Every page, not a sample: the 9-page sample passed while a CRITICAL
+      # invalid-ARIA violation sat on 7 brand pages.
+      - name: Accessibility gate (WCAG 2.2 AA)
+        working-directory: apps/web
+        run: npm run gate:a11y
+
   contract:
     name: Contract · spec and types in sync
     runs-on: ubuntu-latest

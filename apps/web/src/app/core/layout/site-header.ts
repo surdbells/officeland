@@ -30,9 +30,14 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
     <!-- Section 23.5: the first focusable element on every page. -->
     <a class="skip-link" href="#main">Skip to main content</a>
 
-    <!-- One rotating service promise, not a discount shout (section 23.1). -->
+    <!-- One rotating service promise, not a discount shout (section 23.1).
+
+         A <section> with an accessible name rather than a <div>: it sits
+         outside <header>, so as a plain div its text belonged to no landmark
+         and was skipped entirely by screen-reader landmark navigation. Caught
+         by the axe-core gate (Phase 13c). -->
     @if (announcementVisible()) {
-      <div class="bg-ink-900 text-white text-sm">
+      <section aria-label="Service announcement" class="bg-ink-900 text-white text-sm">
         <div class="mx-auto flex max-w-(--container-page) items-center justify-between gap-4 px-(--spacing-gutter) py-2">
           <p class="truncate">Quotes answered within 1 business day · Nationwide delivery &amp; installation</p>
           <button
@@ -42,7 +47,7 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
             (click)="dismissAnnouncement()"
           >&times;</button>
         </div>
-      </div>
+      </section>
     }
 
     <!-- Utility bar: the quote-first equivalents of the reference site's
@@ -68,7 +73,10 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
         </a>
 
         <!-- Search is a real form so it works before JS loads. -->
-        <form action="/search" method="get" role="search" class="ml-auto hidden flex-1 md:block md:max-w-xl">
+        <!-- Named because several pages carry a second search landmark; without
+             distinct names a screen reader offers two identical "search"
+             regions and neither says which is which (Phase 13c). -->
+        <form action="/search" method="get" role="search" aria-label="Search the catalogue" class="ml-auto hidden flex-1 md:block md:max-w-xl">
           <label for="site-search" class="sr-only">Search products</label>
           <input
             id="site-search"

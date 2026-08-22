@@ -43,7 +43,7 @@ import { ProductCard } from '../../shared/product-card';
         }
       </h1>
 
-      <form action="/search" method="get" role="search" class="mt-4 max-w-xl">
+      <form action="/search" method="get" role="search" aria-label="Refine this search" class="mt-4 max-w-xl">
         <label for="results-search" class="sr-only">Search products</label>
         <input
           id="results-search"
@@ -113,7 +113,7 @@ import { ProductCard } from '../../shared/product-card';
             and we will price it.
           </p>
 
-          <nav aria-label="Departments" class="mt-6">
+          <nav aria-label="Browse departments" class="mt-6">
             <h3 class="font-heading text-sm font-semibold uppercase tracking-wide">Or start here</h3>
             <ul class="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               <li><a routerLink="/c/office-furniture/" class="text-brand-600 hover:underline">Office furniture</a></li>

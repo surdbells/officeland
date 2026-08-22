@@ -21,7 +21,7 @@ import { SeoService } from '../../core/seo/seo.service';
         It may have moved, or the address may be slightly off. Try a search, or start from a department.
       </p>
 
-      <form action="/search" method="get" role="search" class="mt-6 max-w-lg">
+      <form action="/search" method="get" role="search" aria-label="Search from the not-found page" class="mt-6 max-w-lg">
         <label for="notfound-search" class="sr-only">Search products</label>
         <input
           id="notfound-search"
@@ -32,7 +32,7 @@ import { SeoService } from '../../core/seo/seo.service';
         />
       </form>
 
-      <nav aria-label="Departments" class="mt-8">
+      <nav aria-label="Browse departments" class="mt-8">
         <h2 class="font-heading text-sm font-semibold uppercase tracking-wide">Departments</h2>
         <ul class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           <li><a routerLink="/c/office-furniture/" class="text-brand-600 hover:underline">Office furniture</a></li>

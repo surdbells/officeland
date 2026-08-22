@@ -52,10 +52,23 @@ import type { FacetGroup } from '../core/api/catalogue-api';
             <ul class="mt-2 space-y-1">
               @for (value of group.values; track value.value) {
                 <li>
+                  <!--
+                    aria-current, NOT aria-pressed. "aria-pressed" is only
+                    supported where the role is button; on an anchor it is
+                    invalid ARIA, which axe rates critical because a screen
+                    reader may ignore it entirely and announce nothing about
+                    the applied state.
+
+                    These are deliberately real anchors (D-012), so the correct
+                    token is aria-current="true" -- "the current item in a set".
+                    Null rather than "false" when unselected: aria-current="false"
+                    is legal but puts an attribute on every unapplied facet for
+                    no benefit.
+                  -->
                   <a
                     [routerLink]="basePath()"
                     [queryParams]="paramsToggling(group.code, value.value)"
-                    [attr.aria-pressed]="isSelected(group.code, value.value)"
+                    [attr.aria-current]="isSelected(group.code, value.value) ? 'true' : null"
                     class="flex items-center justify-between gap-2 rounded px-1 py-0.5 hover:text-brand-600"
                     [class.font-semibold]="isSelected(group.code, value.value)"
                     [class.text-brand-700]="isSelected(group.code, value.value)"

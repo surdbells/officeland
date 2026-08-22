@@ -10,7 +10,8 @@
     "gate:raw-html": "node tools/raw-html-gate.mjs",
     "gate:crawl-depth": "node tools/crawl-depth-gate.mjs",
     "gate:csp": "node tools/csp-hashes.mjs --check",
-    "gate": "npm run gate:raw-html && npm run gate:crawl-depth && npm run gate:csp",
+    "gate:a11y": "node tools/a11y-gate.mjs",
+    "gate": "npm run gate:raw-html && npm run gate:crawl-depth && npm run gate:csp && npm run gate:a11y",
     "serve:ssr:web": "node dist/web/server/server.mjs"
   },
   "private": true,
@@ -37,6 +38,7 @@
     "@angular/compiler-cli": "^22.1.0",
     "@types/express": "^5.0.1",
     "@types/node": "^20.17.19",
+    "axe-core": "^4.13.0",
     "jsdom": "^28.0.0",
     "openapi-fetch": "^0.17.0",
     "prettier": "^3.8.1",
