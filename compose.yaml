@@ -137,9 +137,14 @@ services:
       #
       # After changing composer.json: docker compose exec api composer install
       - api_vendor:/app/vendor
+      # The redirect map is an editorial artefact reviewed in pull requests,
+      # so it lives in docs/ and is imported from there (Phase 14a).
+      - ./docs:/docs:ro
       - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       # Generated CSP snippet, imported by the Caddyfile (Phase 13a).
       - ./infra/caddy/csp.caddy:/etc/caddy/csp.caddy:ro
+      # Generated redirect snippet (Phase 14b).
+      - ./infra/caddy/redirects.caddy:/etc/caddy/redirects.caddy:ro
       - static:/app/static
       - media:/app/storage-media
     ports:

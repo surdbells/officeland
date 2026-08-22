@@ -616,6 +616,31 @@ The first attempt put them in `routes/console.php`. That was wrong and would hav
 **It is deliberately not part of `/health/ready`.** A stale backup must page somebody; it must not deregister the instance. Failing readiness over an old backup is a self-inflicted outage in response to a problem that has not caused one. For the same reason the age check is *skipped* rather than failed where the backup volume is not visible: a daily false alarm is how a real one gets ignored.
 **Status:** architect decision.
 
+### D-058 — Redirects are served by Caddy from a generated snippet, not by PHP
+**Decision:** the `redirects` table is the editable source of truth; `redirects:publish` generates `infra/caddy/redirects.caddy`; Caddy serves it as a `map` with no application in the path.
+
+**The finding this closes is that the redirect layer was completely inert.** The table, `docs/REDIRECT_MAP.csv` and the Filament admin screen all existed and all looked correct, and **nothing served them**. Every legacy URL returned 200 with the homepage. D-007's entire justification for mapping 5,063 legacy URLs is the organic equity they carry, and none of it would have transferred.
+
+**No PHP in the path**, because D-009 says so and a redirect is the last place to make an exception: legacy URLs are hit by crawlers *in bulk* in the weeks after cutover — precisely when the site is under most scrutiny — and that traffic produces no page and no revenue.
+
+**A `map`, not thousands of `redir` lines.** At D-007's scale individual matchers would be 10,000+ Caddyfile lines, each evaluated in turn; a map is one lookup regardless of size.
+
+Two Caddy behaviours had to be found by testing rather than by reading the docs, and both are the kind that fail silently:
+
+- **A bare `respond 410` is ordered after `handle`**, so it lost to the static file handler and every 410 became a 404. Wrapped in `handle` it joins the same mutually-exclusive group and wins by appearing first. The distinction matters: a 410 is dropped from the index faster and stops being re-crawled; a 404 is retried for months.
+- **The map needs an explicit `default ""`**, or an unmatched path leaves the placeholder set and the matcher fires for **every request on the site**.
+
+The generated file is read by Caddy only at start-up, so editing a redirect in Filament changes nothing live until it is published and the edge restarts. That trap is documented in RUNBOOK §14.1 alongside the identical one for assets.
+**Status:** architect decision.
+
+### D-059 — The static handler must not fall back to the homepage
+**Decision:** `try_files` ends at `{path}.html`, with no `/index.html` fallback. A miss 404s honestly and `handle_errors` serves the prerendered 404 page.
+
+The fallback was an SPA pattern applied to a prerendered site, where it can only ever be wrong: under D-009 every real route has its own file, so falling back to the homepage means serving the wrong page. Worse, Caddy *found* a file and answered **200** — so `handle_errors` never fired, every unknown URL was a soft 404 (forbidden outright by SEO_SPEC §8), and the `/404/` page built in Phase 8 was unreachable.
+
+It looked exactly like the site working, which is why it survived from Phase 8 to Phase 14. RUNBOOK §5 even carried an entry about the 404 page pointing at the wrong file — describing a *different* cause for the same symptom, and therefore reading as though the problem was already understood.
+**Status:** architect decision; corrects a Phase 8 defect.
+
 ## Open
 
 ### Q-A — Icecat subscription tier

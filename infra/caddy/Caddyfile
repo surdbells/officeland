@@ -104,6 +104,12 @@ Disallow: /
 		file_server
 	}
 
+	# Legacy redirects (D-007). GENERATED from the redirects table by
+	# `php artisan redirects:publish`. Declared BEFORE the static handler so a
+	# legacy URL never has a chance to resolve to a file or fall through to the
+	# 404 -- a redirect that fires after the 404 is not a redirect.
+	import /etc/caddy/redirects.caddy
+
 	# ---------------------------------------------------------------------
 	# Prerendered storefront. No PHP, no Node — disk reads only.
 	# Content-hashed assets get a far-future cache; HTML must revalidate so
@@ -121,7 +127,17 @@ Disallow: /
 		@html path *.html /
 		header @html Cache-Control "public, max-age=0, must-revalidate"
 
-		try_files {path} {path}/index.html {path}.html /index.html
+		# No `/index.html` fallback. That is an SPA pattern and it is wrong
+		# here: under D-009 every real route has its own prerendered file, so
+		# falling back to the homepage can only ever be incorrect — and it was.
+		# Caddy found a file, answered 200, and `handle_errors` below never
+		# fired, so EVERY unknown URL returned the homepage body under a 200.
+		# That is a soft 404, which SEO_SPEC §8 forbids outright, and it also
+		# made the prerendered /404/ page from Phase 8 unreachable.
+		#
+		# Without the fallback, a miss reaches file_server, 404s honestly, and
+		# handle_errors takes over.
+		try_files {path} {path}/index.html {path}.html
 		file_server
 	}
 

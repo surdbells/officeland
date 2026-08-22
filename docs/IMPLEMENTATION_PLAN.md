@@ -1,6 +1,6 @@
 # Implementation Plan
 
-**Status:** Phases 0-11 built; Phase 12's pipeline built and enforced, its writing not started. Five gates remain open, none of them on code: Phase 8 CWV (Q7 + a browser harness), Phase 9 viewport testing (same), Phase 10 real sends (Q18 credentials), Phase 11 UAT (the sales team), and Phase 12 the writing itself (**Q-B**). Phase 13a-13e are done: the security review (4 findings), the load test, the accessibility gate (4 findings), the restore drill, and the quote-pipeline canary. Phase 5b or 14 next. See docs/HANDOVER-phase-2.md.
+**Status:** Phases 0-11 built; Phase 12's pipeline built and enforced, its writing not started. Five gates remain open, none of them on code: Phase 8 CWV (Q7 + a browser harness), Phase 9 viewport testing (same), Phase 10 real sends (Q18 credentials), Phase 11 UAT (the sales team), and Phase 12 the writing itself (**Q-B**). Phases 13a-13e and the Phase 14 redirect layer are done. Phase 14 CANNOT start: four of ten go/no-go items are blocked on client answers (Q18, Q-B, Q21, Q7) -- see docs/CUTOVER.md. Phase 5b is the only substantial engineering work left, and it needs Q-A. See docs/HANDOVER-phase-2.md.
 
 **Q-B is now the binding constraint on launch date.** Everything mechanical that 15,000 indexable products needs is in place; what is missing is the copy, and no decision has been taken about who writes it.
 **Re-read this document before starting any phase** (§2.3). If reality has diverged, amend the plan — do not drift silently.
@@ -30,7 +30,7 @@
 | **11** | Lead queue admin | 🟡 Built; awaiting UAT | 1 |
 | **12** | Content: category intros, guides, product copy | 🟡 Pipeline built; writing blocked on Q-B | *content track* |
 | **13** | Hardening: security, load, a11y, backup drill | 🟡 13a-13e done; 13e needs a Sentry DSN | 4–5 |
-| **14** | Cutover: redirects, sitemaps, 30-day watch | ⬜ Not started | 3–4 |
+| **14** | Cutover: redirects, sitemaps, 30-day watch | 🟡 Redirect layer built + gated; 4/10 go-no-go client-blocked | 3–4 |
 
 **Critical path:** 0 → 2 → 3 → 7 → 8 → 14. Phases 4, 5, 5b and 6 parallelise against 7/8. Phase 12 runs continuously from Phase 5.
 
@@ -449,17 +449,42 @@ Four findings, all fixed. **Two were serious, and both were absences rather than
 - **13e is partly done.** The synthetic quote canary, the backup heartbeat and the schedule are built and tested (RUNBOOK §13). What is left needs a **Sentry DSN** — and when it is wired, quote payloads must be scrubbed first: `email`, `phone` and `message` are customer PII, so shipping them to a third party is an NDPA question rather than a config one.
 - **Nothing routes the alerts anywhere yet.** `critical` reaching a log file is not an alert. Choosing what watches — Sentry, a log drain, a cron mailer — is the remaining piece.
 
-## Phase 14 — Cutover
+## Phase 14 — Cutover 🟡
 
-**Gate:** coverage and rankings stable against baseline over 30 days.
+**Gate:** coverage and rankings stable against baseline over 30 days. **Cannot start**: four of the ten go/no-go items are blocked on client answers. Procedure and tooling are built; `docs/CUTOVER.md` is the document.
 
-- 14a **Legacy product URL mapping** — 5,063 URLs → best-match category, or product where MPN/model-code matching finds a genuine equivalent (D-016)
-- 14b Redirect gate: every `from_path` verified for exact status and destination; zero chains, zero loops
-- 14c DNS TTL reduction, freeze window, final content sync
-- 14d Redirects activated; sitemaps submitted to GSC and Bing
-- 14e **Rollback procedure with a defined decision deadline**
-- 14f 30-day watch: daily crawl-error and coverage checks, weekly ranking comparison, 404 log review, defined rollback threshold
+| Sub-phase | Deliverable | Status |
+|---|---|---|
+| 14a | Legacy product URL mapping — 5,063 URLs (D-016) | 🟡 161/161 **categories** mapped and verified; products blocked on Q-A |
+| 14b | Redirect gate: exact status and destination, zero chains, zero loops | ✅ Done — `redirects:verify`, 182/182 |
+| 14c | DNS TTL reduction, freeze window, final content sync | ✅ Documented — `CUTOVER.md` §2–4 |
+| 14d | Redirects activated; sitemaps submitted | ✅ Serving layer built; submission needs the live domain |
+| 14e | Rollback with a defined decision deadline | 🟡 Written — **48h deadline, named triggers — but unrehearsed** |
+| 14f | 30-day watch | 🟡 Procedure written; **404 logging not wired up** |
 
+### The finding that mattered
+
+**The redirect layer was completely inert.** The `redirects` table, `docs/REDIRECT_MAP.csv` and the Filament admin screen all existed and all looked correct — and nothing served them. Every legacy URL returned **200 with the homepage**.
+
+That second part was a separate, worse defect: the static handler's `try_files` ended in `/index.html`, an SPA fallback that is wrong for a prerendered site. Caddy found a file, answered 200, and `handle_errors` never fired — so **every** unknown URL was a soft 404, which SEO_SPEC §8 forbids outright, and the `/404/` page built in Phase 8 was unreachable.
+
+D-007's entire justification for mapping 5,063 legacy URLs is the organic equity they carry. None of it would have transferred.
+
+### What is built now
+
+CSV → `redirects:import` → table → `redirects:publish` → Caddy snippet → edge. Redirects are served by Caddy with **no PHP in the path** (D-058), as a `map` rather than thousands of matchers, because at 5,063 URLs individual matchers would be 10,000+ lines each evaluated in turn.
+
+`redirects:verify` makes a real HTTP request for every `from_path` and fails on wrong status, wrong destination, chains or loops. It does not follow redirects — following would hide a 302 pretending to be a 301. **Verified against its own failure mode:** a deliberate chain was inserted, caught, and exited non-zero.
+
+Two Caddy behaviours had to be found by testing rather than reading: a bare `respond 410` is ordered *after* `handle`, so it lost to the static handler and every 410 became a 404; and the `map` needs an explicit `default` or the matcher fires for every request on the site.
+
+### Outstanding
+
+- **14a products need Q-A.** The 161 categories are mapped and verified. The 5,063 product URLs need the legacy list plus MPN/model-code matching against a catalogue that does not exist yet (Phase 5b, blocked on Q-A). Until then they 404 rather than redirect — which is the correct behaviour, just not the valuable one.
+- **404 logging is not wired up**, and it is the single most useful signal in the 30-day watch: every unmapped legacy URL appears there with a referrer, which is exactly the list of redirects still to write. The table and admin screen exist; nothing writes to them. **Close before cutover.**
+- **Rollback is unrehearsed.** An hour's work — point DNS at the legacy site on a staging domain and confirm it serves — turns §5 from a plan into a procedure.
+- **`www`/apex canonicalisation** is not configured. One must 301 to the other.
+- **Four go/no-go items are client-blocked**: Q18 (email), Q-B (content), Q21 (backup destination), Q7 (CWV on real hardware).
 ---
 
 ## Per-phase exit criteria (§2 operating contract)

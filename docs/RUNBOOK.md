@@ -137,7 +137,11 @@ A category with no intro copy is `is_indexable = false`, so it is rendered and l
 Check that Caddy uses `handle_path` and not `handle` for `/media/*`. `handle` does not strip the URL prefix, so it looks for `<root>/media/ab/cd/...` — a path that never exists — while the files sit correctly on disk.
 
 ### An unknown URL returns the homepage
+Two separate causes, and the second is the one that actually bit.
+
 `handle_errors` must rewrite to `/404/index.html`, not `/index.html`. The 404 template is prerendered from an explicit `404` route; a wildcard route cannot be prerendered, because Angular has no parameter to render it under.
+
+**But `handle_errors` only fires if something 404s in the first place.** If the static handler ends its `try_files` with `/index.html`, Caddy finds the homepage, answers **200**, and the error handler is never reached. See §14.5 — this is a soft 404 on every unknown URL and it looks exactly like the site working.
 
 ### A page is stale and the queue is empty
 Almost always a template change with no full build. See §1.
@@ -603,3 +607,73 @@ It checks two things:
 - **Sentry** (release tagging, source maps) needs a DSN — a client credential. When it is wired, quote payloads must be scrubbed before they leave: `email`, `phone` and `message` are customer PII, and shipping them to a third party is an NDPA question, not just a config one.
 - **Nothing routes these logs anywhere.** `critical` reaching a log file is not an alert. Whatever watches — Sentry, a log drain, a cron mailer — still has to be chosen and pointed at `monitor.quote.failed` and `backup.monitor.failed`.
 - **k6 load testing (13b)** and **axe-core (13c)** remain open; both need inputs this environment cannot supply (Q7, and a browser harness).
+
+---
+
+## 14. Redirects and cutover
+
+### 14.1 How a redirect actually reaches a crawler
+
+Four steps, and **all four must happen**. Before Phase 14 the first three existed and the fourth did not, so every legacy URL returned 200 with the homepage while the table, the CSV and the admin screen all looked correct.
+
+```
+docs/REDIRECT_MAP.csv          reviewed in pull requests
+  → redirects:import --apply   into the `redirects` table
+  → redirects:publish          generates infra/caddy/redirects.caddy
+  → docker compose restart api Caddy re-reads it
+  → redirects:verify           proves a crawler gets the right status
+```
+
+> **`redirects:publish` writes a file Caddy only reads at start-up.** Editing a redirect in Filament changes nothing on the live site until it is published *and* the edge restarts. This is the redirect equivalent of the asset-publish trap in §2.
+
+### 14.2 Why Caddy and not PHP
+
+D-009 puts no application in the request path, and a redirect is the last place to make an exception: legacy URLs get hit by crawlers **in bulk** in the weeks after cutover — exactly when the site is under most scrutiny — and that traffic produces no page and no revenue.
+
+A `map` rather than thousands of `redir` lines: at D-007's 5,063 product URLs, individual matchers would be 10,000+ lines each evaluated in turn. A map is one lookup regardless of size.
+
+### 14.3 The gate
+
+```bash
+docker compose exec api php artisan redirects:verify --base=http://127.0.0.1
+```
+
+Makes a real request for **every** `from_path` and fails on any of:
+
+| Failure | Why it matters |
+|---|---|
+| Wrong status | a 301 answering 200 is a legacy page still live; answering 404 has thrown the equity away |
+| Wrong destination | worse than no redirect — it looks right in a report and reads as bait-and-switch to a crawler |
+| Chain | every hop loses a little; point the map at the final destination |
+| Loop | an outage on a URL Google already has indexed |
+
+It does **not** follow redirects, deliberately: following would report the final page and hide a 302 pretending to be a 301, or a two-hop chain.
+
+Verified against its own failure mode — a deliberate chain was inserted and the gate caught it and exited non-zero.
+
+### 14.4 Status codes, and 410 vs 404
+
+| Code | Use for |
+|---|---|
+| **301** | a legacy URL with a genuine successor |
+| **302** | temporary only. If you are unsure, it is a 301 |
+| **410** | deliberately gone with no successor — `/wp-admin/`, `/feed/`, `/cart/`, merchandising pseudo-categories |
+| **404** | not in the map at all: unknown, possibly a typo |
+
+**410 is not a stricter 404.** It tells a crawler the URL is gone on purpose and will not return; it is dropped from the index faster and stops being re-crawled. A 404 is retried for months.
+
+> The 410 block is wrapped in `handle`, not emitted as a bare `respond`. Caddy's directive order puts `respond` **after** `handle`, so a bare respond loses to the static file handler and the URL 404s instead — which is what it did until this was found.
+
+### 14.5 Fault: a legacy URL returns 200 with the homepage
+
+This was the state of the system before Phase 14, and it is worth recognising because it looks like the site working.
+
+The static handler's `try_files` ended in `/index.html`. That is an SPA fallback and it is wrong for a prerendered site: under D-009 every real route has its own file, so falling back to the homepage can only ever be incorrect. Caddy found a file, answered **200**, and `handle_errors` never fired — a soft 404 on every unknown URL, which SEO_SPEC §8 forbids, and it also made the `/404/` page built in Phase 8 unreachable.
+
+Check with any nonsense URL:
+
+```bash
+curl -sS -o /dev/null -w "%{http_code}\n" http://localhost:8095/definitely-not-a-page/
+```
+
+404 is correct. 200 means the fallback is back.
