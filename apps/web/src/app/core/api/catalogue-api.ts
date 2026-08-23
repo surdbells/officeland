@@ -32,6 +32,20 @@ export type Basket = components['schemas']['Basket'];
 export type BasketLine = components['schemas']['BasketLine'];
 export type ApiError = components['schemas']['Error'];
 
+/**
+ * A brand as the megamenu shows it.
+ *
+ * `logo` is null until somebody uploads one, and the menu falls back to the
+ * name as text — which is all it has ever shown, so a missing logo costs
+ * nothing and an uploaded one is a pure gain.
+ */
+export interface NavigationBrand {
+  readonly name: string;
+  readonly slug: string;
+  readonly url: string;
+  readonly logo: Image | null;
+}
+
 export interface NavigationNode {
   readonly name: string;
   readonly slug: string;
@@ -39,11 +53,21 @@ export interface NavigationNode {
   readonly depth: number;
   readonly product_count: number;
   readonly children: readonly NavigationNode[];
+
+  /**
+   * Departments only, and derived from the catalogue rather than curated: a
+   * brand appears here when it has an active product somewhere in this
+   * department's subtree.
+   *
+   * Absent on subcategories and leaves, and empty on a department with no
+   * products — which is why the storefront must treat it as optional rather
+   * than assume a row to render.
+   */
+  readonly brands?: readonly NavigationBrand[];
 }
 
 export interface Navigation {
   readonly departments: readonly NavigationNode[];
-  readonly brands: ReadonlyArray<{ name: string; slug: string; url: string }>;
 }
 
 export interface FacetValue {

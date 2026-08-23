@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Icon, type IconName } from '../../shared/icon';
+import { ResponsiveImage } from '../../shared/responsive-image';
 import { iconForCategory, iconForDepartment } from './category-icons';
 import type { Navigation, NavigationNode } from '../api/catalogue-api';
 
@@ -27,7 +28,7 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
   selector: 'ol-site-header',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon],
+  imports: [RouterLink, Icon, ResponsiveImage],
   template: `
     <!-- The skip link moved to the shell when the masthead took over as the
          first thing in the document; it has to stay the first focusable
@@ -74,11 +75,18 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
         <!-- No wordmark here. The masthead above carries the brand and the
              link home; a second mark in the sticky bar duplicated it. -->
 
-        <!-- Search is a real form so it works before JS loads. -->
+        <!-- Search is a real form so it works before JS loads.
+
+             It fills the row rather than being capped. With a max-width and
+             the actions pinned beside it, the header emptied out to the right
+             on anything wider than about 1200px: 700px of controls in a
+             1564px bar, and a page that reads as though it failed to load.
+             The search is the widest-value control in the header, so it takes
+             the space. -->
         <!-- Named because several pages carry a second search landmark; without
              distinct names a screen reader offers two identical "search"
              regions and neither says which is which (Phase 13c). -->
-        <form action="/search" method="get" role="search" aria-label="Search the catalogue" class="hidden flex-1 md:block md:max-w-2xl">
+        <form action="/search" method="get" role="search" aria-label="Search the catalogue" class="hidden flex-1 md:block">
           <label for="site-search" class="sr-only">Search products</label>
           <input
             id="site-search"
@@ -89,7 +97,7 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
           />
         </form>
 
-        <div class="ml-auto flex items-center gap-3 md:ml-0">
+        <div class="ml-auto flex shrink-0 items-center gap-3">
           <!-- Section 23.1: WhatsApp converts better than a phone number in
                this market, and the reference site has no equivalent. -->
           <a
@@ -351,24 +359,42 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
                     </a>
 
                     <!--
-                      Brands as TEXT, not logos.
+                      The brands this department actually carries.
 
-                      Logos would need licensed files per brand and a decision
-                      about trademark use; the names are already in the
-                      navigation payload, they are crawlable, and they carry
-                      the same "we stock this" signal. Logos can replace them
-                      when the assets exist without changing this structure.
+                      It used to be one global featured list rendered on every
+                      panel, so Office Furniture advertised HP, Canon, Epson
+                      and Kingston. A brands row is a claim about what is
+                      behind the link, and that one was contradicted by the
+                      products. The API now derives it per department from the
+                      catalogue, so it is true by construction and empty when
+                      there is nothing to say.
+
+                      Logo when there is one, name when there is not. Both are
+                      inside the same anchor, so the link is never nameless:
+                      the name stays as visible text beside a logo rather than
+                      being replaced by it, which also keeps the row crawlable
+                      and keeps a wordmark legible at 20px, which most are
+                      not.
                     -->
-                    @if (brands().length) {
-                      <p class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                    @if (active.brands?.length) {
+                      <p class="flex flex-wrap items-center gap-x-5 gap-y-3 text-sm">
                         <span class="font-heading text-xs font-semibold uppercase tracking-[0.14em] text-ink-400">
                           Brands
                         </span>
-                        @for (brand of brands(); track brand.slug) {
+                        @for (brand of active.brands; track brand.slug) {
                           <a
                             [routerLink]="brand.url"
-                            class="font-medium text-ink-600 hover:text-brand-600"
-                          >{{ brand.name }}</a>
+                            class="flex items-center gap-2 font-medium text-ink-600 transition-colors hover:text-brand-600"
+                          >
+                            @if (brand.logo) {
+                              <ol-image
+                                [image]="brand.logo"
+                                sizes="72px"
+                                imgClass="h-5 w-auto max-w-[4.5rem] object-contain"
+                              />
+                            }
+                            {{ brand.name }}
+                          </a>
                         }
                       </p>
                     }
@@ -451,13 +477,6 @@ export class SiteHeader {
   protected iconFor(slug: string): IconName {
     return iconForCategory(slug);
   }
-
-  /**
-   * Brands for the panel footer. Text links rather than logos -- the names
-   * are already in the payload, they are crawlable, and logos would need
-   * licensed files plus a trademark decision per brand.
-   */
-  protected readonly brands = computed(() => this.navigation()?.brands ?? []);
 
   /**
    * The open department, resolved once rather than re-scanned per column.
