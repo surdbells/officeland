@@ -36,6 +36,61 @@ export const routes: Routes = [
     path: 'shop',
     loadComponent: () => import('./features/catalogue/shop-page').then((m) => m.ShopPage),
   },
+  /*
+   * Editorial pages (Phase 12c/12d/12e).
+   *
+   * These twelve were linked from the header and footer for months before
+   * they existed — 404s on all 194 pages, roughly one internal link in seven.
+   * `npm run gate:links` now fails the build if that recurs.
+   *
+   * Grouped into four lazy chunks rather than twelve. They are static text,
+   * a few kilobytes each, and twelve chunks would cost more round trips than
+   * the separation is worth.
+   */
+  {
+    path: 'about',
+    loadComponent: () => import('./features/pages/company-pages').then((m) => m.AboutPage),
+  },
+  {
+    path: 'contact',
+    loadComponent: () => import('./features/pages/company-pages').then((m) => m.ContactPage),
+  },
+  {
+    path: 'locations',
+    loadComponent: () => import('./features/pages/company-pages').then((m) => m.LocationsPage),
+  },
+  {
+    path: 'delivery',
+    loadComponent: () => import('./features/pages/service-pages').then((m) => m.DeliveryPage),
+  },
+  {
+    path: 'returns',
+    loadComponent: () => import('./features/pages/service-pages').then((m) => m.ReturnsPage),
+  },
+  {
+    path: 'warranty',
+    loadComponent: () => import('./features/pages/service-pages').then((m) => m.WarrantyPage),
+  },
+  {
+    path: 'bulk-supply',
+    loadComponent: () => import('./features/pages/sales-pages').then((m) => m.BulkSupplyPage),
+  },
+  {
+    path: 'guides',
+    loadComponent: () => import('./features/pages/sales-pages').then((m) => m.GuidesPage),
+  },
+  {
+    path: 'privacy',
+    loadComponent: () => import('./features/pages/policy-pages').then((m) => m.PrivacyPage),
+  },
+  {
+    path: 'terms',
+    loadComponent: () => import('./features/pages/policy-pages').then((m) => m.TermsPage),
+  },
+  {
+    path: 'cookies',
+    loadComponent: () => import('./features/pages/policy-pages').then((m) => m.CookiesPage),
+  },
   {
     path: 'brands',
     loadComponent: () =>
@@ -67,6 +122,16 @@ export const routes: Routes = [
      */
     path: 'quote',
     loadComponent: () => import('./features/quote/basket-page').then((m) => m.BasketPage),
+  },
+  {
+    /*
+     * A help page, not an account page. There is no self-service lookup: a
+     * quotation carries commercial pricing, so a lookup has to prove the
+     * asker is the person who requested it, and half-building that is worse
+     * than saying plainly how to check on a quote today.
+     */
+    path: 'quote/track',
+    loadComponent: () => import('./features/pages/sales-pages').then((m) => m.QuoteTrackPage),
   },
   {
     path: 'quote/request',
