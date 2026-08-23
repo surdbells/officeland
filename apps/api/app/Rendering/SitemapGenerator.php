@@ -42,6 +42,46 @@ final class SitemapGenerator
     /** The sitemaps.org cap is 50,000 URLs and 50 MB uncompressed. */
     private const MAX_URLS_PER_FILE = 45000;
 
+    /**
+     * Indexable pages that are not rows in a table.
+     *
+     * The generator was built from the catalogue outwards — categories,
+     * brands, products — and so the sitemap did not contain the homepage.
+     * Nor, once they were written, the twelve editorial pages, which are the
+     * ones a search for "office furniture showroom Victoria Island" or
+     * "bulk office supply tender Nigeria" should land on.
+     *
+     * ── Why a hard-coded list ────────────────────────────────────────────
+     * There is nothing to derive it from on this side. These routes live in
+     * the Angular router, and the API has no view of it; the render manifest
+     * flows the other way, from here to the build. A list that has to be
+     * maintained by hand is a poor thing, so it is asserted by
+     * SitemapGeneratorTest rather than trusted.
+     *
+     * No lastmod: these change when somebody edits a template, and inventing
+     * a date would be worse than omitting the field. `lastmod` is a claim,
+     * and a wrong one teaches a crawler to ignore all of them.
+     *
+     * @var list<string>
+     */
+    private const PAGES = [
+        '/',
+        '/about/',
+        '/brands/',
+        '/bulk-supply/',
+        '/c/',
+        '/contact/',
+        '/cookies/',
+        '/delivery/',
+        '/guides/',
+        '/locations/',
+        '/privacy/',
+        '/quote/track/',
+        '/returns/',
+        '/terms/',
+        '/warranty/',
+    ];
+
     public function __construct(private readonly StaticSite $site) {}
 
     /**
@@ -53,6 +93,7 @@ final class SitemapGenerator
     {
         $written = [];
 
+        $written['/sitemap-pages.xml'] = $this->write('/sitemap-pages.xml', $this->pages());
         $written['/sitemap-categories.xml'] = $this->write('/sitemap-categories.xml', $this->categories());
         $written['/sitemap-brands.xml'] = $this->write('/sitemap-brands.xml', $this->brands());
 
@@ -64,6 +105,17 @@ final class SitemapGenerator
         $this->writeIndex(array_keys($written));
 
         return $written;
+    }
+
+    /**
+     * @return list<array{loc: string, lastmod: string|null}>
+     */
+    private function pages(): array
+    {
+        return array_map(
+            static fn (string $path): array => ['loc' => $path, 'lastmod' => null],
+            self::PAGES,
+        );
     }
 
     /**

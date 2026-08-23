@@ -62,6 +62,92 @@ final class SitemapGeneratorTest extends TestCase
         $this->assertStringContainsString('/sitemap-brands.xml', $index);
     }
 
+    // -----------------------------------------------------------------
+    // Pages that are not rows in a table
+    // -----------------------------------------------------------------
+
+    /**
+     * The homepage was not in the sitemap.
+     *
+     * The generator was built from the catalogue outwards, so it listed
+     * categories, brands and products and nothing else — which meant the most
+     * important URL on the site was absent, and stayed absent through every
+     * test in this file, because every test asked about the catalogue.
+     *
+     * The twelve editorial pages arrived later and were absent for the same
+     * reason.
+     */
+    public function test_it_lists_the_homepage(): void
+    {
+        $this->generator->generate();
+
+        $this->assertStringContainsString(
+            '<loc>https://officelandng.com/</loc>',
+            $this->contents('sitemap-pages.xml'),
+        );
+    }
+
+    /**
+     * SitemapGenerator::PAGES is maintained by hand — the routes live in the
+     * Angular router and the API has no view of it. This is what stops the
+     * list quietly falling behind the site.
+     *
+     * A page added to the router and not to that constant is invisible to a
+     * crawler except through internal links; a page removed from the router
+     * and left here offers Google a 404.
+     */
+    public function test_it_lists_every_editorial_page(): void
+    {
+        $this->generator->generate();
+
+        $sitemap = $this->contents('sitemap-pages.xml');
+
+        foreach ([
+            '/about/',
+            '/brands/',
+            '/bulk-supply/',
+            '/c/',
+            '/contact/',
+            '/cookies/',
+            '/delivery/',
+            '/guides/',
+            '/locations/',
+            '/privacy/',
+            '/quote/track/',
+            '/returns/',
+            '/terms/',
+            '/warranty/',
+        ] as $path) {
+            $this->assertStringContainsString(
+                "<loc>https://officelandng.com{$path}</loc>",
+                $sitemap,
+                "{$path} is missing from sitemap-pages.xml.",
+            );
+        }
+    }
+
+    /**
+     * Pages carry no lastmod.
+     *
+     * They change when somebody edits a template, which this side of the
+     * application cannot see. An invented date is a false claim, and a
+     * crawler that catches one learns to disregard every lastmod on the
+     * domain — including the product ones, which are real and useful.
+     */
+    public function test_editorial_pages_carry_no_lastmod(): void
+    {
+        $this->generator->generate();
+
+        $this->assertStringNotContainsString('<lastmod>', $this->contents('sitemap-pages.xml'));
+    }
+
+    public function test_the_index_points_at_the_pages_sitemap(): void
+    {
+        $this->generator->generate();
+
+        $this->assertStringContainsString('/sitemap-pages.xml', $this->contents('sitemap.xml'));
+    }
+
     /**
      * The invariant. A non-indexable product still has a rendered page — it is
      * linked from its category — but must not be offered to Google.

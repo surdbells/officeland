@@ -7,6 +7,7 @@ namespace Tests\Feature;
 use App\Models\Redirect;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -175,7 +176,7 @@ final class RedirectLayerTest extends TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('badRows')]
+    #[DataProvider('badRows')]
     public function test_it_rejects_a_malformed_row(string $row, string $expected): void
     {
         $file = $this->csv([$row]);
