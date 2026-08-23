@@ -81,6 +81,7 @@ docs/              Plan, architecture, SEO spec, decisions, taxonomy
 | Document | Contents |
 |---|---|
 | [BACKLOG.md](docs/BACKLOG.md) | **Everything outstanding** — what is blocked, on what, and what unblocks it |
+| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deploying to Debian 13 + aaPanel, and what must be true first |
 | [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) | 15 phases with gates, dependencies and estimates |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Topology, prerender pipeline, pooling, Icecat ingestion |
 | [SEO_SPEC.md](docs/SEO_SPEC.md) | URL architecture, metadata, structured data, CI gates |

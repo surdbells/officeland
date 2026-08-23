@@ -113,3 +113,22 @@ mandatory, and an invented one is a lie to a screen reader.
 
 Filenames name the category: `wpc-doors-interiors-wpc-doors.jpg` becomes the
 hero of `/wpc-doors-interiors/wpc-doors/`.
+
+---
+
+## 5. Before production
+
+Deployment is documented in [DEPLOYMENT.md](DEPLOYMENT.md). Staging is safe
+now; production is not, and these are why.
+
+- [ ] **The storefront hardcodes `https://officelandng.com`** as its origin
+      for canonical tags and JSON-LD (`seo.service.ts`, `structured-data.ts`).
+      A staging deploy canonicalises to production. Harmless while staging is
+      `noindex`, wrong the moment it is not, and it needs a build-time origin
+      rather than a constant.
+- [ ] **Catalogue is 10 products against 170 categories.** The single biggest
+      reason not to go live.
+- [ ] **Policy pages need legal review** (§1).
+- [ ] **No images anywhere** (§1).
+- [ ] 124 categories without intro copy stay `noindex` by design (D-048) —
+      correct behaviour, but it means most of the site is not indexable yet.
