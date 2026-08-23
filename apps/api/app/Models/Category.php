@@ -63,6 +63,27 @@ final class Category extends Model
         return $this->belongsTo(self::class, 'parent_id');
     }
 
+    /**
+     * The category's hero image.
+     *
+     * `hero_media_id` has been on this table since the Phase 2 migrations and
+     * nothing read it: no relation, no field in the API payload, no admin
+     * control and nothing rendered. A column that exists and is never
+     * populated is indistinguishable from one that was never added, which is
+     * why the storefront has been entirely typographic.
+     *
+     * One image, not a gallery. A category needs a single picture that says
+     * what the category is; a product needs several that say what the product
+     * looks like from four angles. Making this a many-to-many would invite a
+     * carousel onto a page whose job is to send visitors deeper.
+     *
+     * @return BelongsTo<Media, $this>
+     */
+    public function heroMedia(): BelongsTo
+    {
+        return $this->belongsTo(Media::class, 'hero_media_id');
+    }
+
     /** @return HasMany<self, $this> */
     public function children(): HasMany
     {

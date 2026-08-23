@@ -59,7 +59,7 @@ final class ProductResource extends JsonResource
              * image fetchpriority="high" as the LCP element (section 14.9),
              * which relies on Product::media() ordering primary first.
              */
-            'images' => ProductImageResource::collection($this->whenLoaded('media')),
+            'images' => ImageResource::collection($this->whenLoaded('media')),
 
             'specifications' => $this->when(
                 $this->relationLoaded('attributeValues'),

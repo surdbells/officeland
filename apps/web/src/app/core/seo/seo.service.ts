@@ -30,6 +30,26 @@ export interface PageSeo {
   readonly canonicalOverride?: string | null;
   /** Appended after the page name, before the site name. */
   readonly titleSuffix?: string;
+
+  /**
+   * An editor-written title, used verbatim.
+   *
+   * Distinct from `title` because the two are different things.
+   * `title` offers candidates the service may decorate with the site name or
+   * fall through; this is somebody's finished title tag, and appending to it
+   * or discarding it in favour of a template makes the admin field a lie.
+   *
+   * It has to be separate rather than "the first candidate". Made a candidate,
+   * a hand-written title is only used when it is short enough to also carry
+   * " | OfficeLand Nigeria" — 21 characters of a 60-character budget — so the
+   * template wins for anything longer than about 38 characters, which is most
+   * titles worth writing. That is exactly what happened when meta_title was
+   * first wired up: 46 categories had titles and not one of them appeared.
+   *
+   * Still subject to the hard budget: a 300-character title is a mistake, not
+   * an intention.
+   */
+  readonly exactTitle?: string | null;
 }
 
 /**
@@ -63,7 +83,9 @@ export class SeoService {
   private static readonly JSONLD_ATTR = 'data-seo-jsonld';
 
   apply(seo: PageSeo): void {
-    const title = this.composeTitle(seo.title, seo.titleSuffix);
+    const title = seo.exactTitle?.trim()
+      ? this.truncate(seo.exactTitle.trim(), SeoService.TITLE_BUDGET)
+      : this.composeTitle(seo.title, seo.titleSuffix);
     const description = this.truncate(seo.description ?? '', SeoService.DESCRIPTION_BUDGET);
     const canonical = seo.canonicalOverride ?? this.absolute(seo.path);
 

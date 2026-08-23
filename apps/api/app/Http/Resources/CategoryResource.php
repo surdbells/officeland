@@ -25,6 +25,25 @@ final class CategoryResource extends JsonResource
             'depth' => $this->depth,
             'intro_copy' => $this->intro_copy,
             'description_html' => $this->description_html,
+
+            /*
+             * The hero image, when the caller loaded it.
+             *
+             * `whenLoaded` rather than an unconditional read: the megamenu
+             * asks for the whole tree, and a lazy load per node there would
+             * be 170 queries to render a menu.
+             *
+             * Null when a category has no image — which is every category
+             * today. The storefront renders its typographic treatment in
+             * that case rather than a broken frame, so uploading an image is
+             * a pure improvement and never a prerequisite.
+             */
+            'hero' => $this->whenLoaded(
+                'heroMedia',
+                fn (): ?ImageResource => $this->heroMedia === null
+                    ? null
+                    : new ImageResource($this->heroMedia),
+            ),
             'product_count' => $this->product_count_cached,
             // Children ship as real data so the storefront can render them as
             // crawlable anchors on every category page (D-011) — that is what

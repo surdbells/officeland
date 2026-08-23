@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import type { Image } from '../core/api/catalogue-api';
-import { ProductImage } from './product-image';
+import { ResponsiveImage } from './responsive-image';
 
 /**
  * The PDP gallery.
@@ -26,7 +26,7 @@ import { ProductImage } from './product-image';
   selector: 'ol-product-gallery',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ProductImage],
+  imports: [ResponsiveImage],
   template: `
     @if (images().length) {
       <div>
@@ -35,7 +35,7 @@ import { ProductImage } from './product-image';
             <!-- Rendered whether or not active: hidden is a CSS state here,
                  never an absent element. -->
             <div class="aspect-square" [hidden]="i !== activeIndex()">
-              <ol-product-image
+              <ol-image
                 [image]="image"
                 [priority]="i === 0"
                 [sizes]="'(min-width: 1024px) 40vw, 100vw'"
@@ -62,7 +62,7 @@ import { ProductImage } from './product-image';
                   [attr.aria-label]="'Show image ' + (i + 1) + ': ' + image.alt"
                   (click)="show(i)"
                 >
-                  <ol-product-image
+                  <ol-image
                     [image]="image"
                     [sizes]="'64px'"
                     imgClass="h-full w-full object-contain"

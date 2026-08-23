@@ -148,6 +148,8 @@ export interface components {
             url: string;
             depth: number;
             intro_copy?: string | null;
+            /** @description The category hero image, or null. Rendered as a <picture>; the storefront falls back to a typographic treatment when absent, so an image is always an improvement and never a prerequisite. */
+            hero?: components["schemas"]["Image"] | null;
             description_html?: string | null;
             product_count?: number;
             /** @description Rendered as real crawlable anchors on every category page (D-011). */

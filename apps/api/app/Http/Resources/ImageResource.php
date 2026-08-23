@@ -12,6 +12,10 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * One image, shaped for a `<picture>` element (MASTER BUILD PROMPT §12.5).
  *
+ * Not product-specific, despite where it started: a category hero is the same
+ * question. The only product-only field is `role`, which comes from the
+ * product_media pivot and is simply absent on a relation that has none.
+ *
  * ── Why the server builds the srcsets ────────────────────────────────────
  * The client could compose these URLs from a checksum and the variant table,
  * but then the variant table would exist in two places and drift. Worse, the
@@ -27,7 +31,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *
  * @mixin Media
  */
-final class ProductImageResource extends JsonResource
+final class ImageResource extends JsonResource
 {
     /**
      * Format preference, best first — the `<source>` order of §12.5. A browser

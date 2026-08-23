@@ -32,7 +32,9 @@ final class CategoryController extends Controller
     public function show(string $path): JsonResponse
     {
         $category = $this->resolve($path);
-        $category->load('children');
+        // The hero and its derivatives in one go: ImageResource builds srcsets
+        // from media_derivatives, and without them it would emit a bare src.
+        $category->load(['children', 'heroMedia.derivatives']);
 
         return response()->json(['data' => new CategoryResource($category)]);
     }

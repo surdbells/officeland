@@ -11,6 +11,7 @@ import { SeoService } from '../../core/seo/seo.service';
 import { breadcrumbSchema, itemListSchema } from '../../core/seo/structured-data';
 import { EMPTY_LISTING, filterParams, readFilters, splitPagedPath } from '../../shared/listing-state';
 import { FacetRail } from '../../shared/facet-rail';
+import { ResponsiveImage } from '../../shared/responsive-image';
 import { Pagination } from '../../shared/pagination';
 import { ProductCard } from '../../shared/product-card';
 
@@ -33,7 +34,7 @@ import { ProductCard } from '../../shared/product-card';
   selector: 'ol-category-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ProductCard, FacetRail, Pagination],
+  imports: [RouterLink, ProductCard, FacetRail, Pagination, ResponsiveImage],
   template: `
     @if (category(); as cat) {
       <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8">
@@ -51,7 +52,41 @@ import { ProductCard } from '../../shared/product-card';
           </ol>
         </nav>
 
-        <h1 class="mt-4 font-heading text-3xl font-bold">{{ cat.name }}</h1>
+        <!--
+          The hero.
+
+          Only rendered when the category has one. Every category has null
+          today — hero_media_id has been on the table since Phase 2 and
+          nothing ever wrote to it — so this has to be an addition rather
+          than a requirement: a category without a picture must still look
+          deliberate, not broken.
+
+          Which is why the title sits BESIDE the image rather than over it.
+          Text over a photograph needs a scrim, a scrim needs a photograph
+          to darken, and a category without one would get an empty grey box
+          with a heading in it. Side by side, the no-image case is simply the
+          heading at full width, which is what the page already looked like.
+
+          eager + fetchpriority high: this is the LCP element on a category
+          page that has one, and the whole point of setting width and height
+          on it is that arriving late must not move the grid below.
+        -->
+        <div class="mt-4 gap-8 lg:grid lg:grid-cols-[1fr_22rem] lg:items-start">
+          <div>
+            <h1 class="font-heading text-3xl font-bold sm:text-4xl">{{ cat.name }}</h1>
+          </div>
+
+          @if (cat.hero) {
+            <div class="mt-4 overflow-hidden rounded-2xl bg-ink-50 lg:mt-0">
+              <ol-image
+                [image]="cat.hero"
+                [priority]="true"
+                sizes="(min-width: 1024px) 22rem, 100vw"
+                imgClass="h-full w-full object-cover"
+              />
+            </div>
+          }
+        </div>
 
         <!--
           Intro copy is HTML from the CMS, so it is bound rather than
@@ -290,14 +325,24 @@ export class CategoryPage {
 
     this.seo.apply({
       /*
-       * Section 14.3 category template, in descending preference. "Prices"
-       * is retained because it matches query intent even though D-002 shows
-       * none, and "Bulk Supply" because the buyer is a business.
+       * An editor-written title wins, and it did not until now.
        *
-       * Longer category names cannot carry the full phrase inside 60
-       * characters, so shorter whole phrases are offered rather than letting
-       * the budget truncate the first one mid-clause.
+       * `meta_title` has been a column, an admin field and part of the API
+       * payload since Phase 5, and this page composed a template and never
+       * looked at it — so the one lever an editor had over a title tag did
+       * nothing. Nobody noticed because the template is decent and every
+       * title looked fine.
+       *
+       * It is the FIRST candidate, not the only one: the SEO service still
+       * drops to the next entry if a hand-written title overflows the
+       * 60-character budget, which is better than truncating somebody's
+       * careful phrasing mid-word.
+       *
+       * Paginated pages ignore it. A title written for /c/x/ describes that
+       * category, not page 4 of it, and repeating it across pages is exactly
+       * the duplicate-title warning it would otherwise trigger.
        */
+      exactTitle: paged ? null : cat.seo?.meta_title,
       title: paged
         ? [
             `${cat.name} in Nigeria — Page ${page}`,
@@ -310,6 +355,10 @@ export class CategoryPage {
             cat.name,
           ],
       description: cat.seo?.meta_description ?? summarise(cat.intro_copy),
+      // og:image from the hero when there is one. The `og` derivative is a
+      // 1200x630 crop made for exactly this; `src` is the page variant and
+      // would be cropped badly by every social card renderer.
+      image: cat.hero?.src ?? undefined,
       path: paged ? `${cat.url}page/${page}/` : cat.url,
       indexable: filtered ? false : cat.seo?.is_indexable !== false,
       canonicalOverride: cat.seo?.canonical_override ?? null,

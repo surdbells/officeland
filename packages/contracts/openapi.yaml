@@ -217,6 +217,11 @@ components:
           type:
             - string
             - 'null'
+        hero:
+          description: 'The category hero image, or null. Rendered as a <picture>; the storefront falls back to a typographic treatment when absent, so an image is always an improvement and never a prerequisite.'
+          oneOf:
+            - $ref: '#/components/schemas/Image'
+            - type: 'null'
         description_html:
           type:
             - string

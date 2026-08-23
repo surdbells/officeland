@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { ProductCard as ProductCardData } from '../core/api/catalogue-api';
-import { ProductImage } from './product-image';
+import { ResponsiveImage } from './responsive-image';
 
 /**
  * The product card — one component, one prop set, one test suite (8b).
@@ -32,13 +32,13 @@ import { ProductImage } from './product-image';
   selector: 'ol-product-card',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ProductImage],
+  imports: [RouterLink, ResponsiveImage],
   template: `
     <article
       class="group relative flex h-full flex-col rounded-lg border border-ink-100 bg-white p-4 transition hover:border-brand-600"
     >
       <a [routerLink]="product().url" class="mb-3 block aspect-square" tabindex="-1" aria-hidden="true">
-        <ol-product-image [image]="product().image ?? null" [sizes]="imageSizes()" />
+        <ol-image [image]="product().image ?? null" [sizes]="imageSizes()" />
       </a>
 
       @switch (headingLevel()) {

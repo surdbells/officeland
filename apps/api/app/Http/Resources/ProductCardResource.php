@@ -57,9 +57,9 @@ final class ProductCardResource extends JsonResource
              */
             'image' => $this->when(
                 $this->relationLoaded('media'),
-                fn (): ?ProductImageResource => $this->media->isEmpty()
+                fn (): ?ImageResource => $this->media->isEmpty()
                     ? null
-                    : new ProductImageResource($this->media->first()),
+                    : new ImageResource($this->media->first()),
             ),
 
             'key_specs' => $this->when(

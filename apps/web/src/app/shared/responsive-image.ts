@@ -2,7 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import type { Image } from '../core/api/catalogue-api';
 
 /**
- * A responsive `<picture>` built from the server's derivative list (§12.5).
+ * A responsive `<picture>` built from the server’s derivative list (§12.5).
+ *
+ * Not product-specific: a category hero is the same element with a different
+ * `sizes`. It started life on the product card, which is why it was called
+ * ProductImage; the name was the only thing tying it there.
  *
  * ── Why the srcsets are not composed here ────────────────────────────────
  * Generation is resumable and throttled (Phase 4), so a product ingested
@@ -23,7 +27,7 @@ import type { Image } from '../core/api/catalogue-api';
  * Marking several images high priority is the same as marking none.
  */
 @Component({
-  selector: 'ol-product-image',
+  selector: 'ol-image',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -55,7 +59,7 @@ import type { Image } from '../core/api/catalogue-api';
     }
   `,
 })
-export class ProductImage {
+export class ResponsiveImage {
   readonly image = input<Image | null>(null);
   readonly priority = input<boolean>(false);
 
