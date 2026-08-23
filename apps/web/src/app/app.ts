@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
 import { CatalogueApi } from './core/api/catalogue-api';
 import { BasketStore } from './core/quotes/basket-store';
+import { BrandMasthead } from './core/layout/brand-masthead';
 import { LocationsStrip } from './core/layout/locations-strip';
 import { SiteFooter } from './core/layout/site-footer';
 import { SiteHeader } from './core/layout/site-header';
@@ -21,8 +22,19 @@ import { organizationSchema, webSiteSchema } from './core/seo/structured-data';
   selector: 'app-root',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, SiteHeader, LocationsStrip, SiteFooter],
+  imports: [RouterOutlet, BrandMasthead, SiteHeader, LocationsStrip, SiteFooter],
   template: `
+    <!--
+      Section 23.5: the first focusable element on every page.
+
+      It lives here rather than in the header because the header is no longer
+      what opens the document — the masthead is. Left where it was, the first
+      thing a keyboard user reached would have been the brand link, and the
+      bypass would have been second.
+    -->
+    <a class="skip-link" href="#main">Skip to main content</a>
+
+    <ol-brand-masthead />
     <ol-site-header [navigation]="navigation()" [quoteCount]="quoteCount()" />
     <main id="main" tabindex="-1">
       <router-outlet />

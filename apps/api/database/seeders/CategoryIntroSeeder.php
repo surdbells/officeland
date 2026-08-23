@@ -79,6 +79,56 @@ final class CategoryIntroSeeder extends Seeder
             <p>WPC cuts, routs and drills with ordinary woodworking tooling, which is one of its practical advantages over alternatives: no specialist blades and no change to your workshop. It does not, however, behave like timber when heated or bonded, so ask about adhesives and edge treatment before committing a large batch.</p>
             <p>Edging and trims are stocked to match the board finishes, so a cut edge can be closed properly rather than left exposed. Trade quantities are quoted per order — send a cutting list or a sheet count and we will price it, including delivery.</p>
             HTML,
+
+        '/smart-tech/' => <<<'HTML'
+            <p>Smart Tech is where we put the connected and powered hardware that sits around the desks rather than on them: the power that keeps a building running, the cameras that watch it, the equipment that makes a meeting room work, and the devices staff carry.</p>
+            <p>Power and backup comes first here deliberately. Nothing in a Nigerian office runs without something behind it — a UPS under the server, an inverter for the floor, a stabiliser in front of anything with a compressor. Buyers look for those next to the equipment they are protecting rather than filed under IT, so that is where we have put them.</p>
+            <p>The rest is what a fit-out actually needs: CCTV and access control for a site that has to be accounted for, video bars and speakerphones for rooms that now host half their meetings remotely, smart lighting and locks where a building manager wants control without rewiring, and cameras for organisations that document their own work.</p>
+            <p>Most of this is specified per site rather than per item. A camera count means nothing without knowing the cable runs; a UPS rating means nothing without the load. Send us the drawing, the load schedule or just a description of the building, and we will come back with a specification and a quote rather than a list of products.</p>
+            HTML,
+
+        '/smart-tech/power-backup/' => <<<'HTML'
+            <p>Power is the constraint every other purchase in this catalogue is made around. A workstation that reboots twice a day is a workstation nobody trusts, and a printer that browns out mid-job costs a toner cartridge and an afternoon.</p>
+            <p>We supply UPS units for the desk and for the rack, inverters and battery banks for whole floors, solar arrays where a site is going for a genuine reduction in diesel, and voltage stabilisers — the cheapest and most neglected item in the room.</p>
+            <p>Sizing is the whole job. A UPS is chosen by the load it carries and the runtime you need at that load, not by a headline VA figure, and the two numbers most people quote are the two that do not settle it. Tell us what is plugged in and how long it has to stay up, and we will size it. The same applies to an inverter: battery capacity, not inverter rating, decides how long the lights stay on.</p>
+            <p>Installation is quoted separately for anything above desk level, because the work is electrical and site-dependent. We will say plainly when a job needs an electrician rather than a delivery.</p>
+            HTML,
+
+        '/smart-tech/security-surveillance/' => <<<'HTML'
+            <p>Surveillance is bought as a camera count and lived with as a recording problem. Sixteen cameras that overwrite after four days do not answer the question somebody eventually asks them, and that is a storage and bandwidth decision made at the point of specification rather than something to be fixed later.</p>
+            <p>We supply IP and analogue CCTV, recorders and storage, video doorbells, access control from single-door readers up to multi-site systems, and alarm and sensor hardware. Cable, power over Ethernet, mounting and the recorder are quoted with the cameras — a quote that lists only cameras is a quote that will grow.</p>
+            <p>Specify by what you need to be able to prove: a face at a gate, a plate at a barrier, movement across a yard. Each of those implies a different resolution, lens and mounting height, and getting it wrong is expensive in a way that is only discovered when the footage is needed.</p>
+            <p>Access control also carries an administrative cost most buyers underestimate — somebody has to enrol staff, revoke leavers and hold the audit trail. Ask us about that before choosing a system, not after.</p>
+            HTML,
+
+        '/smart-tech/conferencing-av/' => <<<'HTML'
+            <p>Meeting rooms are half-remote by default now, and the equipment that made a room work before that shift does not. A laptop on a table with its own microphone leaves the people at the far end straining, and the room quietly stops being used for anything that matters.</p>
+            <p>We supply all-in-one video bars, conference speakerphones, webcams for individual desks and huddle spaces, and interactive displays for rooms that present as well as call.</p>
+            <p>Room size drives the choice more than brand does. A four-person huddle room needs a wide lens and a single speakerphone; a twelve-seat boardroom needs a camera that can frame whoever is speaking and microphone coverage that reaches the far end of the table. Buying the boardroom equipment for the huddle room is the most common and most expensive mistake here.</p>
+            <p>Tell us the room dimensions, the seat count and the platform you standardise on — Teams, Zoom, Meet — and we will specify against those. Mounting, cabling and commissioning are quoted per room. We will also say when a room needs acoustic treatment more than it needs a better camera.</p>
+            HTML,
+
+        '/smart-tech/smart-office/' => <<<'HTML'
+            <p>Smart building hardware earns its place in an office when it removes a recurring task or a recurring cost, and not otherwise. Lighting that switches itself off on an empty floor, sockets that cut standby load overnight, locks that do not need a key cut when somebody leaves: those pay back. A dashboard nobody opens does not.</p>
+            <p>We supply smart lighting and switching, smart plugs and sockets, climate and air-conditioning control, and smart locks. Most of it retrofits, which is deliberate — the majority of Nigerian offices being upgraded are in existing buildings where rewiring is not on the table.</p>
+            <p>Two questions are worth settling before choosing anything: what happens when the internet drops, and who administers it. Hardware that stops responding without a cloud connection is a poor fit for a building on a shared link, and a system with no named administrator becomes unmanageable the day the person who set it up moves on.</p>
+            <p>Tell us the building, the floor count and what you want automated, and we will specify equipment that works with the wiring and the network you already have.</p>
+            HTML,
+
+        '/smart-tech/cameras-imaging/' => <<<'HTML'
+            <p>Organisations buy cameras for a handful of reasons: documenting projects for a funder, producing training and marketing material in-house, recording events, and inspection work. Each points at different equipment, and for some of them the honest answer is a phone and a good tripod.</p>
+            <p>Where a dedicated camera is the right call, we supply digital cameras, camcorders, and the accessories that decide whether the footage is usable — lenses, tripods, external microphones, lighting, cards and storage.</p>
+            <p>The accessories are not an upsell. Audio is what makes recorded material watchable, and the microphone built into any camera is the weakest part of it. A camera bought without a microphone, a light and enough cards produces one disappointing project and then sits in a drawer.</p>
+            <p>Tell us what the output is for — a report, a training library, a social feed, a formal record — and we will specify against that rather than against a sensor size. We will also tell you when the budget is better spent on lighting than on the camera body.</p>
+            HTML,
+
+        '/smart-tech/wearables/' => <<<'HTML'
+            <p>Wearables reach an office order in two ways: as staff welfare and recognition items, and as issued equipment for people who work away from a desk. Both are legitimate, and they lead to different purchases.</p>
+            <p>We supply smart watches, fitness trackers and power banks, in single units and in the quantities a staff scheme needs.</p>
+            <p>For a welfare or long-service scheme, battery life and durability matter more than features, because the devices will be worn by people with no interest in configuring them. For issued equipment — field staff, drivers, security teams — the questions are what it has to survive and whether it needs its own connection or can tether to a phone.</p>
+            <p>Power banks are the item most often bought badly. Capacity is quoted at cell level and delivered at output level, so a nominal 20,000 mAh bank does not put 20,000 mAh into a laptop, and a bank without the right output will not charge one at all. Tell us what it has to charge and we will specify accordingly.</p>
+            <p>Bulk orders can be supplied engraved or branded; ask when you request the quote, because it affects the lead time.</p>
+            HTML,
     ];
 
     public function run(): void

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Icon } from '../../shared/icon';
+import { Icon, type IconName } from '../../shared/icon';
+import { iconForCategory } from './category-icons';
 import type { Navigation, NavigationNode } from '../api/catalogue-api';
 
 /**
@@ -28,8 +29,9 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Icon],
   template: `
-    <!-- Section 23.5: the first focusable element on every page. -->
-    <a class="skip-link" href="#main">Skip to main content</a>
+    <!-- The skip link moved to the shell when the masthead took over as the
+         first thing in the document; it has to stay the first focusable
+         element, and the header is no longer first. -->
 
     <!-- One rotating service promise, not a discount shout (section 23.1).
 
@@ -69,15 +71,14 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
 
     <header class="sticky top-0 z-40 border-b border-ink-100 bg-white">
       <div class="mx-auto flex max-w-(--container-page) items-center gap-4 px-(--spacing-gutter) py-3">
-        <a routerLink="/" class="font-heading text-xl font-bold text-brand-600">
-          OfficeLand
-        </a>
+        <!-- No wordmark here. The masthead above carries the brand and the
+             link home; a second mark in the sticky bar duplicated it. -->
 
         <!-- Search is a real form so it works before JS loads. -->
         <!-- Named because several pages carry a second search landmark; without
              distinct names a screen reader offers two identical "search"
              regions and neither says which is which (Phase 13c). -->
-        <form action="/search" method="get" role="search" aria-label="Search the catalogue" class="ml-auto hidden flex-1 md:block md:max-w-xl">
+        <form action="/search" method="get" role="search" aria-label="Search the catalogue" class="hidden flex-1 md:block md:max-w-2xl">
           <label for="site-search" class="sr-only">Search products</label>
           <input
             id="site-search"
@@ -209,11 +210,27 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
                   <div class="grid gap-x-8 gap-y-7 sm:grid-cols-2 lg:grid-cols-4">
                     @for (group of active.children; track group.slug) {
                       <div>
+                        <!--
+                          The subcategory heading carries its icon.
+
+                          Decorative, and it has to stay that way: the icon is
+                          inside the link, so if it were exposed to assistive
+                          technology it would become part of the link's name
+                          and every menu item would announce a glyph before
+                          its label. Icon already sets aria-hidden.
+
+                          Level 3 stays text. Forty-two icons is a scan aid;
+                          a hundred and nineteen is wallpaper, and every one
+                          of them is bytes in the bundle.
+                        -->
                         <h3 class="border-b border-ink-100 pb-2">
                           <a
                             [routerLink]="group.url"
-                            class="font-heading text-sm font-semibold text-ink-900 hover:text-brand-600"
-                          >{{ group.name }}</a>
+                            class="flex items-center gap-2 font-heading text-sm font-semibold text-ink-900 hover:text-brand-600"
+                          >
+                            <ol-icon [name]="iconFor(group.slug)" [size]="18" class="text-brand-600" />
+                            {{ group.name }}
+                          </a>
                         </h3>
 
                         @if (group.children.length) {
@@ -286,6 +303,17 @@ export class SiteHeader {
   protected readonly departments = computed<readonly NavigationNode[]>(
     () => this.navigation()?.departments ?? [],
   );
+
+  /**
+   * The glyph for a subcategory heading.
+   *
+   * A method, not a pipe or a computed: it is a pure lookup over a constant,
+   * called once per subcategory heading, and only for the one department whose
+   * panel is open — six times on the widest of them.
+   */
+  protected iconFor(slug: string): IconName {
+    return iconForCategory(slug);
+  }
 
   /**
    * Brands for the panel footer. Text links rather than logos -- the names

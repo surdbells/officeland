@@ -31,7 +31,7 @@ Audit of the live site, 2026-08-19:
 
 ## 3. The new tree
 
-Seven departments. `~` marks a leaf that exists mainly to absorb legacy terms and may be merged if it stays thin.
+Nine departments. `~` marks a leaf that exists mainly to absorb legacy terms and may be merged if it stays thin.
 
 ```
 /c/office-furniture/
@@ -84,11 +84,34 @@ Seven departments. `~` marks a leaf that exists mainly to absorb legacy terms an
 
 /c/school-supplies/
     art-craft/                  drawing-colouring · crayons-colour-pencils
-    maths-geometry/             math-sets · rulers-stencils
     classroom-essentials/
+    maths-geometry/             math-sets · rulers-stencils
+
+/c/smart-tech/
+    power-backup/               ups-systems · inverters · solar-panels · voltage-stabilisers
+    security-surveillance/      cctv-cameras · video-doorbells · access-control · alarms-sensors
+    conferencing-av/            video-bars · conference-speakerphones · webcams · interactive-displays
+    smart-office/               smart-lighting · smart-plugs-switches · smart-climate · smart-locks
+    cameras-imaging/            digital-cameras · camcorders · camera-accessories
+    wearables/                  smart-watches · fitness-trackers · power-banks
+
+/c/wpc-doors-interiors/
+    wpc-doors/                  internal-doors · door-frames · flush-doors
+    wpc-wardrobes/              fitted-wardrobes · sliding-wardrobes
+    wpc-kitchens/               kitchen-cabinets · kitchen-islands
+    wpc-interiors/              wall-panels · ceiling-panels
+    wpc-boards/                 wpc-sheets · wpc-edging
 ```
 
-**Totals:** 7 departments · 31 subcategories · 86 leaves = **124 categories** (down from 161).
+**Totals:** 9 departments · 42 subcategories · 119 leaves = **170 categories**.
+
+The tree was signed off at 124. Two departments were added on 2026-08-23, both
+for lines of business the Phase 0 legacy crawl never surfaced because the
+legacy site did not sell them online: **WPC Doors & Interiors** (a fit-out
+business — see docs/BUSINESS_FACTS.md) and **Smart Tech**. Smart Tech is not
+the reference site’s consumer version; its `power-backup/` branch is the local
+addition that justifies the department, because nothing in a Nigerian office
+runs without a UPS, an inverter or a stabiliser behind it.
 
 Counts are asserted by `TaxonomySeeder`, which warns if this document and the seeded tree diverge.
 

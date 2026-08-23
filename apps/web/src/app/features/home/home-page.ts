@@ -33,29 +33,6 @@ import { SeoService } from '../../core/seo/seo.service';
   imports: [RouterLink, Icon],
   template: `
     <!--
-      The brand band.
-
-      A BAND, not a splash overlay. The original brief asked for a centred
-      logo on a brand-colour background "animated on entry", which is
-      structurally a splash screen — and a splash screen is the most reliable
-      way to lose the LCP budget in SEO_SPEC §9. As a band it is part of the
-      layout: the hero below paints and is readable while this animates.
-
-      CSS only. A JS entry animation cannot run before hydration, so it would
-      either not play or play late and shift the layout.
-
-      Fixed height, so it contributes no CLS. Current CLS is 0 and the
-      accessibility gate protects it.
-    -->
-    <div class="ol-brand-band bg-brand-600">
-      <div class="mx-auto flex h-20 max-w-(--container-page) items-center justify-center px-(--spacing-gutter)">
-        <span class="ol-brand-band__mark font-heading text-2xl font-bold tracking-tight text-white sm:text-3xl">
-          OfficeLand
-        </span>
-      </div>
-    </div>
-
-    <!--
       Hero: 65 / 35 on desktop, stacking below 1024px.
 
       Slide 1 is the LCP element, so it is eager and high priority. Every
@@ -285,35 +262,6 @@ import { SeoService } from '../../core/seo/seo.service';
     </section>
   `,
   styles: `
-    /*
-     * The entry animation. Guarded by prefers-reduced-motion, and deliberately
-     * short: it is decoration on the critical path, and anything longer is
-     * decoration the user is waiting behind.
-     *
-     * Transform and opacity only — both composited, so this cannot cause
-     * layout shift.
-     */
-    @keyframes ol-brand-rise {
-      from {
-        opacity: 0;
-        transform: translateY(0.5rem);
-      }
-      to {
-        opacity: 1;
-        transform: none;
-      }
-    }
-
-    .ol-brand-band__mark {
-      animation: ol-brand-rise 400ms ease-out both;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .ol-brand-band__mark {
-        animation: none;
-      }
-    }
-
     /* A floor, so the hero has presence before real imagery exists. */
     .ol-hero-slide {
       min-height: 22rem;

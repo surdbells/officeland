@@ -12,11 +12,12 @@ use Illuminate\Support\Str;
  * Seeds the approved category taxonomy — docs/TAXONOMY.md, signed off
  * 2026-08-20.
  *
- * 8 departments / 36 subcategories / 97 leaves = 141 categories, replacing the
+ * 9 departments / 42 subcategories / 119 leaves = 170 categories, replacing the
  * legacy 161-term tree in which 35 terms (22%) were brand branches.
  *
- * Was 124 until 2026-08-23, when WPC Doors & Interiors was added: a fit-out
- * business the Phase 0 legacy crawl never surfaced (docs/BUSINESS_FACTS.md).
+ * Was 124 until 2026-08-23, when WPC Doors & Interiors was added (a fit-out
+ * business the Phase 0 legacy crawl never surfaced, docs/BUSINESS_FACTS.md),
+ * then 170 the same day when Smart Tech was added.
  *
  * Idempotent: keyed on `path`, so re-running updates rather than duplicates.
  * Categories seed as `is_indexable = false`; they may only be raised once they
@@ -92,6 +93,61 @@ final class TaxonomySeeder extends Seeder
                 'software' => ['name' => 'Software', 'children' => [
                     'office-productivity' => 'Office & Productivity',
                     'antivirus-security' => 'Antivirus & Security',
+                ]],
+            ],
+        ],
+        /*
+         * Smart Tech — added 2026-08-23.
+         *
+         * The department the reference megamenu has and this taxonomy did not.
+         * It is NOT a copy of the reference's consumer version: no gaming, no
+         * AI glasses, no drones. What is here is the connected and powered
+         * hardware an office, school or ministry actually raises a requisition
+         * for.
+         *
+         * Power & Backup is the deliberate local addition, and it is the
+         * reason this department is worth having at all. Nothing in a Nigerian
+         * office runs without a UPS, an inverter or a stabiliser behind it,
+         * and buyers look for those next to the equipment they protect rather
+         * than under IT. "Smart" is stretched to cover it; the alternative was
+         * a category nobody would find.
+         */
+        'smart-tech' => [
+            'name' => 'Smart Tech',
+            'children' => [
+                'power-backup' => ['name' => 'Power & Backup', 'children' => [
+                    'ups-systems' => 'UPS Systems',
+                    'inverters' => 'Inverters',
+                    'solar-panels' => 'Solar Panels',
+                    'voltage-stabilisers' => 'Voltage Stabilisers',
+                ]],
+                'security-surveillance' => ['name' => 'Security & Surveillance', 'children' => [
+                    'cctv-cameras' => 'CCTV Cameras',
+                    'video-doorbells' => 'Video Doorbells',
+                    'access-control' => 'Access Control',
+                    'alarms-sensors' => 'Alarms & Sensors',
+                ]],
+                'conferencing-av' => ['name' => 'Conferencing & AV', 'children' => [
+                    'video-bars' => 'Video Conferencing Bars',
+                    'conference-speakerphones' => 'Conference Speakerphones',
+                    'webcams' => 'Webcams',
+                    'interactive-displays' => 'Interactive Displays',
+                ]],
+                'smart-office' => ['name' => 'Smart Office', 'children' => [
+                    'smart-lighting' => 'Smart Lighting',
+                    'smart-plugs-switches' => 'Smart Plugs & Switches',
+                    'smart-climate' => 'Smart Climate Control',
+                    'smart-locks' => 'Smart Locks',
+                ]],
+                'cameras-imaging' => ['name' => 'Cameras & Imaging', 'children' => [
+                    'digital-cameras' => 'Digital Cameras',
+                    'camcorders' => 'Camcorders',
+                    'camera-accessories' => 'Camera Accessories',
+                ]],
+                'wearables' => ['name' => 'Wearables', 'children' => [
+                    'smart-watches' => 'Smart Watches',
+                    'fitness-trackers' => 'Fitness Trackers',
+                    'power-banks' => 'Power Banks',
                 ]],
             ],
         ],
@@ -302,8 +358,8 @@ final class TaxonomySeeder extends Seeder
 
         // The tree in docs/TAXONOMY.md is the approved artefact. If this drifts
         // from it, the redirect map and the URL structure drift with it.
-        if ($total !== 141) {
-            $this->command->warn("Expected 141 categories, seeded {$total} — docs/TAXONOMY.md and this seeder have diverged.");
+        if ($total !== 170) {
+            $this->command->warn("Expected 170 categories, seeded {$total} — docs/TAXONOMY.md and this seeder have diverged.");
         }
     }
 
