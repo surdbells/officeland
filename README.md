@@ -80,11 +80,12 @@ docs/              Plan, architecture, SEO spec, decisions, taxonomy
 
 | Document | Contents |
 |---|---|
+| [BACKLOG.md](docs/BACKLOG.md) | **Everything outstanding** — what is blocked, on what, and what unblocks it |
 | [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) | 15 phases with gates, dependencies and estimates |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Topology, prerender pipeline, pooling, Icecat ingestion |
 | [SEO_SPEC.md](docs/SEO_SPEC.md) | URL architecture, metadata, structured data, CI gates |
 | [DECISIONS.md](docs/DECISIONS.md) | Every decision and departure, with rationale |
-| [TAXONOMY.md](docs/TAXONOMY.md) | The 124-category tree and its design rules |
+| [TAXONOMY.md](docs/TAXONOMY.md) | The 170-category tree and its design rules |
 | [REDIRECT_MAP.csv](docs/REDIRECT_MAP.csv) | Legacy URL mapping — 161/161 categories covered |
 
 ## Development
