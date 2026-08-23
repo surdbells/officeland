@@ -133,7 +133,7 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
         linking the megamenu exists to provide. Same rule as the PDP gallery.
       -->
       <nav aria-label="Departments" class="relative hidden border-t border-ink-100 md:block">
-        <ul class="mx-auto flex max-w-(--container-page) flex-nowrap items-stretch gap-0.5 px-(--spacing-gutter)">
+        <ul class="ol-dept-row mx-auto flex max-w-(--container-page) flex-nowrap items-stretch gap-0.5 overflow-x-auto px-(--spacing-gutter)">
           @for (department of departments(); track department.slug; let i = $index) {
             <li
               class="shrink-0"
@@ -342,6 +342,30 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
         }
       </nav>
     </header>
+  `,
+  styles: `
+    /*
+     * The department row scrolls rather than pushing the page.
+     *
+     * Six departments plus "More" and "Shop all" fit comfortably at 1366 and
+     * above, which is what the fixed split was chosen against. But this bar
+     * is shown from 768px up, and between roughly 768 and 1000 the same six
+     * do not fit — with flex-nowrap and shrink-0 they widened the document
+     * and gave the whole site a horizontal scrollbar. Caught by measuring
+     * scrollWidth against clientWidth in the browser, not by any gate.
+     *
+     * overflow-x on the row contains it: the row scrolls, the page does not,
+     * and the single line survives at every width. The panel is a sibling of
+     * this list rather than a child, so it is unaffected by the new scroll
+     * container.
+     */
+    .ol-dept-row {
+      scrollbar-width: none;
+    }
+
+    .ol-dept-row::-webkit-scrollbar {
+      display: none;
+    }
   `,
   host: {
     '(document:keydown.escape)': 'close()',

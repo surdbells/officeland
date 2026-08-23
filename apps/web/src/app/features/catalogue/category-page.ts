@@ -91,7 +91,10 @@ import { ProductCard } from '../../shared/product-card';
           </nav>
         }
 
-        <div class="mt-10 grid gap-8 lg:grid-cols-[16rem_1fr]">
+        <!-- Facets sit ABOVE the grid on every listing except /shop/. The
+             scope is already narrowed here, so filtering is a refinement and
+             the products keep the full width. -->
+        <div class="mt-10">
           <ol-facet-rail
             [facets]="listing().facets"
             [selected]="selectedFilters()"
@@ -99,7 +102,7 @@ import { ProductCard } from '../../shared/product-card';
             [preserved]="preservedParams()"
           />
 
-          <section aria-labelledby="products-heading">
+          <section aria-labelledby="products-heading" class="mt-8">
             <div class="flex flex-wrap items-baseline justify-between gap-3">
               <h2 id="products-heading" class="font-heading text-lg font-semibold">
                 Products

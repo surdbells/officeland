@@ -20,16 +20,22 @@ import { ProductCard } from '../../shared/product-card';
  * requisition list rather than a browse path has no category to start from,
  * and the reference site has no equivalent at all.
  *
- * ── Filters on the left ──────────────────────────────────────────────────
- * The same side as the category pages. A filter rail that moves depending on
- * which listing you are looking at costs the visitor a moment of hunting on
- * every page, and consistency across the site is worth more than any argument
- * for one side over the other.
+ * ── A left rail here, a filter bar everywhere else ───────────────────────
+ * This is the only listing with a vertical rail. Category, brand and search
+ * pages put their facets in a horizontal bar above the grid instead.
  *
- * The DOM order is still grid first, filters second, so that on a phone —
- * where the two columns stack — the products are what appears under the
- * heading rather than a long rail of filters. CSS "order" puts the rail on
- * the left at desktop widths without moving it in the markup.
+ * The split follows how the pages are used. A category page arrives with the
+ * scope already narrowed — you are inside "Seating" — so filtering is a
+ * secondary act, and a bar above the grid keeps the products at full width
+ * where they belong. This page starts from the entire catalogue, so filtering
+ * IS the page: there are more groups, more values, and more traffic through
+ * them. A rail holds that without collapsing anything, and it stays visible
+ * while the grid scrolls.
+ *
+ * The DOM order is grid first, filters second, so that on a phone — where the
+ * two columns stack — the products are what appears under the heading rather
+ * than a long rail of filters. CSS "order" puts the rail on the left at
+ * desktop widths without moving it in the markup.
  *
  * ── Noindex, and not reluctantly ─────────────────────────────────────────
  * An unfiltered listing of the whole catalogue competes directly with the
@@ -144,6 +150,7 @@ import { ProductCard } from '../../shared/product-card';
               [selected]="selectedFilters()"
               basePath="/shop/"
               [preserved]="preservedParams()"
+              layout="rail"
             />
           </div>
         </div>

@@ -70,7 +70,8 @@ import { ProductCard } from '../../shared/product-card';
       }
 
       @if (listing().data.length) {
-        <div class="mt-8 grid gap-8 lg:grid-cols-[16rem_1fr]">
+        <!-- Facets above the results; see category-page. -->
+        <div class="mt-8">
           <ol-facet-rail
             [facets]="listing().facets"
             [selected]="selectedFilters()"
@@ -78,7 +79,7 @@ import { ProductCard } from '../../shared/product-card';
             [preserved]="searchParams()"
           />
 
-          <section aria-labelledby="results-heading">
+          <section aria-labelledby="results-heading" class="mt-8">
             <h2 id="results-heading" class="sr-only">Results</h2>
 
             <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
