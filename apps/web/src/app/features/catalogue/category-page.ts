@@ -53,8 +53,23 @@ import { ProductCard } from '../../shared/product-card';
 
         <h1 class="mt-4 font-heading text-3xl font-bold">{{ cat.name }}</h1>
 
+        <!--
+          Intro copy is HTML from the CMS, so it is bound rather than
+          interpolated. Interpolated it rendered the tags as visible text —
+          "<p>Sliding doors run within..." — on every one of the 24 category
+          pages that carry copy. It looked fine to the robots check, to the
+          raw-HTML gate and to axe; only looking at the page caught it.
+
+          [innerHTML] is safe here in a way it was not for the icons: Domino
+          only lacks the setter for SVG elements, and Angular sanitises the
+          value, which is what it is for. The copy is authored in the admin
+          by staff, not submitted by visitors.
+        -->
         @if (cat.intro_copy) {
-          <div class="mt-4 max-w-3xl text-ink-600">{{ cat.intro_copy }}</div>
+          <div
+            class="ol-prose mt-4 max-w-3xl text-ink-600"
+            [innerHTML]="cat.intro_copy"
+          ></div>
         }
 
         <!-- D-011. Real anchors, always in the HTML. -->
@@ -291,7 +306,7 @@ export class CategoryPage {
             `${cat.name} in Nigeria`,
             cat.name,
           ],
-      description: cat.seo?.meta_description ?? cat.intro_copy ?? undefined,
+      description: cat.seo?.meta_description ?? summarise(cat.intro_copy),
       path: paged ? `${cat.url}page/${page}/` : cat.url,
       indexable: filtered ? false : cat.seo?.is_indexable !== false,
       canonicalOverride: cat.seo?.canonical_override ?? null,
@@ -313,4 +328,38 @@ export class CategoryPage {
 
     this.seo.setStructuredData(nodes);
   }
+}
+
+/**
+ * A meta description fallback derived from intro copy.
+ *
+ * The copy is HTML, and it was being handed to the description tag whole —
+ * tags, entities and all — whenever a category had no explicit
+ * meta_description. Strip the markup and cut at a word boundary near the
+ * length search engines actually display.
+ *
+ * A fallback, not a substitute: an editor-written meta_description still
+ * wins, and should, because the first 155 characters of a good intro are
+ * rarely the 155 characters that earn a click.
+ */
+function summarise(html: string | null | undefined): string | undefined {
+  if (!html) {
+    return undefined;
+  }
+
+  const text = html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&#(\d+);/g, (_, code: string) => String.fromCharCode(Number(code)))
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (text.length <= 155) {
+    return text || undefined;
+  }
+
+  const cut = text.slice(0, 155);
+
+  return cut.slice(0, cut.lastIndexOf(' ')) + '…';
 }

@@ -237,3 +237,39 @@
     scroll-behavior: auto !important;
   }
 }
+
+/*
+ * CMS prose.
+ *
+ * Global, and it has to be. This styles markup injected with [innerHTML] —
+ * category intros, product descriptions — and injected nodes never receive
+ * the _ngcontent attribute Angular's emulated encapsulation scopes on. A
+ * component-scoped rule silently matches nothing, which is exactly what the
+ * first attempt at this did: the paragraphs rendered, ran together, and the
+ * stylesheet looked correct.
+ *
+ * ::ng-deep would have worked and is deprecated. One global class, used by
+ * every surface that renders authored HTML, is the honest version.
+ *
+ * The base layer gives <p> no margin on purpose — right for markup this
+ * application writes, wrong for prose it does not.
+ */
+.ol-prose p + p {
+  margin-top: 1rem;
+}
+
+.ol-prose ul,
+.ol-prose ol {
+  margin-top: 1rem;
+  padding-left: 1.25rem;
+  list-style: revert;
+}
+
+.ol-prose li + li {
+  margin-top: 0.375rem;
+}
+
+.ol-prose a {
+  color: var(--color-brand-600);
+  text-decoration: underline;
+}

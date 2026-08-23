@@ -94,7 +94,7 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
         @if (p.description_html) {
           <section class="mt-12">
             <h2 class="font-heading text-xl font-semibold">Overview</h2>
-            <div class="mt-3 max-w-3xl text-ink-600" [innerHTML]="p.description_html"></div>
+            <div class="ol-prose mt-3 max-w-3xl text-ink-600" [innerHTML]="p.description_html"></div>
           </section>
         }
 

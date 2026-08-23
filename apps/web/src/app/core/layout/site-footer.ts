@@ -79,11 +79,11 @@ import { RouterLink } from '@angular/router';
                    decorative; the address IS the label. -->
               <p class="flex items-center gap-2.5">
                 <ol-icon name="mail" [size]="18" class="text-ink-400" />
-                <a href="mailto:sales@officelandng.com" class="hover:text-brand-600">sales&#64;officelandng.com</a>
+                <a href="mailto:sales@officelandng.com" class="ol-wrap-anywhere hover:text-brand-600">sales&#64;officelandng.com</a>
               </p>
               <p class="flex items-center gap-2.5">
                 <ol-icon name="mail" [size]="18" class="text-ink-400" />
-                <a href="mailto:support@officelandng.com" class="hover:text-brand-600">support&#64;officelandng.com</a>
+                <a href="mailto:support@officelandng.com" class="ol-wrap-anywhere hover:text-brand-600">support&#64;officelandng.com</a>
               </p>
               <p class="flex items-center gap-2.5">
                 <ol-icon name="phone" [size]="18" class="text-ink-400" />
@@ -121,6 +121,23 @@ import { RouterLink } from '@angular/router';
         </p>
       </div>
     </footer>
+  `,
+  styles: `
+    /*
+     * Email addresses are long unbreakable strings, and in the narrow column
+     * this footer uses at tablet widths they set the column's minimum width
+     * and pushed the whole document into a horizontal scrollbar. Found by
+     * measuring scrollWidth against clientWidth in the browser; nothing in
+     * the build would have flagged it.
+     *
+     * "anywhere" rather than "break-word" on purpose: only "anywhere"
+     * affects the min-content size, which is the measurement that was
+     * causing the overflow. break-word wraps the text and leaves the box
+     * just as wide.
+     */
+    .ol-wrap-anywhere {
+      overflow-wrap: anywhere;
+    }
   `,
 })
 export class SiteFooter {
