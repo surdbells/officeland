@@ -71,6 +71,21 @@ final class RouteResolver
      */
     private function forProduct(Product $product): array
     {
+        /*
+         * Load what this method reads rather than trusting the caller to.
+         *
+         * The resolver runs from a model observer, so its callers are every
+         * write path in the application — Filament, the CSV importer, Icecat
+         * ingestion, seeders, tinker. Reading `$product->brand` as a property
+         * throws under `preventLazyLoading()` (AppServiceProvider) unless that
+         * particular caller happened to eager-load it, which turns a rendering
+         * concern into a constraint on every save in the codebase.
+         *
+         * `loadMissing` is a no-op when the relation is already loaded, so a
+         * caller that does eager-load pays nothing for this.
+         */
+        $product->loadMissing(['brand', 'primaryCategory']);
+
         $direct = [$product->url()];
 
         // Every category the product appears in, plus the ancestors of each —
@@ -154,6 +169,12 @@ final class RouteResolver
      */
     private function forCategory(Category $category): array
     {
+        // As in forProduct: `$category->children` is read as a property below,
+        // so the relation is loaded here rather than assumed. Seeding intro
+        // copy is what surfaced this — every save threw, and the enqueue was
+        // silently lost with it.
+        $category->loadMissing('children');
+
         $routes = $this->listingRoutes($category->url());
 
         // The parent renders this category in its child list (D-011), so a

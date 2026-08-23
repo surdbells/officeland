@@ -230,6 +230,68 @@ final class RenderInvalidationTest extends TestCase
     }
 
     // -----------------------------------------------------------------
+    // Lazy loading
+    // -----------------------------------------------------------------
+
+    /**
+     * The resolver runs inside a model observer, so it is reached from every
+     * write path in the application. It must not depend on the caller having
+     * eager-loaded the relations it reads.
+     *
+     * Arming the guard takes a deliberate setup. Eloquent only sets
+     * `preventsLazyLoading` on a model instance when the query that hydrated
+     * it returned MORE THAN ONE row (Builder::hydrate) — the guard is aimed at
+     * N+1 in collections, not at single-model reads. So a factory-created
+     * model, or anything fetched with `first()`, sails past it.
+     *
+     * That is precisely what makes the bug this test covers so unpleasant:
+     * every existing test here passed, and the failure only appeared when a
+     * real batch operation iterated categories and saved each one. The route
+     * enqueue was lost with the exception.
+     */
+    public function test_resolving_a_category_hydrated_in_bulk_does_not_lazy_load(): void
+    {
+        $department = Category::factory()->root('cleaning')->create();
+        Category::factory()->childOf($department, 'janitorial')->create();
+        Category::factory()->childOf($department, 'washroom')->create();
+
+        $hydrated = Category::query()->orderBy('id')->get()->firstWhere('path', '/cleaning/');
+
+        $this->assertNotNull($hydrated);
+        $this->assertTrue(
+            $hydrated->preventsLazyLoading,
+            'The guard must be armed on this instance, or the test proves nothing.',
+        );
+
+        $direct = $this->routesOf($this->resolver->resolve($hydrated), RenderRequest::PRIORITY_DIRECT);
+
+        $this->assertContains('/c/cleaning/janitorial/', $direct);
+        $this->assertContains('/c/cleaning/washroom/', $direct);
+    }
+
+    public function test_resolving_a_product_hydrated_in_bulk_does_not_lazy_load(): void
+    {
+        $brand = Brand::factory()->create(['slug' => 'epson']);
+        $category = Category::factory()->root('printing')->create();
+
+        Product::factory()->forBrand($brand)->create(['primary_category_id' => $category->id]);
+        Product::factory()->create();
+
+        $hydrated = Product::query()->orderBy('id')->get()->firstWhere('brand_id', $brand->id);
+
+        $this->assertNotNull($hydrated);
+        $this->assertTrue(
+            $hydrated->preventsLazyLoading,
+            'The guard must be armed on this instance, or the test proves nothing.',
+        );
+
+        $direct = $this->routesOf($this->resolver->resolve($hydrated), RenderRequest::PRIORITY_DIRECT);
+
+        $this->assertContains('/brands/epson/', $direct);
+        $this->assertContains('/c/printing/', $direct);
+    }
+
+    // -----------------------------------------------------------------
     // Deduplication, debouncing and the observer
     // -----------------------------------------------------------------
 
