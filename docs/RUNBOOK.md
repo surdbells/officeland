@@ -49,7 +49,15 @@ is a page that appears not to exist when it was simply never built.
 | `serve.sh --no-build` from `docker compose down` | 33 s |
 | `serve.sh --rebuild` from `docker compose down` | 2 min 56 s |
 
-**Editor integration.** `.claude/launch.json` runs the same script, so the
+**Editor integration.** `.claude/launch.json` *attaches* to the running stack
+rather than starting one — it has a `url` and no command. The port is not the
+preview harness's to choose: Caddy binds 8095 from `compose.yaml`, and
+`.env`, the generated redirect snippet and the CSP all assume it, so
+`autoPort` is `false`. Start the stack with the script first; the preview then
+connects to it. Trying to have the harness start it produces "Port 8095 is in
+use by com.docker.backend.exe", which is Docker correctly holding the port
+this application asked for.
+
 in-app browser can start the stack itself.
 
 ## 1. How a change reaches production

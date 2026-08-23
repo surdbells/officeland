@@ -3,9 +3,9 @@
   "configurations": [
     {
       "name": "officeland",
-      "runtimeExecutable": "sh",
-      "runtimeArgs": ["scripts/serve.sh"],
-      "port": 8095
+      "url": "http://localhost:8095",
+      "port": 8095,
+      "autoPort": false
     }
   ]
 }
