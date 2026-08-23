@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { Icon } from '../../shared/icon';
 import type { Navigation, NavigationNode } from '../api/catalogue-api';
 
 /**
@@ -25,7 +26,7 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
   selector: 'ol-site-header',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, Icon],
   template: `
     <!-- Section 23.5: the first focusable element on every page. -->
     <a class="skip-link" href="#main">Skip to main content</a>
@@ -108,12 +109,17 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
         </div>
       </div>
 
-      <!-- Departments. Level 1 and 2 are real anchors in the HTML. -->
-      <nav aria-label="Departments" class="hidden border-t border-ink-100 md:block">
+      <!--
+        Departments. Level 1 and 2 are real anchors in the HTML.
+
+        "relative" sits on the NAV, not on each item, so the panel can span the
+        full container width. Anchored to the list item it could only ever be
+        as wide as one department label allows.
+      -->
+      <nav aria-label="Departments" class="relative hidden border-t border-ink-100 md:block">
         <ul class="mx-auto flex max-w-(--container-page) items-stretch gap-1 px-(--spacing-gutter)">
           @for (department of departments(); track department.slug) {
             <li
-              class="relative"
               (mouseenter)="openWithIntent(department.slug)"
               (mouseleave)="closeWithIntent()"
             >
@@ -123,43 +129,146 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
                    keyboard. -->
               <a
                 [routerLink]="department.url"
-                class="block px-3 py-3 text-sm font-medium hover:text-brand-600"
+                class="flex items-center gap-1 border-b-2 px-3 py-3 text-sm font-medium transition-colors"
+                [class.border-brand-600]="open() === department.slug"
+                [class.text-brand-600]="open() === department.slug"
+                [class.border-transparent]="open() !== department.slug"
                 [attr.aria-expanded]="open() === department.slug"
                 [attr.aria-controls]="'panel-' + department.slug"
                 (keydown.enter)="toggle(department.slug, $event)"
                 (keydown.space)="toggle(department.slug, $event)"
                 (focus)="open.set(department.slug)"
-              >{{ department.name }}</a>
+              >
+                {{ department.name }}
+                @if (department.children.length) {
+                  <ol-icon name="chevron-down" [size]="14" />
+                }
+              </a>
+            </li>
+          }
+        </ul>
 
-              @if (open() === department.slug && department.children.length) {
-                <!-- Absolute, so opening the panel shifts nothing
-                     (section 23.1 rule 5). -->
-                <div
-                  [id]="'panel-' + department.slug"
-                  class="absolute left-0 top-full z-50 w-max min-w-[36rem] border border-ink-100 bg-white p-6 shadow-lg"
-                >
-                  <ul class="grid grid-cols-3 gap-x-8 gap-y-2">
-                    @for (child of department.children; track child.slug) {
+        <!--
+          One panel for whichever department is open, rendered OUTSIDE the
+          loop.
+
+          Only the open department's subtree is ever in the DOM — that is
+          §23.1 rule 2's "level 3 on intent", and it is what keeps the header
+          under the ~150-anchor budget. Rendering all seven departments' trees
+          eagerly would put roughly 250 anchors on every page and dilute the
+          crawl signal the megamenu exists to provide.
+
+          Absolute, so opening it shifts nothing (rule 5). Measured CLS is 0
+          and the gate protects that.
+        -->
+        @if (activeDepartment(); as active) {
+          <div
+            [id]="'panel-' + active.slug"
+            class="absolute inset-x-0 top-full z-50 border-t border-ink-100 bg-white shadow-xl"
+            (mouseenter)="cancelClose()"
+            (mouseleave)="closeWithIntent()"
+          >
+            <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8">
+              <div class="grid gap-8 lg:grid-cols-[14rem_1fr]">
+                <!--
+                  The department rail. Lets a visitor move between departments
+                  without closing and reopening the menu, which is the whole
+                  ergonomic advantage of this pattern over a per-item dropdown.
+                -->
+                <div class="hidden border-r border-ink-100 pr-6 lg:block">
+                  <h3 class="font-heading text-xs font-semibold uppercase tracking-[0.14em] text-ink-400">
+                    Departments
+                  </h3>
+                  <ul class="mt-3 space-y-0.5">
+                    @for (department of departments(); track department.slug) {
                       <li>
-                        <a [routerLink]="child.url" class="text-sm hover:text-brand-600">{{ child.name }}</a>
+                        <a
+                          [routerLink]="department.url"
+                          class="flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors hover:bg-brand-50 hover:text-brand-700"
+                          [class.bg-brand-50]="department.slug === active.slug"
+                          [class.font-semibold]="department.slug === active.slug"
+                          [class.text-brand-700]="department.slug === active.slug"
+                          (mouseenter)="open.set(department.slug)"
+                          (focus)="open.set(department.slug)"
+                        >
+                          {{ department.name }}
+                          <ol-icon name="chevron-right" [size]="14" class="text-ink-400" />
+                        </a>
                       </li>
                     }
                   </ul>
-                  <p class="mt-4 border-t border-ink-100 pt-3 text-sm">
-                    <a [routerLink]="department.url" class="font-medium text-brand-600">
-                      All {{ department.name }} &rarr;
-                    </a>
-                  </p>
                 </div>
-              }
-            </li>
-          }
 
-          <!-- Section 23.1: "Brands" as a peer nav entry is what replaces the
-               broken /product-category/hp/ pattern (legacy defect 4E). -->
-          <li><a routerLink="/brands/" class="block px-3 py-3 text-sm font-medium hover:text-brand-600">Brands</a></li>
-          <li><a routerLink="/services/" class="block px-3 py-3 text-sm font-medium hover:text-brand-600">Services</a></li>
-        </ul>
+                <div>
+                  <!--
+                    Level 2 as a column heading, level 3 beneath it. This is
+                    the shape the taxonomy already has (department →
+                    subcategory → leaf), so the menu mirrors the URL structure
+                    rather than inventing a second one.
+                  -->
+                  <div class="grid gap-x-8 gap-y-7 sm:grid-cols-2 lg:grid-cols-4">
+                    @for (group of active.children; track group.slug) {
+                      <div>
+                        <h3 class="border-b border-ink-100 pb-2">
+                          <a
+                            [routerLink]="group.url"
+                            class="font-heading text-sm font-semibold text-ink-900 hover:text-brand-600"
+                          >{{ group.name }}</a>
+                        </h3>
+
+                        @if (group.children.length) {
+                          <ul class="mt-3 space-y-1.5">
+                            @for (leaf of group.children; track leaf.slug) {
+                              <li>
+                                <a
+                                  [routerLink]="leaf.url"
+                                  class="text-sm text-ink-600 hover:text-brand-600"
+                                >{{ leaf.name }}</a>
+                              </li>
+                            }
+                          </ul>
+                        }
+                      </div>
+                    }
+                  </div>
+
+                  <div class="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-ink-100 pt-5">
+                    <a
+                      [routerLink]="active.url"
+                      class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:underline"
+                    >
+                      All {{ active.name }}
+                      <ol-icon name="arrow-right" [size]="16" />
+                    </a>
+
+                    <!--
+                      Brands as TEXT, not logos.
+
+                      Logos would need licensed files per brand and a decision
+                      about trademark use; the names are already in the
+                      navigation payload, they are crawlable, and they carry
+                      the same "we stock this" signal. Logos can replace them
+                      when the assets exist without changing this structure.
+                    -->
+                    @if (brands().length) {
+                      <p class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                        <span class="font-heading text-xs font-semibold uppercase tracking-[0.14em] text-ink-400">
+                          Brands
+                        </span>
+                        @for (brand of brands(); track brand.slug) {
+                          <a
+                            [routerLink]="brand.url"
+                            class="font-medium text-ink-600 hover:text-brand-600"
+                          >{{ brand.name }}</a>
+                        }
+                      </p>
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
       </nav>
     </header>
   `,
@@ -179,6 +288,32 @@ export class SiteHeader {
   );
 
   /**
+   * Brands for the panel footer. Text links rather than logos -- the names
+   * are already in the payload, they are crawlable, and logos would need
+   * licensed files plus a trademark decision per brand.
+   */
+  protected readonly brands = computed(() => this.navigation()?.brands ?? []);
+
+  /**
+   * The open department, resolved once rather than re-scanned per column.
+   *
+   * Returns null when nothing is open OR when the open department has no
+   * children, so a childless department behaves as a plain link instead of
+   * opening an empty panel.
+   */
+  protected readonly activeDepartment = computed<NavigationNode | null>(() => {
+    const slug = this.open();
+
+    if (slug === null) {
+      return null;
+    }
+
+    const match = this.departments().find((d) => d.slug === slug);
+
+    return match && match.children.length > 0 ? match : null;
+  });
+
+  /**
    * ~150ms of intent before opening. Without it, dragging the pointer across
    * the bar flickers every panel in turn.
    */
@@ -188,6 +323,16 @@ export class SiteHeader {
   protected openWithIntent(slug: string): void {
     this.clearTimers();
     this.openTimer = setTimeout(() => this.open.set(slug), 150);
+  }
+
+  /**
+   * Keeps the panel open while the pointer is inside it.
+   *
+   * Without this the panel closes the moment the pointer leaves the trigger,
+   * which makes every link in it unreachable by mouse.
+   */
+  protected cancelClose(): void {
+    this.clearTimers();
   }
 
   protected closeWithIntent(): void {
