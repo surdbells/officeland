@@ -9,13 +9,26 @@ submit a quote request; sales prices and responds internally.
 ## Quick start
 
 ```bash
-cp .env.example .env
-docker compose up --build
+sh scripts/serve.sh
 ```
+
+Starts the containers, waits for every healthcheck, migrates, publishes the
+storefront if nothing is published yet, and prints the URLs. Copies
+`.env.example` to `.env` on a fresh clone. Safe to run repeatedly.
+
+`--rebuild` forces a fresh storefront build (about three minutes), `--no-build`
+skips it, `--detach` returns to the prompt instead of tailing logs. Stop with
+`docker compose down`.
+
+Plain `docker compose up` starts the containers but does **not** publish the
+storefront, and under D-009 there is nothing to serve until it has been — see
+docs/RUNBOOK.md §0.
 
 | URL | What |
 |---|---|
 | http://localhost:8095/ | Storefront (prerendered static HTML) |
+| http://localhost:8095/shop/ | The whole catalogue, faceted |
+| http://localhost:8095/admin | Filament admin |
 | http://localhost:8095/health/live | Liveness probe |
 | http://localhost:8095/health/ready | Readiness probe — DB, Redis, disk, queue |
 

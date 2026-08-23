@@ -181,6 +181,13 @@ services:
       # @contracts/api at ../../packages, so packages/ must sit two levels up.
       - ./apps/web:/repo/apps/web
       - ./packages:/repo/packages:ro
+      # The gates reach outside apps/web. The CSP gate writes the Caddy
+      # snippet and the icon gate reads the approved taxonomy; without these
+      # two, `npm run gate` had to be split between the container and the
+      # host, and the CSP half silently reported "no committed policy"
+      # instead of checking one.
+      - ./infra/caddy:/repo/infra/caddy
+      - ./docs:/repo/docs:ro
       # Named volume keeps Linux-native node_modules out of the host bind
       # mount; the host runs Node 24.14 which is below Angular CLI 22's floor.
       - web_node_modules:/repo/apps/web/node_modules

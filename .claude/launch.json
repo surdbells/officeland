@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "officeland",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["scripts/serve.sh"],
+      "port": 8095
+    }
+  ]
+}

@@ -6,6 +6,52 @@ The storefront is **static files** (D-009). There is no application between Cadd
 
 ---
 
+## 0. Running it locally
+
+```bash
+sh scripts/serve.sh
+```
+
+That is the whole thing. It starts the containers, waits for every
+healthcheck, runs migrations, publishes the storefront if nothing is
+published yet, and prints the URLs. Safe to run repeatedly — containers that
+are already up are left alone.
+
+| Flag | What it does |
+| --- | --- |
+| *(none)* | Start. Build only if nothing is published yet. |
+| `--rebuild` | Start and rebuild the storefront from scratch (~3 min). |
+| `--no-build` | Start only. Serve whatever is already published. |
+| `--detach` | Do not tail logs; return to the prompt. |
+
+| Surface | URL |
+| --- | --- |
+| Storefront | `http://localhost:8095/` |
+| Admin | `http://localhost:8095/admin` |
+| API | `http://localhost:8095/api/v1/navigation` |
+| Health | `http://localhost:8095/health/ready` |
+
+Stop everything with `docker compose down`. Ctrl-C only detaches the log tail;
+the stack keeps running.
+
+**Why a script rather than `docker compose up`.** Under D-009 nothing is
+rendered at request time. The site Caddy serves is a directory of static files
+that only exists after an Angular build has been *published* into it, and the
+build output and the served directory are deliberately different volumes so
+the swap is atomic. `docker compose up` gets you containers and an empty or
+stale storefront; the missing step is the one people forget, and the symptom
+is a page that appears not to exist when it was simply never built.
+
+**Cold-start timings**, measured on the development machine:
+
+| | Wall clock |
+| --- | --- |
+| `serve.sh --no-build` from `docker compose down` | 33 s |
+| `serve.sh --rebuild` from `docker compose down` | 2 min 56 s |
+
+**Editor integration.** `.claude/launch.json` runs the same script, so the
+in-app browser can start the stack itself.
+
 ## 1. How a change reaches production
 
 There are two paths, and they cover different kinds of change.
