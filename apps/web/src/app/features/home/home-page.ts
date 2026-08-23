@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
 import { CatalogueApi } from '../../core/api/catalogue-api';
+import { Icon, type IconName } from '../../shared/icon';
 import { SeoService } from '../../core/seo/seo.service';
 
 /**
@@ -29,7 +30,7 @@ import { SeoService } from '../../core/seo/seo.service';
   selector: 'ol-home-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, Icon],
   template: `
     <!--
       The brand band.
@@ -238,7 +239,10 @@ import { SeoService } from '../../core/seo/seo.service';
         <ul class="mt-10 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 lg:grid-cols-6">
           @for (property of wpcProperties; track property.name) {
             <li class="border-t border-white/15 pt-4">
-              <h3 class="font-heading text-sm font-semibold text-white">{{ property.name }}</h3>
+              <span class="inline-flex text-accent-400">
+                <ol-icon [name]="property.icon" [size]="22" />
+              </span>
+              <h3 class="mt-2.5 font-heading text-sm font-semibold text-white">{{ property.name }}</h3>
               <p class="mt-1 text-sm text-white/60">{{ property.detail }}</p>
             </li>
           }
@@ -348,13 +352,13 @@ export class HomePage {
    * They move into the CMS with the WPC landing page.
    */
   protected readonly wpcProperties = [
-    { name: '100% waterproof', detail: 'Kitchens and wet areas without swelling.' },
-    { name: 'Termite proof', detail: 'The failure mode that ends timber here.' },
-    { name: 'Fire retardant', detail: 'Slows ignition and spread.' },
-    { name: 'High density core', detail: 'Holds a screw and takes a load.' },
-    { name: 'Eco friendly', detail: 'No felled hardwood in the board.' },
-    { name: 'Low maintenance', detail: 'Wipes clean; no sealing or refinishing.' },
-  ] as const;
+    { icon: 'droplets', name: '100% waterproof', detail: 'Kitchens and wet areas without swelling.' },
+    { icon: 'bug-off', name: 'Termite proof', detail: 'The failure mode that ends timber here.' },
+    { icon: 'flame', name: 'Fire retardant', detail: 'Slows ignition and spread.' },
+    { icon: 'layers', name: 'High density core', detail: 'Holds a screw and takes a load.' },
+    { icon: 'leaf', name: 'Eco friendly', detail: 'No felled hardwood in the board.' },
+    { icon: 'sparkles', name: 'Low maintenance', detail: 'Wipes clean; no sealing or refinishing.' },
+  ] as const satisfies readonly { icon: IconName; name: string; detail: string }[];
 
   constructor() {
     /*
