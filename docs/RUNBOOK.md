@@ -677,3 +677,20 @@ curl -sS -o /dev/null -w "%{http_code}\n" http://localhost:8095/definitely-not-a
 ```
 
 404 is correct. 200 means the fallback is back.
+
+### 14.6 Fault: a new category is missing from the megamenu
+
+The pages exist and serve, but the department never appears in the header.
+
+**The navigation endpoint is cached.** `ng build` fetches `/api/v1/navigation` once at build time to render the megamenu, so a taxonomy change that has not invalidated that cache produces a build with the *old* tree — every new page renders and is reachable by URL, and nothing links to it.
+
+It fails quietly: the gates all pass, because the pages are real and the crawl depth is unaffected.
+
+```bash
+docker compose exec api php artisan cache:clear
+docker compose exec render sh -lc 'cd /repo/apps/web && npx ng build'
+docker compose restart render          # publish — see §2 step 3
+```
+
+> Seeding the taxonomy does not clear the cache. Until it does, `cache:clear`
+> belongs in the same breath as `db:seed --class=TaxonomySeeder`.

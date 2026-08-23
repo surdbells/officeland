@@ -12,8 +12,11 @@ use Illuminate\Support\Str;
  * Seeds the approved category taxonomy — docs/TAXONOMY.md, signed off
  * 2026-08-20.
  *
- * 7 departments / 31 subcategories / 86 leaves = 124 categories, replacing the
+ * 8 departments / 36 subcategories / 97 leaves = 141 categories, replacing the
  * legacy 161-term tree in which 35 terms (22%) were brand branches.
+ *
+ * Was 124 until 2026-08-23, when WPC Doors & Interiors was added: a fit-out
+ * business the Phase 0 legacy crawl never surfaced (docs/BUSINESS_FACTS.md).
  *
  * Idempotent: keyed on `path`, so re-running updates rather than duplicates.
  * Categories seed as `is_indexable = false`; they may only be raised once they
@@ -202,6 +205,59 @@ final class TaxonomySeeder extends Seeder
                 'classroom-essentials' => ['name' => 'Classroom Essentials', 'children' => []],
             ],
         ],
+
+        /*
+         * WPC Doors & Interiors — added 2026-08-23.
+         *
+         * ── Why this is a department and not a category ──────────────────
+         * WPC is a fit-out business that happens to sit inside a supplier:
+         * kitchens, wardrobes, doors and wall panelling, sold on material
+         * properties and specified per project rather than picked off a
+         * shelf. Filing it under Office Furniture would put a kitchen next
+         * to a desk chair and lose the thing entirely.
+         *
+         * It was absent from the original 124 because Phase 0's crawl of the
+         * legacy site did not surface it; it came to light from the
+         * business's own marketing (see docs/BUSINESS_FACTS.md).
+         *
+         * ── The leaves are applications, not SKUs ────────────────────────
+         * A buyer looking for WPC is deciding "can this do my kitchen",
+         * not comparing board thicknesses. The subcategories are therefore
+         * rooms and uses, with material formats underneath where they are
+         * genuinely how somebody shops.
+         *
+         * ── These pages are NOT indexable yet, and that is correct ───────
+         * Every category needs a 150-word intro before it may be indexed
+         * (D-048, enforced on the model). None of these have one, so they
+         * will render and be linked but stay out of the sitemap until
+         * somebody writes them. They appear in the content-readiness queue.
+         */
+        'wpc-doors-interiors' => [
+            'name' => 'WPC Doors & Interiors',
+            'children' => [
+                'wpc-doors' => ['name' => 'WPC Doors', 'children' => [
+                    'internal-doors' => 'Internal Doors',
+                    'door-frames' => 'Door Frames & Architraves',
+                    'flush-doors' => 'Flush Doors',
+                ]],
+                'wpc-wardrobes' => ['name' => 'Wardrobes & Storage', 'children' => [
+                    'fitted-wardrobes' => 'Fitted Wardrobes',
+                    'sliding-wardrobes' => 'Sliding-Door Wardrobes',
+                ]],
+                'wpc-kitchens' => ['name' => 'Kitchen Cabinetry', 'children' => [
+                    'kitchen-cabinets' => 'Kitchen Cabinets',
+                    'kitchen-islands' => 'Islands & Worktop Units',
+                ]],
+                'wpc-interiors' => ['name' => 'Wall & Ceiling Panels', 'children' => [
+                    'wall-panels' => 'Wall Panels',
+                    'ceiling-panels' => 'Ceiling Panels',
+                ]],
+                'wpc-boards' => ['name' => 'WPC Boards & Sheets', 'children' => [
+                    'wpc-sheets' => 'Boards & Sheets',
+                    'wpc-edging' => 'Edging & Trims',
+                ]],
+            ],
+        ],
     ];
 
     public function run(): void
@@ -246,8 +302,8 @@ final class TaxonomySeeder extends Seeder
 
         // The tree in docs/TAXONOMY.md is the approved artefact. If this drifts
         // from it, the redirect map and the URL structure drift with it.
-        if ($total !== 124) {
-            $this->command->warn("Expected 124 categories, seeded {$total} — docs/TAXONOMY.md and this seeder have diverged.");
+        if ($total !== 141) {
+            $this->command->warn("Expected 141 categories, seeded {$total} — docs/TAXONOMY.md and this seeder have diverged.");
         }
     }
 
