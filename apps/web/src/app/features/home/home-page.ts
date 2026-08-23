@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+  DestroyRef,
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of } from 'rxjs';
@@ -149,30 +159,98 @@ import { SeoService } from '../../core/seo/seo.service';
             </a>
           </div>
 
-          <ul class="ol-rail mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2">
-            @for (department of departments(); track department.slug) {
-              <li class="w-40 shrink-0 snap-start sm:w-48">
-                <a [routerLink]="department.url" class="group block">
-                  <!--
-                    A tinted tile, not a stock photograph. Real imagery is
-                    blocked on licensing (HOMEPAGE_BRIEF §1.4) and a
-                    placeholder that looks like a photo is worse than one that
-                    admits it is a placeholder.
-                  -->
-                  <span
-                    class="flex aspect-square items-center justify-center rounded-2xl bg-brand-50 transition-colors p-4 text-center font-heading text-sm font-semibold text-brand-700 group-hover:bg-brand-100"
-                    aria-hidden="true"
-                  >{{ department.name }}</span>
-                  <span class="mt-2 block text-sm font-medium text-ink-900 group-hover:text-brand-600">
-                    {{ department.name }}
-                  </span>
-                  <span class="block text-xs text-ink-400">
-                    {{ department.product_count }} products
-                  </span>
-                </a>
-              </li>
+          <!--
+            A carousel, not a scrollbar.
+
+            The rail was a plain overflow-x container, which put a browser
+            scrollbar across the bottom of the section. That reads as a bug
+            rather than a control — nobody expects a horizontal scrollbar in
+            the middle of a page — so the bar is hidden and replaced with
+            buttons.
+
+            ── Still a scroll container underneath ──────────────────────────
+            The buttons drive "scrollBy"; they do not reimplement scrolling.
+            That keeps every native behaviour intact: trackpad swipe, shift +
+            wheel, touch drag, and — the one that matters for accessibility —
+            tabbing to a link off-screen scrolls it into view on its own.
+            Hiding a scrollbar is only safe because none of that depends on it
+            being visible.
+
+            ── Why the buttons are progressive enhancement ──────────────────
+            Under D-009 this markup is prerendered, so the buttons exist in
+            the static HTML but do nothing until hydration. Every department
+            is still a real anchor in that HTML and the rail still scrolls by
+            touch and keyboard, so the pre-hydration page is usable rather
+            than merely present.
+
+            aria-hidden on the buttons: they duplicate scrolling a screen
+            reader user gets for free by moving through the links, and
+            announcing "previous/next" for a list that reading order already
+            covers is noise. They are pointer affordances.
+          -->
+          <div class="relative mt-6">
+            <ul
+              #rail
+              class="ol-rail flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2"
+              (scroll)="onRailScroll()"
+            >
+              @for (department of departments(); track department.slug) {
+                <li class="w-40 shrink-0 snap-start sm:w-48">
+                  <a [routerLink]="department.url" class="group block">
+                    <!--
+                      A tinted tile, not a stock photograph. Real imagery is
+                      blocked on licensing (HOMEPAGE_BRIEF §1.4) and a
+                      placeholder that looks like a photo is worse than one
+                      that admits it is a placeholder.
+                    -->
+                    <span
+                      class="flex aspect-square items-center justify-center rounded-2xl bg-brand-50 transition-colors p-4 text-center font-heading text-sm font-semibold text-brand-700 group-hover:bg-brand-100"
+                      aria-hidden="true"
+                    >{{ department.name }}</span>
+                    <span class="mt-2 block text-sm font-medium text-ink-900 group-hover:text-brand-600">
+                      {{ department.name }}
+                    </span>
+                    <!--
+                      The count only when there is one. Every department read
+                      "0 products" while the catalogue is being populated,
+                      which is both discouraging and misleading — we supply
+                      far more than we list, and the tile was saying the
+                      opposite.
+                    -->
+                    @if (department.product_count) {
+                      <span class="block text-xs text-ink-400">
+                        {{ department.product_count }} products
+                      </span>
+                    }
+                  </a>
+                </li>
+              }
+            </ul>
+
+            @if (canScrollBack()) {
+              <button
+                type="button"
+                aria-hidden="true"
+                tabindex="-1"
+                class="ol-rail-button left-0 -translate-x-1/2"
+                (click)="scrollRail(-1)"
+              >
+                <ol-icon name="chevron-right" [size]="20" class="rotate-180" />
+              </button>
             }
-          </ul>
+
+            @if (canScrollOn()) {
+              <button
+                type="button"
+                aria-hidden="true"
+                tabindex="-1"
+                class="ol-rail-button right-0 translate-x-1/2"
+                (click)="scrollRail(1)"
+              >
+                <ol-icon name="chevron-right" [size]="20" />
+              </button>
+            }
+          </div>
         </div>
       </section>
     }
@@ -271,15 +349,131 @@ import { SeoService } from '../../core/seo/seo.service';
       min-height: 10.5rem;
     }
 
-    /* Hides the scrollbar without removing the scroll — the rail is still
-       keyboard and touch scrollable. */
+    /*
+     * The scrollbar is hidden, not the scrolling.
+     *
+     * Safe only because nothing depends on the bar being visible: the buttons
+     * drive scrollBy, touch and trackpad gestures are untouched, and tabbing
+     * to an off-screen link scrolls it into view natively. Hiding a scrollbar
+     * on a container whose only affordance IS the scrollbar would be an
+     * accessibility failure; here it removes a control that had been
+     * duplicated.
+     */
     .ol-rail {
-      scrollbar-width: thin;
+      scrollbar-width: none;
+    }
+
+    .ol-rail::-webkit-scrollbar {
+      display: none;
+    }
+
+    /*
+     * The buttons straddle the rail edge rather than sitting inside it, so
+     * they never cover a tile. Half of each sits over the gutter, which is
+     * why the container is not "overflow: hidden".
+     */
+    .ol-rail-button {
+      position: absolute;
+      top: 4.5rem;
+      display: none;
+      height: 2.75rem;
+      width: 2.75rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      border: 1px solid var(--color-ink-100);
+      background: #fff;
+      color: var(--color-ink-900);
+      box-shadow: var(--shadow-lg, 0 10px 30px rgb(0 0 0 / 0.12));
+      transition: background-color 150ms var(--ease-out-soft);
+    }
+
+    .ol-rail-button:hover {
+      background: var(--color-brand-50);
+    }
+
+    /*
+     * Pointer devices only. On a touch screen the gesture is the control, a
+     * floating button over a scrollable rail is something to hit by accident,
+     * and there is no hover state to hint that it is there.
+     */
+    @media (hover: hover) and (pointer: fine) {
+      .ol-rail-button {
+        display: flex;
+      }
     }
   `,
 })
 export class HomePage {
+
+  /**
+   * The rail element, so the buttons can scroll it.
+   *
+   * A viewChild rather than a document query: this component is rendered at
+   * build time by Domino as well as in a browser, and a document lookup on
+   * the server finds a different document or none at all.
+   */
+  private readonly rail = viewChild<ElementRef<HTMLElement>>('rail');
+
+  /**
+   * Where the rail is, remeasured on scroll.
+   *
+   * Signals rather than reading the element in the template: a template that
+   * reads scrollLeft is re-read on every change detection pass and forces a
+   * layout each time.
+   */
+  private readonly scrollLeft = signal(0);
+  private readonly scrollWidth = signal(0);
+  private readonly clientWidth = signal(0);
+
+  /*
+   * Both start false so the buttons are absent from the prerendered HTML.
+   * Rendering them into the static page would show two dead controls until
+   * hydration, and the left one would be pointing at content that is already
+   * on screen.
+   */
+  protected readonly canScrollBack = computed(() => this.scrollLeft() > 8);
+
+  protected readonly canScrollOn = computed(
+    () => this.scrollLeft() + this.clientWidth() < this.scrollWidth() - 8,
+  );
+
+  protected onRailScroll(): void {
+    const element = this.rail()?.nativeElement;
+
+    if (!element) {
+      return;
+    }
+
+    this.scrollLeft.set(element.scrollLeft);
+    this.scrollWidth.set(element.scrollWidth);
+    this.clientWidth.set(element.clientWidth);
+  }
+
+  /**
+   * Scrolls by roughly a screen, less one tile.
+   *
+   * The overlap is deliberate: paging by exactly one viewport leaves the
+   * reader with no anchor between pages, and a partly visible tile is what
+   * tells them the rail moved rather than replaced itself.
+   *
+   * `scroll-snap` on the list aligns the result to a tile boundary, so this
+   * does not need to know the tile width.
+   */
+  protected scrollRail(direction: 1 | -1): void {
+    const element = this.rail()?.nativeElement;
+
+    if (!element) {
+      return;
+    }
+
+    element.scrollBy({
+      left: direction * Math.max(element.clientWidth - 96, 160),
+      behavior: 'smooth',
+    });
+  }
   private readonly seo = inject(SeoService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly api = inject(CatalogueApi);
 
   private readonly navigation = toSignal(
@@ -309,6 +503,28 @@ export class HomePage {
   ] as const satisfies readonly { icon: IconName; name: string; detail: string }[];
 
   constructor() {
+    /*
+     * Measure the rail once it exists, and again when the viewport changes.
+     *
+     * The buttons were absent on load without this: they are derived from
+     * scrollWidth and clientWidth, and those were only read in the scroll
+     * handler — so nothing had measured the rail until somebody scrolled it,
+     * which is precisely what the buttons exist to let them do.
+     *
+     * afterNextRender is browser-only by contract, which is what makes it
+     * right here. Reading layout during prerender asks Domino for a
+     * scrollWidth it does not compute, and the answer would be baked into the
+     * static HTML for every viewport.
+     */
+    afterNextRender(() => {
+      this.onRailScroll();
+
+      const remeasure = (): void => this.onRailScroll();
+
+      window.addEventListener('resize', remeasure, { passive: true });
+      this.destroyRef.onDestroy(() => window.removeEventListener('resize', remeasure));
+    });
+
     /*
      * The legacy homepage title is the company name followed by a ~330
      * character marketing paragraph, so every SERP snippet it produces is

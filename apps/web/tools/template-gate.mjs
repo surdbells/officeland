@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Catches backticks inside Angular inline templates.
+ * Catches backticks inside Angular inline templates and styles blocks.
  *
  * ── Why this exists ──────────────────────────────────────────────────────
  * Inline templates are backtick-delimited template literals. A backtick in
@@ -47,49 +47,65 @@ function sources(dir) {
   });
 }
 
+
+/**
+ * Both inline literals a component carries.
+ *
+ * `styles:` was added after the gate let a backtick through it. The rule is
+ * identical — a backtick closes the literal — but the failure reads
+ * differently: the TypeScript that follows is parsed as an object literal, so
+ * the build complains that "overflow" is not a property of Component and that
+ * it cannot find the name "hidden". Nothing in that names CSS, let alone the
+ * comment the backticks were in.
+ *
+ * Checking only the one that had bitten me was the same mistake as every gate
+ * this project has had to add: it checked the thing it was named after.
+ */
+const MARKERS = ['template: `', 'styles: `'];
+
 const problems = [];
 
 for (const file of sources(root)) {
   const text = readFileSync(file, 'utf8');
-  const start = text.indexOf('template: `');
 
-  if (start === -1) {
-    continue;
+  for (const marker of MARKERS) {
+    const start = text.indexOf(marker);
+
+    if (start === -1) {
+      continue;
+    }
+
+    const open = start + marker.length;
+    const close = text.indexOf('`', open);
+
+    if (close === -1) {
+      continue;
+    }
+
+    /*
+     * The literal is delimited by the FIRST unescaped backtick after the
+     * opening one, so anything the author intended as content past that point
+     * is already outside it. A healthy literal is followed by `,` or `}`;
+     * anything else means it closed somewhere it should not have.
+     */
+    if (/^\s*(,|\})/.test(text.slice(close + 1, close + 3))) {
+      continue;
+    }
+
+    const line = text.slice(0, close).split('\n').length;
+    const context = text.split('\n')[line - 1].trim();
+
+    problems.push(`${relative(join(here, '..'), file)}:${line}  ${context}`);
   }
-
-  const open = start + 'template: `'.length;
-  const close = text.indexOf('`', open);
-
-  if (close === -1) {
-    continue;
-  }
-
-  /*
-   * The literal is delimited by the FIRST unescaped backtick after the
-   * opening one, so anything the author intended as template content past
-   * that point is already outside it. Report the closing backtick's line
-   * unless the text that follows looks like a properly terminated template
-   * (`,` or `\n}` next), which is the healthy case.
-   */
-  const after = text.slice(close + 1, close + 3);
-
-  if (/^\s*(,|\})/.test(after)) {
-    continue;
-  }
-
-  const line = text.slice(0, close).split('\n').length;
-  const context = text.split('\n')[line - 1].trim();
-
-  problems.push(`${relative(join(here, '..'), file)}:${line}  ${context}`);
 }
 
 if (problems.length > 0) {
   console.error(
-    `${problems.length} inline template(s) closed early by a backtick:\n` +
+    `${problems.length} inline literal(s) closed early by a backtick:\n` +
       problems.map((entry) => `  ${entry}`).join('\n') +
-      '\n\nA backtick inside an inline template ends the literal. Use double quotes.',
+      '\n\nA backtick inside an inline template or styles block ends the literal. Use double quotes.',
   );
   process.exit(1);
 }
 
-console.log('Templates verified: no inline template is closed early by a backtick.');
+console.log(`Templates verified: no inline template or styles block is closed early by a backtick.`);
