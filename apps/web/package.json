@@ -12,8 +12,9 @@
     "gate:csp": "node tools/csp-hashes.mjs --check",
     "gate:a11y": "node tools/a11y-gate.mjs",
     "gate:icons": "node tools/icons.mjs --check",
+    "gate:templates": "node tools/template-gate.mjs",
     "icons": "node tools/icons.mjs",
-    "gate": "npm run gate:raw-html && npm run gate:crawl-depth && npm run gate:csp && npm run gate:icons && npm run gate:a11y",
+    "gate": "npm run gate:raw-html && npm run gate:crawl-depth && npm run gate:templates && npm run gate:csp && npm run gate:icons && npm run gate:a11y",
     "serve:ssr:web": "node dist/web/server/server.mjs"
   },
   "private": true,

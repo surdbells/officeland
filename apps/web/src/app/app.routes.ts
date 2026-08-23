@@ -24,6 +24,19 @@ export const routes: Routes = [
       import('./features/catalogue/category-page').then((m) => m.CategoryPage),
   },
   {
+    /*
+     * The shop page: the whole catalogue behind one set of filters, for
+     * buyers who did not arrive through the taxonomy.
+     *
+     * Prerendered as a shell and noindex, like /search — the listing depends
+     * on query parameters, which a static file cannot vary on, and every
+     * filter combination would otherwise be another crawlable URL of the
+     * same products (SEO_SPEC §10.3).
+     */
+    path: 'shop',
+    loadComponent: () => import('./features/catalogue/shop-page').then((m) => m.ShopPage),
+  },
+  {
     path: 'brands',
     loadComponent: () =>
       import('./features/brands/brand-index-page').then((m) => m.BrandIndexPage),

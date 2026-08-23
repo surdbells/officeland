@@ -135,8 +135,26 @@
   --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
 
   /* --- Layout ----------------------------------------------------------- */
-  --spacing-gutter: 1rem;
-  --container-page: 80rem;
+
+  /*
+   * Page width: 1564px, and the gutter scales with the viewport.
+   *
+   * `min()` rather than a media query. Every container is
+   * `max-width: var(--container-page)` with `margin-inline: auto`, so the
+   * moment the viewport is narrower than the cap the container is already
+   * viewport-width — the cap simply stops applying. Nothing to break at a
+   * breakpoint, because there is no breakpoint.
+   *
+   * The `100vw - 2 * gutter` term is what keeps a 1366 or 1440 laptop from
+   * losing its margins: at those widths the content is viewport-minus-gutter
+   * rather than clipped or scrolled. Note vw includes the scrollbar, so the
+   * subtraction is deliberately generous.
+   *
+   * The gutter grows with the page rather than staying at 16px, because a
+   * 1564px column with a 16px margin reads as content jammed against glass.
+   */
+  --spacing-gutter: clamp(1rem, 2.5vw, 2.5rem);
+  --container-page: min(97.75rem, calc(100vw - 2 * var(--spacing-gutter)));
 
   /* Vertical rhythm between page sections. Named rather than picked per
      section, because inconsistent section padding is the thing that most

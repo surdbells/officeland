@@ -41,6 +41,9 @@ Route::prefix('v1')->name('api.')->middleware('throttle:catalogue')->group(funct
     // The prerender route list (D-009). Declared before the category catch-all
     // so 'render/manifest' is not swallowed as a category path.
     Route::get('render/manifest', RenderManifestController::class)->name('render.manifest');
+    // The whole catalogue as one faceted listing (the /shop/ page). Declared
+    // before 'products/{slug}' so 'products' is not read as a slug.
+    Route::get('products', [ProductController::class, 'index'])->name('products.index');
 
     Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
 

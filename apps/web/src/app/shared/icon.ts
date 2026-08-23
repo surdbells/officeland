@@ -59,6 +59,7 @@ export type IconName =
   | 'badge-check'
   | 'battery-charging'
   | 'box'
+  | 'boxes'
   | 'bug-off'
   | 'building-2'
   | 'calculator'
@@ -70,12 +71,17 @@ export type IconName =
   | 'columns-3'
   | 'cooking-pot'
   | 'copy'
+  | 'cpu'
+  | 'door-closed'
   | 'door-open'
   | 'droplets'
+  | 'ellipsis'
   | 'file-stack'
   | 'file-text'
   | 'flame'
   | 'folder'
+  | 'funnel'
+  | 'graduation-cap'
   | 'hard-drive'
   | 'house-plug'
   | 'inbox'
@@ -89,9 +95,11 @@ export type IconName =
   | 'monitor'
   | 'mouse'
   | 'notebook-pen'
+  | 'notebook-text'
   | 'paint-bucket'
   | 'palette'
   | 'panels-top-left'
+  | 'paperclip'
   | 'pen-line'
   | 'phone'
   | 'presentation'
@@ -104,6 +112,8 @@ export type IconName =
   | 'send'
   | 'shield-check'
   | 'shirt'
+  | 'sliders-horizontal'
+  | 'sofa'
   | 'sparkles'
   | 'sticker'
   | 'sticky-note'
@@ -113,6 +123,8 @@ export type IconName =
   | 'truck'
   | 'video'
   | 'watch'
+  | 'wifi'
+  | 'x'
   // === end generated ===
   ;
 
@@ -183,6 +195,20 @@ export type IconName =
           <path d="m3.3 7 8.7 5 8.7-5" />
           <path d="M12 22V12" />
         }
+        @case ('boxes') {
+          <path d="M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z" />
+          <path d="m7 16.5-4.74-2.85" />
+          <path d="m7 16.5 5-3" />
+          <path d="M7 16.5v5.17" />
+          <path d="M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z" />
+          <path d="m17 16.5-5-3" />
+          <path d="m17 16.5 4.74-2.85" />
+          <path d="M17 16.5v5.17" />
+          <path d="M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z" />
+          <path d="M12 8 7.26 5.15" />
+          <path d="m12 8 4.74-2.85" />
+          <path d="M12 13.5V8" />
+        }
         @case ('bug-off') {
           <path d="M12 20v-8" />
           <path d="M12.656 7H14a4 4 0 0 1 4 4v1.344" />
@@ -252,6 +278,27 @@ export type IconName =
           <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
           <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
         }
+        @case ('cpu') {
+          <path d="M12 20v2" />
+          <path d="M12 2v2" />
+          <path d="M17 20v2" />
+          <path d="M17 2v2" />
+          <path d="M2 12h2" />
+          <path d="M2 17h2" />
+          <path d="M2 7h2" />
+          <path d="M20 12h2" />
+          <path d="M20 17h2" />
+          <path d="M20 7h2" />
+          <path d="M7 20v2" />
+          <path d="M7 2v2" />
+          <rect x="4" y="4" width="16" height="16" rx="2" />
+          <rect x="8" y="8" width="8" height="8" rx="1" />
+        }
+        @case ('door-closed') {
+          <path d="M10 12h.01" />
+          <path d="M18 20V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14" />
+          <path d="M2 20h20" />
+        }
         @case ('door-open') {
           <path d="M11 20H2" />
           <path d="M11 4.562v16.157a1 1 0 0 0 1.242.97L19 20V5.562a2 2 0 0 0-1.515-1.94l-4-1A2 2 0 0 0 11 4.561z" />
@@ -262,6 +309,11 @@ export type IconName =
         @case ('droplets') {
           <path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z" />
           <path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97" />
+        }
+        @case ('ellipsis') {
+          <circle cx="12" cy="12" r="1" />
+          <circle cx="19" cy="12" r="1" />
+          <circle cx="5" cy="12" r="1" />
         }
         @case ('file-stack') {
           <path d="M11 21a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1" />
@@ -280,6 +332,14 @@ export type IconName =
         }
         @case ('folder') {
           <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+        }
+        @case ('funnel') {
+          <path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z" />
+        }
+        @case ('graduation-cap') {
+          <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
+          <path d="M22 10v6" />
+          <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
         }
         @case ('hard-drive') {
           <path d="M10 16h.01" />
@@ -344,6 +404,16 @@ export type IconName =
           <path d="M2 18h4" />
           <path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z" />
         }
+        @case ('notebook-text') {
+          <path d="M2 6h4" />
+          <path d="M2 10h4" />
+          <path d="M2 14h4" />
+          <path d="M2 18h4" />
+          <rect width="16" height="20" x="4" y="2" rx="2" />
+          <path d="M9.5 8h5" />
+          <path d="M9.5 12H16" />
+          <path d="M9.5 16H14" />
+        }
         @case ('paint-bucket') {
           <path d="M11 7 6 2" />
           <path d="M18.992 12H2.041" />
@@ -361,6 +431,9 @@ export type IconName =
           <rect width="18" height="18" x="3" y="3" rx="2" />
           <path d="M3 9h18" />
           <path d="M9 21V9" />
+        }
+        @case ('paperclip') {
+          <path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551" />
         }
         @case ('pen-line') {
           <path d="M13 21h8" />
@@ -420,6 +493,24 @@ export type IconName =
         @case ('shirt') {
           <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />
         }
+        @case ('sliders-horizontal') {
+          <path d="M10 5H3" />
+          <path d="M12 19H3" />
+          <path d="M14 3v4" />
+          <path d="M16 17v4" />
+          <path d="M21 12h-9" />
+          <path d="M21 19h-5" />
+          <path d="M21 5h-7" />
+          <path d="M8 10v4" />
+          <path d="M8 12H3" />
+        }
+        @case ('sofa') {
+          <path d="M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3" />
+          <path d="M2 16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v1.5a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5V11a2 2 0 0 0-4 0z" />
+          <path d="M4 18v2" />
+          <path d="M20 18v2" />
+          <path d="M12 4v9" />
+        }
         @case ('sparkles') {
           <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" />
           <path d="M20 2v4" />
@@ -468,6 +559,16 @@ export type IconName =
           <path d="m16.13 7.66-.81-4.05a2 2 0 0 0-2-1.61h-2.68a2 2 0 0 0-2 1.61l-.78 4.05" />
           <path d="m7.88 16.36.8 4a2 2 0 0 0 2 1.61h2.72a2 2 0 0 0 2-1.61l.81-4.05" />
           <circle cx="12" cy="12" r="6" />
+        }
+        @case ('wifi') {
+          <path d="M12 20h.01" />
+          <path d="M2 8.82a15 15 0 0 1 20 0" />
+          <path d="M5 12.859a10 10 0 0 1 14 0" />
+          <path d="M8.5 16.429a5 5 0 0 1 7 0" />
+        }
+        @case ('x') {
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
         }
         <!-- end generated -->
       }

@@ -36,6 +36,12 @@ export const serverRoutes: ServerRoute[] = [
     },
   },
   {
+    // Shell only: noindex and query-parameter driven, but the URL still has
+    // to resolve to a file on a static host.
+    path: 'shop',
+    renderMode: RenderMode.Prerender,
+  },
+  {
     path: 'brands',
     renderMode: RenderMode.Prerender,
   },

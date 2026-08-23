@@ -26,7 +26,7 @@ const CATEGORY_ICONS = {
   // Office Furniture
   seating: 'armchair',
   'desks-tables': 'table',
-  'storage-furniture': 'archive',
+  'storage-furniture': 'boxes',
   'partitions-screens': 'columns-3',
 
   // IT Products
@@ -89,3 +89,32 @@ export function iconForCategory(slug: string): IconName {
   return (CATEGORY_ICONS as Record<string, IconName>)[slug] ?? 'chevron-right';
 }
 
+
+/**
+ * An icon for every department.
+ *
+ * Added when the header bar was collapsed to a single non-wrapping row: with
+ * fewer labels visible at once, a glyph does more work than it did when nine
+ * of them were competing. The same map drives the panel's department rail.
+ *
+ * `printer` appears here and again on the Printers & Consumables panel's own
+ * `printers` subcategory. That is not an oversight — a printer is what both
+ * of them are, and reaching for a worse glyph to avoid the repetition would
+ * make the menu harder to read, not easier.
+ */
+const DEPARTMENT_ICONS = {
+  'office-furniture': 'sofa',
+  'it-products': 'cpu',
+  'smart-tech': 'wifi',
+  'printers-consumables': 'printer',
+  'office-supplies': 'paperclip',
+  'paper-notebooks': 'notebook-text',
+  'filing-storage': 'archive',
+  'school-supplies': 'graduation-cap',
+  'wpc-doors-interiors': 'door-closed',
+} as const satisfies Record<string, IconName>;
+
+/** The glyph for a department, or a neutral one if it has no entry. */
+export function iconForDepartment(slug: string): IconName {
+  return (DEPARTMENT_ICONS as Record<string, IconName>)[slug] ?? 'chevron-right';
+}

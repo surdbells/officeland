@@ -64,6 +64,21 @@ const ICONS = [
   'leaf',
   'sparkles',
 
+  // Department icons for the header bar and the panel rail.
+  'cpu',
+  'door-closed',
+  'ellipsis',
+  'graduation-cap',
+  'notebook-text',
+  'paperclip',
+  'sofa',
+  'wifi',
+
+  // Filters.
+  'funnel',
+  'sliders-horizontal',
+  'x',
+
   // Category icons for the megamenu — one per subcategory.
   // See src/app/core/layout/category-icons.ts for the mapping.
   'app-window',
@@ -72,6 +87,7 @@ const ICONS = [
   'backpack',
   'battery-charging',
   'box',
+  'boxes',
   'calculator',
   'camera',
   'cctv',
@@ -194,27 +210,34 @@ function checkCategoryCoverage() {
 
   // Four leading spaces is a subcategory; "/c/x/" at column 0 is a department.
   const subcategories = [...tree.matchAll(/^ {4}([a-z0-9-]+)\/(?:\s|$)/gm)].map(([, slug]) => slug);
+  const departments = [...tree.matchAll(/^\/c\/([a-z0-9-]+)\/$/gm)].map(([, slug]) => slug);
 
-  if (subcategories.length === 0) {
-    throw new Error('Parsed no subcategories out of docs/TAXONOMY.md — has its tree block changed shape?');
+  if (subcategories.length === 0 || departments.length === 0) {
+    throw new Error('Parsed no categories out of docs/TAXONOMY.md — has its tree block changed shape?');
   }
 
-  const covered = new Set(
-    [...map.matchAll(/^\s{2}'?([a-z0-9-]+)'?:/gm)].map(([, slug]) => slug),
-  );
+  // Both maps are in one file, so the slugs are read from their own blocks:
+  // everything before DEPARTMENT_ICONS covers subcategories, everything after
+  // covers departments. Reading the whole file would let an entry in the wrong
+  // map satisfy the gate.
+  const split = map.indexOf('const DEPARTMENT_ICONS');
+  const slugsIn = (source) => new Set([...source.matchAll(/^\s{2}'?([a-z0-9-]+)'?:/gm)].map(([, s]) => s));
 
-  const missing = subcategories.filter((slug) => !covered.has(slug));
+  const missing = [
+    ...subcategories.filter((slug) => !slugsIn(map.slice(0, split)).has(slug)).map((s) => `subcategory ${s}`),
+    ...departments.filter((slug) => !slugsIn(map.slice(split)).has(slug)).map((s) => `department ${s}`),
+  ];
 
   if (missing.length > 0) {
     console.error(
-      `${missing.length} subcategor(y/ies) in docs/TAXONOMY.md have no icon:\n` +
-        missing.map((slug) => `  ${slug}`).join('\n') +
+      `${missing.length} categor(y/ies) in docs/TAXONOMY.md have no icon:\n` +
+        missing.map((entry) => `  ${entry}`).join('\n') +
         '\nAdd them to src/app/core/layout/category-icons.ts.',
     );
     process.exit(1);
   }
 
-  return subcategories.length;
+  return { subcategories: subcategories.length, departments: departments.length };
 }
 
 const current = readFileSync(target, 'utf8');
@@ -234,11 +257,11 @@ if (process.argv.includes('--check')) {
     process.exit(1);
   }
 
-  const subcategories = checkCategoryCoverage();
+  const coverage = checkCategoryCoverage();
 
   console.log(
     `Icons verified: ${ICONS.length} inlined from lucide-static, ` +
-      `${subcategories} subcategories covered.`,
+      `${coverage.departments} departments and ${coverage.subcategories} subcategories covered.`,
   );
   process.exit(0);
 }

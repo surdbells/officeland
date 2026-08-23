@@ -61,6 +61,22 @@ final class ImportRedirects extends Command
         $updated = 0;
         $unchanged = 0;
         $rejected = [];
+
+        /*
+         * Every from_path the CSV mentions, so rows it no longer mentions can
+         * be removed at the end.
+         *
+         * Without this the importer only ever added. Deleting a line from the
+         * map left the redirect live, and the CSV stopped being the source of
+         * truth the moment anybody needed to retire one. Found the hard way:
+         * /shop/ was a legacy WooCommerce redirect to /c/, the storefront grew
+         * a real /shop/ page, the line was deleted, the import reported "181
+         * already correct" — and /shop/ still answered 301.
+         *
+         * Scoped to source = 'migration' so redirects created in the admin,
+         * which were never in this file, are not swept away by it.
+         */
+        $seen = [];
         $line = 1;
 
         while (($row = fgetcsv($handle)) !== false) {
@@ -96,6 +112,8 @@ final class ImportRedirects extends Command
 
                 continue;
             }
+
+            $seen[] = $from;
 
             $existing = Redirect::query()->where('from_path', $from)->first();
 
@@ -134,12 +152,31 @@ final class ImportRedirects extends Command
 
         fclose($handle);
 
+        // Rows this file used to carry and no longer does. See $seen above.
+        $stale = Redirect::query()
+            ->where('source', 'migration')
+            ->whereNotIn('from_path', $seen)
+            ->pluck('from_path')
+            ->all();
+
+        if ($apply && $stale !== []) {
+            Redirect::query()
+                ->where('source', 'migration')
+                ->whereIn('from_path', $stale)
+                ->delete();
+        }
+
         $this->table(['Outcome', 'Rows'], [
             [$apply ? 'Created' : 'Would create', $created],
             [$apply ? 'Updated' : 'Would update', $updated],
             ['Already correct', $unchanged],
+            [$apply ? 'Removed' : 'Would remove', count($stale)],
             ['Rejected', count($rejected)],
         ]);
+
+        foreach (array_slice($stale, 0, 20) as $path) {
+            $this->comment(($apply ? 'Removed' : 'Would remove').": {$path} — no longer in the map.");
+        }
 
         foreach (array_slice($rejected, 0, 20) as $problem) {
             $this->warn($problem);

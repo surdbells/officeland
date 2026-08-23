@@ -128,6 +128,18 @@ export class CatalogueApi {
     );
   }
 
+  /**
+   * The whole catalogue as one faceted listing — the shop page.
+   *
+   * Same envelope as every other listing surface, because it is the same
+   * question with the category filter left out.
+   */
+  catalogue(params: ListingParams = {}): Observable<Listing> {
+    return this.http.get<Listing>(`${this.base}/products`, {
+      params: this.listingParams(params),
+    });
+  }
+
   brandProducts(slug: string, params: ListingParams = {}): Observable<Listing> {
     return this.http.get<Listing>(
       `${this.base}/brands/${encodeURIComponent(slug)}/products`,

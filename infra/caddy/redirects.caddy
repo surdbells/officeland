@@ -172,7 +172,6 @@ map {path} {ol_to} {ol_status} {
 	"/product-category/workstation/" "/c/office-furniture/desks-tables/workstations/" 301
 	"/quote-received-page/" "/quote/submitted/" 301
 	"/shop-2/" "/c/" 301
-	"/shop/" "/c/" 301
 	"/track-you-order/" "/contact/" 301
 	"/wishlist/" "/quote/" 301
 	"/work-with-us/" "/about/" 301

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Icon, type IconName } from '../../shared/icon';
-import { iconForCategory } from './category-icons';
+import { iconForCategory, iconForDepartment } from './category-icons';
 import type { Navigation, NavigationNode } from '../api/catalogue-api';
 
 /**
@@ -109,18 +109,35 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
           </a>
         </div>
       </div>
-
       <!--
         Departments. Level 1 and 2 are real anchors in the HTML.
 
         "relative" sits on the NAV, not on each item, so the panel can span the
         full container width. Anchored to the list item it could only ever be
         as wide as one department label allows.
+
+        ── One line, never two ──────────────────────────────────────────────
+        Nine departments with icons do not fit across a 1366 laptop, and a
+        navigation bar that wraps onto a second line reads as an accident. So
+        the row never wraps: every label is nowrap and the list does not wrap
+        either.
+
+        What it does instead is show the first six and put the rest behind
+        "More". Six is a fixed split rather than a measured one, because
+        measuring means JavaScript, and under D-009 the bar has to be correct
+        in the prerendered HTML before any script runs.
+
+        The overflow departments are still in that HTML. They are hidden with
+        a class, never with @if — an @if would remove three department
+        anchors from every page on the site, which is exactly the internal
+        linking the megamenu exists to provide. Same rule as the PDP gallery.
       -->
       <nav aria-label="Departments" class="relative hidden border-t border-ink-100 md:block">
-        <ul class="mx-auto flex max-w-(--container-page) items-stretch gap-1 px-(--spacing-gutter)">
-          @for (department of departments(); track department.slug) {
+        <ul class="mx-auto flex max-w-(--container-page) flex-nowrap items-stretch gap-0.5 px-(--spacing-gutter)">
+          @for (department of departments(); track department.slug; let i = $index) {
             <li
+              class="shrink-0"
+              [class.hidden]="i >= visibleDepartments && !moreOpen()"
               (mouseenter)="openWithIntent(department.slug)"
               (mouseleave)="closeWithIntent()"
             >
@@ -130,7 +147,7 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
                    keyboard. -->
               <a
                 [routerLink]="department.url"
-                class="flex items-center gap-1 border-b-2 px-3 py-3 text-sm font-medium transition-colors"
+                class="flex items-center gap-1.5 whitespace-nowrap border-b-2 px-2.5 py-3 text-sm font-medium transition-colors"
                 [class.border-brand-600]="open() === department.slug"
                 [class.text-brand-600]="open() === department.slug"
                 [class.border-transparent]="open() !== department.slug"
@@ -140,6 +157,7 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
                 (keydown.space)="toggle(department.slug, $event)"
                 (focus)="open.set(department.slug)"
               >
+                <ol-icon [name]="iconForDept(department.slug)" [size]="17" class="text-ink-400" />
                 {{ department.name }}
                 @if (department.children.length) {
                   <ol-icon name="chevron-down" [size]="14" />
@@ -147,6 +165,35 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
               </a>
             </li>
           }
+
+          <!--
+            The overflow toggle. A real button: it discloses, it does not
+            navigate. Hidden when every department already fits, so it does
+            not appear on a taxonomy with six or fewer.
+          -->
+          @if (departments().length > visibleDepartments) {
+            <li class="shrink-0">
+              <button
+                type="button"
+                class="flex items-center gap-1.5 whitespace-nowrap border-b-2 border-transparent px-2.5 py-3 text-sm font-medium text-ink-600 transition-colors hover:text-brand-600"
+                [attr.aria-expanded]="moreOpen()"
+                (click)="moreOpen.set(!moreOpen())"
+              >
+                <ol-icon name="ellipsis" [size]="17" />
+                {{ moreOpen() ? 'Less' : 'More' }}
+              </button>
+            </li>
+          }
+
+          <li class="ml-auto flex shrink-0 items-center">
+            <a
+              routerLink="/shop/"
+              class="flex items-center gap-1.5 whitespace-nowrap px-2.5 py-3 text-sm font-semibold text-brand-600 hover:underline"
+            >
+              <ol-icon name="sliders-horizontal" [size]="16" />
+              Shop all
+            </a>
+          </li>
         </ul>
 
         <!--
@@ -192,7 +239,14 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
                           (mouseenter)="open.set(department.slug)"
                           (focus)="open.set(department.slug)"
                         >
-                          {{ department.name }}
+                          <span class="flex items-center gap-2.5">
+                            <ol-icon
+                              [name]="iconForDept(department.slug)"
+                              [size]="17"
+                              [class]="department.slug === active.slug ? 'text-brand-600' : 'text-ink-400'"
+                            />
+                            {{ department.name }}
+                          </span>
                           <ol-icon name="chevron-right" [size]="14" class="text-ink-400" />
                         </a>
                       </li>
@@ -299,6 +353,27 @@ export class SiteHeader {
 
   protected readonly open = signal<string | null>(null);
   protected readonly announcementVisible = signal(true);
+
+  /**
+   * How many departments the header bar shows before "More".
+   *
+   * A fixed number, not a measured one. Measuring requires JavaScript and a
+   * layout pass, and under D-009 the bar has to be right in the prerendered
+   * HTML before any of that happens — a bar that reflows on hydration is a
+   * bar that shifts the page.
+   *
+   * Six is what fits with icons on a 1366 laptop, which is the narrowest
+   * desktop this bar is shown on at all (it is hidden below md). Raising it
+   * without checking that width is how the row ends up on two lines again.
+   */
+  protected readonly visibleDepartments = 6;
+
+  protected readonly moreOpen = signal(false);
+
+  /** The glyph for a department, in the bar and in the panel rail. */
+  protected iconForDept(slug: string): IconName {
+    return iconForDepartment(slug);
+  }
 
   protected readonly departments = computed<readonly NavigationNode[]>(
     () => this.navigation()?.departments ?? [],

@@ -160,7 +160,6 @@ from_path,to_path,status,notes
 /product-category/school-supplies/general/,/c/school-supplies/classroom-essentials/,301,
 /product-category/school-supplies/math-set/,/c/school-supplies/maths-geometry/math-sets/,301,
 /product-category/school-supplies/ruler-stencils/,/c/school-supplies/maths-geometry/rulers-stencils/,301,
-/shop/,/c/,301,WooCommerce shop root
 /shop-2/,/c/,301,Duplicate-slug page artefact
 /cart/,,410,No cart in a quote-first model
 /cart-2/,,410,Duplicate-slug page artefact
