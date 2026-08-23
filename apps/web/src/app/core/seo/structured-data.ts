@@ -209,3 +209,65 @@ export function itemListSchema(
     })),
   };
 }
+
+/**
+ * One physical location that a customer can walk into.
+ *
+ * ── This is the map, and it is on Google rather than on us ───────────────
+ * D-053 rules out a Maps iframe — several hundred KB of third-party
+ * JavaScript against a 130 KB budget, and the CSP has no `frame-src`. That
+ * decision stands, and this is the thing worth doing instead: LocalBusiness
+ * markup is what puts the business on Google's own map, in the knowledge
+ * panel and in the local pack, which is where somebody searching "office
+ * furniture showroom Victoria Island" actually looks. A map embedded on a
+ * page they have already reached helps far less.
+ *
+ * ── No aggregateRating ───────────────────────────────────────────────────
+ * The 4.4 stars and 138 reviews are Google's, collected on Google. Showing
+ * that is fine; marking it up as our own rating is self-serving review markup
+ * and against Google's structured-data policy, with a manual action as the
+ * downside (Q15). It is displayed as text and asserted nowhere.
+ *
+ * ── No geo, no openingHours ──────────────────────────────────────────────
+ * Both would strengthen the node and neither is known. Guessing coordinates
+ * from a street address puts a pin on the wrong side of Idowu Martins Street,
+ * and invented opening hours send somebody to a closed door. Omitted until
+ * the business supplies them (Q14).
+ *
+ * ── Lagos only ───────────────────────────────────────────────────────────
+ * The Dubai address is a registered office and it is unresolved whether it
+ * trades (Q14). LocalBusiness markup on it would tell Google the business
+ * serves UAE customers, which may simply be false.
+ */
+export interface LocationInput {
+  readonly name: string;
+  readonly street: string;
+  readonly locality: string;
+  readonly region: string;
+  readonly url: string;
+}
+
+export function localBusinessSchema(location: LocationInput): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FurnitureStore',
+    '@id': `${ORIGIN}${location.url}#${location.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+    name: `OfficeLand — ${location.name}`,
+    // The specific type is deliberate. "LocalBusiness" is the generic
+    // fallback; FurnitureStore is a recognised subtype and tells Google what
+    // kind of result this is, which is what decides the local pack it appears
+    // in.
+    parentOrganization: { '@id': `${ORIGIN}/#organization` },
+    url: `${ORIGIN}${location.url}`,
+    telephone: '+2347074723165',
+    email: 'sales@officelandng.com',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: location.street,
+      addressLocality: location.locality,
+      addressRegion: location.region,
+      addressCountry: 'NG',
+    },
+    areaServed: { '@type': 'Country', name: 'Nigeria' },
+  };
+}

@@ -252,6 +252,44 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
                       </li>
                     }
                   </ul>
+                  <!--
+                    The promo card, at the foot of the department rail.
+
+                    The reference megamenu puts a merchandising tile here and
+                    spends it on a seasonal offer. This business has no offers
+                    to run — no prices, no deals, no stock (D-002, D-005) — so
+                    a "10% off" card would be an invention. What it does have
+                    is one thing it wants from a visitor big enough to be
+                    browsing a whole department, and that is the schedule.
+
+                    Deliberately the same on every panel. A per-department
+                    promo needs per-department copy somebody maintains, and
+                    nine cards that go stale are worse than one that stays
+                    true.
+
+                    No image. It is sized to take one — this is where a
+                    department hero would go now that categories carry them —
+                    but a card whose picture is a grey rectangle is worse than
+                    a card that never promised one.
+                  -->
+                  <a
+                    routerLink="/bulk-supply/"
+                    class="mt-6 block rounded-xl border border-brand-100 bg-brand-50 p-4 transition-colors hover:border-brand-600"
+                    (click)="close()"
+                  >
+                    <span class="flex items-center gap-2 font-heading text-sm font-semibold text-brand-700">
+                      <ol-icon name="file-text" [size]="16" />
+                      Fitting out a whole floor?
+                    </span>
+                    <span class="mt-1.5 block text-xs leading-relaxed text-ink-600">
+                      Send the requisition schedule as it is. We price every line and
+                      state lead times per item.
+                    </span>
+                    <span class="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-brand-600">
+                      Bulk &amp; tender supply
+                      <ol-icon name="arrow-right" [size]="14" />
+                    </span>
+                  </a>
                 </div>
 
                 <div>

@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { ContentPage } from './content-page';
 import { Icon } from '../../shared/icon';
 import { SeoService } from '../../core/seo/seo.service';
+import { localBusinessSchema } from '../../core/seo/structured-data';
 
 /**
  * About, Contact and Showrooms.
@@ -251,5 +252,35 @@ export class LocationsPage {
       indexable: true,
       canonicalOverride: null,
     });
+
+    /*
+     * The two Lagos addresses as FurnitureStore nodes.
+     *
+     * This is the substitute for a map on the page. D-053 rules out a Maps
+     * iframe, and this is the better half of that trade anyway: the markup is
+     * what puts the business on Google's own map and in the local pack, which
+     * is where "office furniture showroom Victoria Island" is actually
+     * searched. A map on a page somebody has already found helps less.
+     *
+     * Dubai is absent on purpose — a registered office whose trading status
+     * is unresolved (Q14), and asserting LocalBusiness there tells Google the
+     * business serves UAE customers.
+     */
+    this.seo.setStructuredData([
+      localBusinessSchema({
+        name: 'Head Office',
+        street: 'Century 21 Mall, 14B Idowu Martins Street',
+        locality: 'Victoria Island',
+        region: 'Lagos',
+        url: '/locations/',
+      }),
+      localBusinessSchema({
+        name: 'Furniture Showroom',
+        street: 'No 18, Idowu Martins Street',
+        locality: 'Victoria Island',
+        region: 'Lagos',
+        url: '/locations/',
+      }),
+    ]);
   }
 }
