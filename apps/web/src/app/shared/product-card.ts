@@ -65,15 +65,30 @@ import { ResponsiveImage } from './responsive-image';
         }
       }
 
+      <!--
+        Brand under the name, as a link. Above the stretched ::after so it
+        stays clickable inside a card that is otherwise one big target.
+      -->
       @if (product().brand; as brand) {
-        <!-- Above the stretched ::after, so the brand link stays clickable. -->
         <p class="relative z-10 mt-1 text-xs text-ink-600">
           <a [routerLink]="brand.url" class="hover:text-brand-600">{{ brand.name }}</a>
         </p>
       }
 
+      <!--
+        The product code as a chip.
+
+        It is the field a B2B buyer matches against a requisition line, and
+        on a grid of near-identical chairs it is often the only thing that
+        distinguishes two cards. A bordered pill rather than grey text
+        because it is an identifier to be read and copied, not a caption.
+      -->
       @if (modelCode(); as code) {
-        <p class="mt-1 text-xs text-ink-400">{{ code }}</p>
+        <p class="mt-2">
+          <span class="inline-block rounded border border-ink-200 px-2 py-0.5 font-mono text-[0.6875rem] tracking-tight text-ink-600">
+            {{ code }}
+          </span>
+        </p>
       }
 
       @if (product().key_specs?.length) {
@@ -84,6 +99,14 @@ import { ResponsiveImage } from './responsive-image';
         </ul>
       }
 
+      <!--
+        No price block, and no space held for one.
+
+        D-002 means nothing here has a price, so the card ends on the action
+        rather than on a gap where a number would be. "mt-auto" pushes this
+        to the bottom, which is what keeps a row of cards aligned when their
+        names wrap to different heights.
+      -->
       <div class="mt-auto pt-3">
         <p class="text-xs font-medium">{{ availabilityLabel() }}</p>
 
@@ -94,7 +117,7 @@ import { ResponsiveImage } from './responsive-image';
         <!-- Above the stretched ::after so the button is reachable. -->
         <button
           type="button"
-          class="relative z-10 mt-3 w-full rounded-lg bg-brand-600 px-3 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+          class="relative z-10 mt-3 w-full rounded-lg bg-brand-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
           (click)="addToQuote.emit(product())"
         >
           Add to quote
