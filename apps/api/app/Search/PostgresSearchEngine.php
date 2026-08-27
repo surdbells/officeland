@@ -75,7 +75,7 @@ final class PostgresSearchEngine implements SearchEngine
                 $bindings,
             );
 
-            // Trigram fallback catches typos and partial model codes — "ce302a"
+            // Trigram fallback catches typos and partial model codes - "ce302a"
             // for "CE320A". Only consulted when FTS finds nothing, because it
             // is looser and would otherwise dilute good results.
             if (! $matched->exists()) {
@@ -205,7 +205,7 @@ final class PostgresSearchEngine implements SearchEngine
             foreach ($group as $token) {
                 // A multi-word synonym such as "flash drive" is a PHRASE.
                 // Interpolated raw it produces `flash drive:*`, which is a
-                // tsquery syntax error — the words must be joined with the
+                // tsquery syntax error - the words must be joined with the
                 // phrase operator so they match adjacently.
                 $words = preg_split('/[^\p{L}\p{N}]+/u', $token, -1, PREG_SPLIT_NO_EMPTY) ?: [];
 
@@ -347,7 +347,7 @@ final class PostgresSearchEngine implements SearchEngine
      *
      * Each group is counted with every OTHER active filter applied but not its
      * own. That is what lets a buyer see the other colours still available
-     * after choosing one — counting with all filters applied would show every
+     * after choosing one - counting with all filters applied would show every
      * unselected value as zero, and counting with none would offer dead ends.
      *
      * @return list<FacetGroup>

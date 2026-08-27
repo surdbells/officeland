@@ -4,7 +4,7 @@ import { ContentPage } from './content-page';
 import { SeoService } from '../../core/seo/seo.service';
 
 /**
- * Delivery, Returns and Warranty — the three questions a buyer asks after
+ * Delivery, Returns and Warranty - the three questions a buyer asks after
  * "how much", and the three a procurement officer has to answer to their own
  * finance department before raising an order.
  *
@@ -35,7 +35,7 @@ import { SeoService } from '../../core/seo/seo.service';
       <p>
         Broadly: stationery and consumables we hold move fastest, IT and furniture
         depend on what is in stock against what is on order, and anything made to a
-        measure &mdash; WPC doors, wardrobes, kitchens, panelling &mdash; is
+        measure - WPC doors, wardrobes, kitchens, panelling - is
         fabrication time plus installation and is quoted per project.
       </p>
 
@@ -75,7 +75,7 @@ import { SeoService } from '../../core/seo/seo.service';
         Ministries, schools and agencies frequently have delivery windows, gate
         procedures and documentation requirements that are not obvious from outside.
         Tell us about them at quotation stage and we will build them into the
-        schedule &mdash; see <a routerLink="/bulk-supply/">bulk and tender supply</a>.
+        schedule - see <a routerLink="/bulk-supply/">bulk and tender supply</a>.
       </p>
     </ol-content-page>
   `,
@@ -85,7 +85,7 @@ export class DeliveryPage {
 
   constructor() {
     this.seo.apply({
-      title: ['Delivery & Lead Times — Nationwide from Lagos', 'Delivery & lead times'],
+      title: ['Delivery & Lead Times - Nationwide from Lagos', 'Delivery & lead times'],
       description:
         'How OfficeLand quotes lead times, delivers nationwide from Lagos, and handles installation and access. Lead times are stated per line.',
       path: '/delivery/',
@@ -117,9 +117,9 @@ export class DeliveryPage {
       <h2>If you ordered the wrong thing</h2>
       <p>
         Unused goods in their original packaging can usually go back. Ask before
-        sending anything: we need to know it is coming, and some items &mdash;
+        sending anything: we need to know it is coming, and some items -
         particularly IT with activated licences, opened consumables and anything
-        made or cut to your specification &mdash; cannot be resold and cannot be
+        made or cut to your specification - cannot be resold and cannot be
         taken back. A restocking charge and the collection cost may apply, and both
         will be stated before you commit to the return rather than after.
       </p>
@@ -130,7 +130,7 @@ export class DeliveryPage {
 
       <h2>What cannot be returned</h2>
       <ul>
-        <li>Anything manufactured, cut or finished to your measure &mdash; WPC doors,
+        <li>Anything manufactured, cut or finished to your measure - WPC doors,
           wardrobes, kitchens and panelling are made for one site.</li>
         <li>Opened consumables: toner, ink, paper and cleaning products.</li>
         <li>Software and IT where a licence has been activated or a seal broken.</li>
@@ -188,7 +188,7 @@ export class ReturnsPage {
       <p>
         A warranty covers a defect in manufacture or materials. It does not cover
         wear, accidental damage, misuse, or a failure caused by the environment the
-        equipment is in &mdash; which in practice means the single most common
+        equipment is in - which in practice means the single most common
         rejected claim is electrical damage to equipment that was not protected.
         See <a routerLink="/c/smart-tech/power-backup/">power and backup</a>; a
         stabiliser costs a fraction of the equipment it protects.
@@ -221,7 +221,7 @@ export class ReturnsPage {
       <p>
         Where we install, the installation is ours to put right. Where somebody else
         installs equipment we supplied, a fault caused by the installation is not a
-        manufacturing defect &mdash; which is a large part of why we would rather
+        manufacturing defect - which is a large part of why we would rather
         install what we supply. See <a routerLink="/delivery/">delivery and
         installation</a>.
       </p>
@@ -233,7 +233,7 @@ export class WarrantyPage {
 
   constructor() {
     this.seo.apply({
-      title: ['Warranty — Claims and Cover', 'Warranty'],
+      title: ['Warranty - Claims and Cover', 'Warranty'],
       description:
         'How OfficeLand handles warranty claims: what manufacturer warranties cover, what they do not, and how to make a claim.',
       path: '/warranty/',

@@ -11,12 +11,13 @@ import { SeoService } from '../../core/seo/seo.service';
 import { breadcrumbSchema, itemListSchema } from '../../core/seo/structured-data';
 import { EMPTY_LISTING, filterParams, readFilters, splitPagedPath } from '../../shared/listing-state';
 import { FacetRail } from '../../shared/facet-rail';
+import { CategoryChips } from '../../shared/category-chips';
 import { ResponsiveImage } from '../../shared/responsive-image';
 import { Pagination } from '../../shared/pagination';
 import { ProductCard } from '../../shared/product-card';
 
 /**
- * Category page — breadcrumbs, child anchors, facet rail, product grid.
+ * Category page - breadcrumbs, child anchors, facet rail, product grid.
  *
  * ── D-011, and why the child list is not decoration ──────────────────────
  * Section 14.5 requires every product within 3 clicks of the homepage.
@@ -34,7 +35,7 @@ import { ProductCard } from '../../shared/product-card';
   selector: 'ol-category-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ProductCard, FacetRail, Pagination, ResponsiveImage],
+  imports: [RouterLink, ProductCard, FacetRail, Pagination, ResponsiveImage, CategoryChips],
   template: `
     @if (category(); as cat) {
       <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8">
@@ -56,8 +57,8 @@ import { ProductCard } from '../../shared/product-card';
           The hero.
 
           Only rendered when the category has one. Every category has null
-          today — hero_media_id has been on the table since Phase 2 and
-          nothing ever wrote to it — so this has to be an addition rather
+          today - hero_media_id has been on the table since Phase 2 and
+          nothing ever wrote to it - so this has to be an addition rather
           than a requirement: a category without a picture must still look
           deliberate, not broken.
 
@@ -71,7 +72,7 @@ import { ProductCard } from '../../shared/product-card';
           page that has one, and the whole point of setting width and height
           on it is that arriving late must not move the grid below.
         -->
-        <div class="mt-4 gap-8 lg:grid lg:grid-cols-[1fr_22rem] lg:items-start">
+        <div [class]="cat.hero ? 'mt-4 gap-8 lg:grid lg:grid-cols-[1fr_22rem] lg:items-start' : 'mt-4'">
           <div>
             <h1 class="font-heading text-3xl font-bold sm:text-4xl">{{ cat.name }}</h1>
           </div>
@@ -90,8 +91,8 @@ import { ProductCard } from '../../shared/product-card';
 
         <!--
           Intro copy is HTML from the CMS, so it is bound rather than
-          interpolated. Interpolated it rendered the tags as visible text —
-          "<p>Sliding doors run within..." — on every one of the 24 category
+          interpolated. Interpolated it rendered the tags as visible text -
+          "<p>Sliding doors run within..." - on every one of the 24 category
           pages that carry copy. It looked fine to the robots check, to the
           raw-HTML gate and to axe; only looking at the page caught it.
 
@@ -102,9 +103,33 @@ import { ProductCard } from '../../shared/product-card';
         -->
         @if (cat.intro_copy) {
           <div
-            class="ol-prose mt-4 max-w-3xl text-ink-600"
+            class="ol-prose ol-intro-columns mt-4 text-ink-600"
             [innerHTML]="cat.intro_copy"
           ></div>
+        }
+
+        <!--
+          The chip row: children where there are children, siblings where
+          there are not.
+
+          It sits above the text category block rather than replacing it. The
+          block is what carries two levels of anchors and therefore the
+          3-click crawl guarantee; these chips carry one level and exist for
+          a person scanning the page. Dropping the block to avoid repeating
+          the names would trade a crawl guarantee for tidiness.
+        -->
+        @if (cat.children?.length) {
+          <ol-category-chips
+            [categories]="cat.children ?? []"
+            label="Subcategories"
+            class="mt-6 block"
+          />
+        } @else if (cat.siblings?.length) {
+          <ol-category-chips
+            [categories]="cat.siblings ?? []"
+            label="Related categories"
+            class="mt-6 block"
+          />
         }
 
         <!-- D-011. Real anchors, always in the HTML. -->
@@ -114,7 +139,7 @@ import { ProductCard } from '../../shared/product-card';
 
             Two, not one, and the reason is arithmetic. A department that
             lists only its subcategories puts each leaf 2 clicks from home and
-            each product 4 — because a product is only shallower than its own
+            each product 4 - because a product is only shallower than its own
             leaf if it happens to fit on page 1 of an ancestor's listing.
             That held while the catalogue was ten products. At real volume,
             224 products sat 4 clicks deep and the crawl-depth gate failed.
@@ -201,7 +226,7 @@ import { ProductCard } from '../../shared/product-card';
                 } @else {
                   Nothing is listed here yet.
                   <a routerLink="/quote/" class="text-brand-600 hover:underline">Ask us for a quote</a>
-                  &mdash; we supply far more than we list.
+                  - we supply far more than we list.
                 }
               </p>
             }
@@ -360,7 +385,7 @@ export class CategoryPage {
        *
        * `meta_title` has been a column, an admin field and part of the API
        * payload since Phase 5, and this page composed a template and never
-       * looked at it — so the one lever an editor had over a title tag did
+       * looked at it - so the one lever an editor had over a title tag did
        * nothing. Nobody noticed because the template is decent and every
        * title looked fine.
        *
@@ -376,12 +401,12 @@ export class CategoryPage {
       exactTitle: paged ? null : cat.seo?.meta_title,
       title: paged
         ? [
-            `${cat.name} in Nigeria — Page ${page}`,
-            `${cat.name} — Page ${page}`,
+            `${cat.name} in Nigeria - Page ${page}`,
+            `${cat.name} - Page ${page}`,
           ]
         : [
-            `${cat.name} in Nigeria — Prices & Bulk Supply`,
-            `${cat.name} — Prices & Bulk Supply`,
+            `${cat.name} in Nigeria - Prices & Bulk Supply`,
+            `${cat.name} - Prices & Bulk Supply`,
             `${cat.name} in Nigeria`,
             cat.name,
           ],
@@ -416,8 +441,8 @@ export class CategoryPage {
 /**
  * A meta description fallback derived from intro copy.
  *
- * The copy is HTML, and it was being handed to the description tag whole —
- * tags, entities and all — whenever a category had no explicit
+ * The copy is HTML, and it was being handed to the description tag whole -
+ * tags, entities and all - whenever a category had no explicit
  * meta_description. Strip the markup and cut at a word boundary near the
  * length search engines actually display.
  *

@@ -26,7 +26,7 @@ use UnitEnum;
  *
  * ── What this screen is really preventing ────────────────────────────────
  * One shared inbox works until it doesn't. When everyone receives every lead,
- * the ones nobody owns are the ones nobody answers — diffusion of
+ * the ones nobody owns are the ones nobody answers - diffusion of
  * responsibility, not volume, is the failure mode. Routing furniture enquiries
  * to the furniture team makes ownership the default rather than an act of
  * initiative.
@@ -66,7 +66,7 @@ final class QuoteRoutingRuleResource extends Resource
                     ->label('Category')
                     ->searchable()
                     // The path is what actually matches, so it is shown rather
-                    // than left implicit — two categories can share a name.
+                    // than left implicit - two categories can share a name.
                     ->description(fn (QuoteRoutingRule $record): string => (string) $record->category?->path),
 
                 TextColumn::make('recipient')
@@ -78,7 +78,7 @@ final class QuoteRoutingRuleResource extends Resource
 
                 TextColumn::make('note')
                     ->label('Note')
-                    ->placeholder('—')
+                    ->placeholder('-')
                     ->wrap()
                     ->toggleable(),
             ])
@@ -115,7 +115,7 @@ final class QuoteRoutingRuleResource extends Resource
             Toggle::make('is_active')
                 ->label('Active')
                 ->default(true)
-                ->helperText('Turn off to pause a rule without losing it — leads fall back to the default inbox.'),
+                ->helperText('Turn off to pause a rule without losing it - leads fall back to the default inbox.'),
 
             TextInput::make('note')
                 ->label('Note')

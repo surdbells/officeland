@@ -20,7 +20,7 @@ use UnitEnum;
  * ── Why the order is the feature ─────────────────────────────────────────
  * A list of 15,000 products missing descriptions is not a work queue, it is a
  * reason to give up. The only version of this screen that gets used is one
- * that answers "what should I write this morning" in its first ten rows — so
+ * that answers "what should I write this morning" in its first ten rows - so
  * the ordering (ContentValue) is doing more work here than the list itself.
  *
  * ── Categories before products ───────────────────────────────────────────
@@ -127,8 +127,8 @@ final class ContentReadiness extends Page
 
         /*
          * Only products that are ACTIVE and not yet indexable. A draft product
-         * is not withheld from Google by its description — it is withheld by
-         * being a draft — so listing it here would pad the queue with work
+         * is not withheld from Google by its description - it is withheld by
+         * being a draft - so listing it here would pad the queue with work
          * that changes nothing.
          */
         return Product::query()
@@ -171,6 +171,6 @@ final class ContentReadiness extends Page
     public function getSubheading(): string
     {
         return 'Ordered by internal search demand, which is a stand-in for keyword value until '.
-            'Search Console has data. Categories first — they unlock whole subtrees.';
+            'Search Console has data. Categories first - they unlock whole subtrees.';
     }
 }

@@ -46,7 +46,7 @@ describe('basket CSV', () => {
    * CSV injection. A field starting with =, +, - or @ is executed as a
    * formula by Excel and Sheets. Free text is user input and this file is
    * opened outside our control, so it is forced to text with a leading
-   * apostrophe — the standard mitigation.
+   * apostrophe - the standard mitigation.
    */
   describe('formula injection', () => {
     for (const dangerous of ['=1+1', '+1', '-1', '@SUM(A1)', '=HYPERLINK("http://evil")']) {
@@ -54,7 +54,7 @@ describe('basket CSV', () => {
         const csv = toCsv([line({ name: dangerous })]);
 
         // The apostrophe goes inside the quoting, and any quotes in the value
-        // are doubled per RFC 4180 — so the field opens with "' and then the
+        // are doubled per RFC 4180 - so the field opens with "' and then the
         // escaped value, not the raw one.
         expect(csv).toContain(`"'${dangerous.replace(/"/g, '""')}"`);
       });

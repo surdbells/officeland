@@ -55,7 +55,7 @@ final class QuoteEvent extends Model
      * The payload is a jsonb bag whose shape differs per type, and a timeline
      * that renders it raw is one a salesperson skips. It lives on the model
      * rather than in the Filament page because the same wording belongs in any
-     * future export or digest — and because a type added elsewhere should show
+     * future export or digest - and because a type added elsewhere should show
      * up here without an admin change.
      *
      * The fallthrough is deliberate: an unrecognised type still renders as
@@ -79,7 +79,7 @@ final class QuoteEvent extends Model
             ),
             'email_queued' => sprintf('%s queued to %s', $payload['template'] ?? 'email', $payload['to'] ?? 'unknown'),
             'email_queue_failed' => sprintf('%s could NOT be queued: %s', $payload['template'] ?? 'email', $payload['error'] ?? 'unknown error'),
-            'confirmation_suppressed' => sprintf('No receipt sent — %s is suppressed', $payload['email'] ?? 'the address'),
+            'confirmation_suppressed' => sprintf('No receipt sent - %s is suppressed', $payload['email'] ?? 'the address'),
             'assigned' => sprintf('Assigned to %s', $payload['to'] ?? 'nobody'),
             'first_response' => 'Marked as replied to',
             'note' => (string) ($payload['note'] ?? ''),
@@ -87,7 +87,7 @@ final class QuoteEvent extends Model
                 '%s → %s%s',
                 $payload['from'] ?? '?',
                 $payload['to'] ?? '?',
-                isset($payload['note']) ? ' — '.$payload['note'] : '',
+                isset($payload['note']) ? ' - '.$payload['note'] : '',
             )),
             default => $payload === []
                 ? ''

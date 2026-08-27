@@ -20,7 +20,7 @@ use Illuminate\Queue\SerializesModels;
  *
  * This is the message that turns a database row into somebody's job. The
  * business promises a response within one business day, and that promise is
- * kept by this email arriving — so it is deliberately plain, complete, and
+ * kept by this email arriving - so it is deliberately plain, complete, and
  * actionable from a phone.
  *
  * Reply-to is the CUSTOMER, so a salesperson can answer the lead by hitting
@@ -45,7 +45,7 @@ final class QuoteReceivedMail extends Mailable implements ShouldQueue
          * Counted from the loaded relation rather than with a fresh
          * `items()->count()` query. Two reasons: the body is about to iterate
          * the same rows anyway, so the query is pure waste; and it lets a
-         * quote that was never persisted — the routing test-send (§11d) —
+         * quote that was never persisted - the routing test-send (§11d) -
          * render, which a query against `quote_id = null` cannot.
          */
         $lines = $this->lines()->count();
@@ -54,7 +54,7 @@ final class QuoteReceivedMail extends Mailable implements ShouldQueue
             // The subject is the triage surface: reference, size and who from,
             // so a phone notification is enough to decide whether to act now.
             subject: sprintf(
-                'New quote %s — %d line%s from %s',
+                'New quote %s - %d line%s from %s',
                 $this->quote->reference,
                 $lines,
                 $lines === 1 ? '' : 's',
@@ -79,7 +79,7 @@ final class QuoteReceivedMail extends Mailable implements ShouldQueue
      * The quote's lines, loaded once.
      *
      * `loadMissing` rather than `load`: a caller that has already attached the
-     * rows — a preview built in memory — keeps them.
+     * rows - a preview built in memory - keeps them.
      *
      * @return Collection<int, QuoteItem>
      */

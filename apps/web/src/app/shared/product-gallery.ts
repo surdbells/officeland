@@ -14,7 +14,7 @@ import { ResponsiveImage } from './responsive-image';
  * ── Only the first image is the LCP element ──────────────────────────────
  * It takes `fetchpriority="high"` and eager loading; every other image is
  * lazy. Marking several images high priority is the same as marking none, and
- * the PDP page-weight budget is 800 KB (§14.9) — a five-image gallery at full
+ * the PDP page-weight budget is 800 KB (§14.9) - a five-image gallery at full
  * width would spend most of it before the buyer has scrolled.
  *
  * ── Thumbnails are buttons, not links ────────────────────────────────────

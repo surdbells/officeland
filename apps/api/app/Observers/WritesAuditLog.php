@@ -21,7 +21,7 @@ use Illuminate\Support\Str;
  * remembering to log. The same reasoning as InvalidatesRenderedRoutes.
  *
  * Only CHANGED attributes are stored. Recording whole rows makes the log
- * enormous and buries the one field that actually moved — which is the field
+ * enormous and buries the one field that actually moved - which is the field
  * anyone reading an audit log is looking for.
  */
 final class WritesAuditLog
@@ -93,7 +93,7 @@ final class WritesAuditLog
          *
          * Deleting a user fires this observer, which would insert an audit row
          * referencing the user row that is disappearing in the same
-         * transaction — a foreign key violation that aborts the deletion
+         * transaction - a foreign key violation that aborts the deletion
          * itself. An audit system that prevents deletions is worse than one
          * that loses an id, and `user_label` preserves who it was regardless.
          */

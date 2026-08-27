@@ -10,7 +10,7 @@ import type { components } from '@contracts/api';
  * ── Why not openapi-fetch ────────────────────────────────────────────────
  * Section 15.1 requires a generated client and rejects hand-written HTTP
  * calls. Every type below comes from packages/contracts, generated from the
- * OpenAPI spec, and CI fails if that contract drifts — so response shapes are
+ * OpenAPI spec, and CI fails if that contract drifts - so response shapes are
  * checked against the server rather than hand-maintained.
  *
  * The transport is Angular's HttpClient rather than openapi-fetch because
@@ -36,7 +36,7 @@ export type ApiError = components['schemas']['Error'];
  * A brand as the megamenu shows it.
  *
  * `logo` is null until somebody uploads one, and the menu falls back to the
- * name as text — which is all it has ever shown, so a missing logo costs
+ * name as text - which is all it has ever shown, so a missing logo costs
  * nothing and an uploaded one is a pure gain.
  */
 export interface NavigationBrand {
@@ -60,7 +60,7 @@ export interface NavigationNode {
    * department's subtree.
    *
    * Absent on subcategories and leaves, and empty on a department with no
-   * products — which is why the storefront must treat it as optional rather
+   * products - which is why the storefront must treat it as optional rather
    * than assume a row to render.
    */
   readonly brands?: readonly NavigationBrand[];
@@ -96,7 +96,7 @@ export interface ListingMeta {
 }
 
 /**
- * One envelope for every listing surface — PLP, search, brand hub — because
+ * One envelope for every listing surface - PLP, search, brand hub - because
  * one card component renders all three (section 23.5).
  */
 export interface Listing {
@@ -153,7 +153,7 @@ export class CatalogueApi {
   }
 
   /**
-   * The whole catalogue as one faceted listing — the shop page.
+   * The whole catalogue as one faceted listing - the shop page.
    *
    * Same envelope as every other listing surface, because it is the same
    * question with the category filter left out.

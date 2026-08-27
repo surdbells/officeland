@@ -7,8 +7,8 @@ import { SeoService } from '../../core/seo/seo.service';
  * Privacy, Terms and Cookies.
  *
  * ── These are drafts and need a lawyer before launch ─────────────────────
- * They are written to describe what this application ACTUALLY does — the data
- * it collects, where it goes, how long it is kept — which is the part an
+ * They are written to describe what this application ACTUALLY does - the data
+ * it collects, where it goes, how long it is kept - which is the part an
  * engineer can state accurately and a template cannot. A generic policy
  * copied from elsewhere would be worse than useless: it would describe
  * processing that does not happen and omit processing that does.
@@ -58,8 +58,8 @@ import { SeoService } from '../../core/seo/seo.service';
         personal data and identifies a basket rather than a person.
       </p>
       <p>
-        <strong>When you visit any page:</strong> our servers log the request &mdash;
-        address, page, timestamp, browser &mdash; as any web server does. These logs
+        <strong>When you visit any page:</strong> our servers log the request -
+        address, page, timestamp, browser - as any web server does. These logs
         exist to keep the site running and secure, and are not used to build a profile
         of you.
       </p>
@@ -73,7 +73,7 @@ import { SeoService } from '../../core/seo/seo.service';
       <h2>Why we are allowed to hold it</h2>
       <p>
         For quote requests, because you asked us for a quotation and we cannot
-        provide one without it &mdash; the lawful basis is the steps taken at your
+        provide one without it - the lawful basis is the steps taken at your
         request before entering a contract. For server logs and security records, our
         legitimate interest in operating a site that works and is not being attacked.
         For marketing email, your consent, which you give separately and can withdraw
@@ -88,7 +88,7 @@ import { SeoService } from '../../core/seo/seo.service';
         </li>
         <li>
           <strong>Carriers</strong>, where an order is delivered outside Lagos, receive
-          the delivery name, address and phone number &mdash; the minimum needed to
+          the delivery name, address and phone number - the minimum needed to
           deliver it.
         </li>
         <li>
@@ -107,7 +107,7 @@ import { SeoService } from '../../core/seo/seo.service';
         relationship is live and afterwards for as long as we may need them for tax,
         audit and warranty purposes. Basket cookies expire on their own. Server logs
         are rotated on a short cycle. Marketing consent is kept until you withdraw it,
-        along with the record of the withdrawal itself &mdash; that record is how we
+        along with the record of the withdrawal itself - that record is how we
         avoid contacting you again.
       </p>
 
@@ -186,7 +186,7 @@ export class PrivacyPage {
       <h2>Quotations</h2>
       <p>
         A quotation is an offer to supply on the terms it states. It holds for the
-        period stated on it, and after that we may need to requote &mdash; not as a
+        period stated on it, and after that we may need to requote - not as a
         tactic but because exchange rates and supplier pricing move.
       </p>
       <p>
@@ -197,8 +197,8 @@ export class PrivacyPage {
 
       <h2>Orders</h2>
       <p>
-        An order exists when you accept a quotation in writing &mdash; a purchase
-        order, a signed quotation, or an email confirming it &mdash; and we acknowledge
+        An order exists when you accept a quotation in writing - a purchase
+        order, a signed quotation, or an email confirming it - and we acknowledge
         it. Once fabrication or a special order has started, cancellation may not be
         possible; where that applies we say so on the quotation before you commit.
       </p>
@@ -224,7 +224,7 @@ export class PrivacyPage {
 
       <h2>Using this site</h2>
       <p>
-        The content of this site &mdash; text, structure and images we own &mdash;
+        The content of this site - text, structure and images we own -
         belongs to OfficeLand Limited. Brand names and logos belong to their owners and
         appear here to identify what we supply. You may not scrape, republish or resell
         the catalogue.
@@ -265,7 +265,7 @@ export class TermsPage {
     >
       <p>
         Most sites open with a consent banner because most sites set cookies you would
-        reasonably decline. This one does not, so there is no banner &mdash; asking
+        reasonably decline. This one does not, so there is no banner - asking
         permission for something you cannot switch off is theatre.
       </p>
 
@@ -300,7 +300,7 @@ export class TermsPage {
       <p>
         Your browser can block or delete cookies for this site at any time, and nothing
         will break except the basket, which will forget its contents between pages. You
-        can still request a quote &mdash; the form works without it.
+        can still request a quote - the form works without it.
       </p>
 
       <h2>Related</h2>

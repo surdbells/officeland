@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * Seeds the approved category taxonomy — docs/TAXONOMY.md, signed off
+ * Seeds the approved category taxonomy - docs/TAXONOMY.md, signed off
  * 2026-08-20.
  *
  * 9 departments / 42 subcategories / 119 leaves = 170 categories, replacing the
@@ -97,7 +97,7 @@ final class TaxonomySeeder extends Seeder
             ],
         ],
         /*
-         * Smart Tech — added 2026-08-23.
+         * Smart Tech - added 2026-08-23.
          *
          * The department the reference megamenu has and this taxonomy did not.
          * It is NOT a copy of the reference's consumer version: no gaming, no
@@ -263,7 +263,7 @@ final class TaxonomySeeder extends Seeder
         ],
 
         /*
-         * WPC Doors & Interiors — added 2026-08-23.
+         * WPC Doors & Interiors - added 2026-08-23.
          *
          * ── Why this is a department and not a category ──────────────────
          * WPC is a fit-out business that happens to sit inside a supplier:
@@ -359,7 +359,7 @@ final class TaxonomySeeder extends Seeder
         // The tree in docs/TAXONOMY.md is the approved artefact. If this drifts
         // from it, the redirect map and the URL structure drift with it.
         if ($total !== 170) {
-            $this->command->warn("Expected 170 categories, seeded {$total} — docs/TAXONOMY.md and this seeder have diverged.");
+            $this->command->warn("Expected 170 categories, seeded {$total} - docs/TAXONOMY.md and this seeder have diverged.");
         }
     }
 

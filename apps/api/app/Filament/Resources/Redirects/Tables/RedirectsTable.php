@@ -21,7 +21,7 @@ final class RedirectsTable
             ->columns([
                 TextColumn::make('from_path')->label('Old address')->searchable()->limit(60),
                 TextColumn::make('to_path')->label('New address')->searchable()->limit(60)
-                    ->placeholder('— gone —'),
+                    ->placeholder('- gone -'),
                 TextColumn::make('status_code')->label('Type')->badge()
                     ->color(fn (int $state): string => $state === 410 ? 'danger' : 'success'),
                 TextColumn::make('source')->badge()->toggleable(),

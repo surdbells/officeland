@@ -47,7 +47,7 @@
   /* Darkened from #8b95a3 after WCAG 2.2 AA contrast testing in a real
      browser (Phase 13c): the old value was 3.03:1 on white and 2.85:1 on
      ink-50, against a 4.5:1 requirement. It carries product codes, spec
-     labels and the footer — small text that is exactly where contrast
+     labels and the footer - small text that is exactly where contrast
      matters most.
 
      The binding constraint is ink-50, NOT white. A value tuned only against
@@ -142,7 +142,7 @@
    * `min()` rather than a media query. Every container is
    * `max-width: var(--container-page)` with `margin-inline: auto`, so the
    * moment the viewport is narrower than the cap the container is already
-   * viewport-width — the cap simply stops applying. Nothing to break at a
+   * viewport-width - the cap simply stops applying. Nothing to break at a
    * breakpoint, because there is no breakpoint.
    *
    * The `100vw - 2 * gutter` term is what keeps a 1366 or 1440 laptop from
@@ -259,8 +259,8 @@
 /*
  * CMS prose.
  *
- * Global, and it has to be. This styles markup injected with [innerHTML] —
- * category intros, product descriptions — and injected nodes never receive
+ * Global, and it has to be. This styles markup injected with [innerHTML] -
+ * category intros, product descriptions - and injected nodes never receive
  * the _ngcontent attribute Angular's emulated encapsulation scopes on. A
  * component-scoped rule silently matches nothing, which is exactly what the
  * first attempt at this did: the paragraphs rendered, ran together, and the
@@ -269,7 +269,7 @@
  * ::ng-deep would have worked and is deprecated. One global class, used by
  * every surface that renders authored HTML, is the honest version.
  *
- * The base layer gives <p> no margin on purpose — right for markup this
+ * The base layer gives <p> no margin on purpose - right for markup this
  * application writes, wrong for prose it does not.
  */
 .ol-prose p + p {
@@ -290,4 +290,38 @@
 .ol-prose a {
   color: var(--color-brand-600);
   text-decoration: underline;
+}
+
+/*
+ * Category intro copy across the full width, in columns.
+ *
+ * The copy was capped at a 48rem measure inside a 1564px container, which
+ * left roughly half the row empty on every category page that has intro
+ * text. Simply removing the cap would fix the gap and break the reading:
+ * a 1500px line is around 200 characters, and the eye loses its place on
+ * the return sweep somewhere past 90.
+ *
+ * Two columns solve both. Each column lands near 700px at the widest
+ * container, which is the measure the single column had, and the row is
+ * full. Below 1024px it collapses to one column, where the viewport is
+ * already doing the same job.
+ *
+ * Injected by [innerHTML], so this cannot be component-scoped - the same
+ * reason .ol-prose is global.
+ */
+@media (min-width: 1024px) {
+  .ol-intro-columns {
+    columns: 2;
+    column-gap: 3.5rem;
+  }
+}
+
+/* A paragraph split across a column break reads as two paragraphs. */
+.ol-intro-columns p {
+  break-inside: avoid;
+}
+
+/* `columns` puts the first paragraph's margin at the top of column one. */
+.ol-intro-columns p:first-child {
+  margin-top: 0;
 }

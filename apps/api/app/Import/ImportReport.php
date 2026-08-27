@@ -7,8 +7,8 @@ namespace App\Import;
 /**
  * The result of a CSV import, whether previewed or applied.
  *
- * Row numbers are the ones the editor sees in their spreadsheet — line 1 is
- * the header — so "row 47 is wrong" means row 47 in their file. Reporting
+ * Row numbers are the ones the editor sees in their spreadsheet - line 1 is
+ * the header - so "row 47 is wrong" means row 47 in their file. Reporting
  * zero-based array offsets would make every error message a puzzle.
  */
 final class ImportReport

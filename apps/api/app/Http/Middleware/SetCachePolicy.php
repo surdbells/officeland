@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * The ETag matters more here than the max-age. Under D-009 the storefront is
  * prerendered, so these endpoints are consumed mostly by the render worker and
- * by client-side facet filtering — both of which repeat identical requests. A
+ * by client-side facet filtering - both of which repeat identical requests. A
  * 304 costs a hash comparison instead of a full serialisation.
  */
 final class SetCachePolicy
@@ -77,7 +77,7 @@ final class SetCachePolicy
      * The basket is the important one and the easiest to miss: it is a GET, it
      * returns 200, and its response carries a Set-Cookie. Without this it
      * would be marked `public, max-age=60` like any other catalogue read, and
-     * a shared cache could hand one visitor's basket — and their cookie — to
+     * a shared cache could hand one visitor's basket - and their cookie - to
      * the next person who asked.
      */
     private function isPrivate(Request $request): bool

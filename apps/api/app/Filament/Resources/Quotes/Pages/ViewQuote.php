@@ -32,7 +32,7 @@ use Filament\Support\Icons\Heroicon;
  * ── Why "mark as answered" is its own action ─────────────────────────────
  * The reply happens outside this system (D-005), so nothing can detect it. The
  * SLA is measured from `first_response_at`, and if setting it is a side effect
- * of some other action it will be wrong — either never set, making every
+ * of some other action it will be wrong - either never set, making every
  * answered lead look overdue forever, or set on open, making the metric a lie.
  * It is one deliberate button.
  */
@@ -46,7 +46,7 @@ final class ViewQuote extends ViewRecord
 
         return $schema->components([
             Section::make('Customer')
-                ->description('Reply to the email or call the number — the reply happens outside this system.')
+                ->description('Reply to the email or call the number - the reply happens outside this system.')
                 ->columns(3)
                 ->schema([
                     TextEntry::make('email')
@@ -102,13 +102,13 @@ final class ViewQuote extends ViewRecord
                                 ->openUrlInNewTab()
                                 ->helperText(fn ($record): ?string => $record->free_text_description === null
                                     ? null
-                                    : 'Not in the catalogue — priced by hand'),
+                                    : 'Not in the catalogue - priced by hand'),
 
-                            TextEntry::make('sku_snapshot')->label('SKU')->placeholder('—'),
+                            TextEntry::make('sku_snapshot')->label('SKU')->placeholder('-'),
 
                             TextEntry::make('customer_note')
                                 ->label('Customer note')
-                                ->placeholder('—')
+                                ->placeholder('-')
                                 ->columnSpan(4),
                         ]),
                 ]),
@@ -123,11 +123,11 @@ final class ViewQuote extends ViewRecord
                 ->collapsed()
                 ->columns(3)
                 ->schema([
-                    TextEntry::make('utm_source')->label('Source')->placeholder('—'),
-                    TextEntry::make('utm_medium')->label('Medium')->placeholder('—'),
-                    TextEntry::make('utm_campaign')->label('Campaign')->placeholder('—'),
-                    TextEntry::make('landing_page')->label('Landing page')->placeholder('—')->columnSpan(3),
-                    TextEntry::make('referrer')->label('Referrer')->placeholder('—')->columnSpan(3),
+                    TextEntry::make('utm_source')->label('Source')->placeholder('-'),
+                    TextEntry::make('utm_medium')->label('Medium')->placeholder('-'),
+                    TextEntry::make('utm_campaign')->label('Campaign')->placeholder('-'),
+                    TextEntry::make('landing_page')->label('Landing page')->placeholder('-')->columnSpan(3),
+                    TextEntry::make('referrer')->label('Referrer')->placeholder('-')->columnSpan(3),
                 ]),
 
             /*
@@ -148,7 +148,7 @@ final class ViewQuote extends ViewRecord
                                 ->label('What')
                                 ->badge()
                                 // Only the failures are coloured. If everything
-                                // is coloured, nothing is — and the two rows
+                                // is coloured, nothing is - and the two rows
                                 // that matter here are the two that mean the
                                 // customer heard nothing.
                                 ->color(fn (string $state): string => match ($state) {
@@ -163,7 +163,7 @@ final class ViewQuote extends ViewRecord
                                 ->label('Detail')
                                 ->columnSpan(3)
                                 ->state(fn (QuoteEvent $record): string => $record->describe())
-                                ->placeholder('—'),
+                                ->placeholder('-'),
                         ]),
                 ]),
         ]);
@@ -214,7 +214,7 @@ final class ViewQuote extends ViewRecord
                         /*
                          * Only people who can actually open the queue. Offering
                          * every user makes it possible to assign a lead to
-                         * somebody who cannot see it — which looks exactly like
+                         * somebody who cannot see it - which looks exactly like
                          * an owned lead and behaves exactly like an abandoned
                          * one. Inactive accounts are excluded for the same
                          * reason.
@@ -289,7 +289,7 @@ final class ViewQuote extends ViewRecord
                     Textarea::make('note')
                         ->label('Why')
                         ->rows(3)
-                        ->helperText('Especially useful on Lost — it is the only record of why.'),
+                        ->helperText('Especially useful on Lost - it is the only record of why.'),
                 ])
                 ->fillForm(fn (Quote $record): array => ['status' => $record->status])
                 ->action(function (Quote $record, array $data): void {

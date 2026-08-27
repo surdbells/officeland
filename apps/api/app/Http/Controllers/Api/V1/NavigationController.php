@@ -17,7 +17,7 @@ use OpenApi\Attributes as OA;
 /**
  * The full category tree plus featured brands.
  *
- * Feeds the megamenu (section 23.1 rule 7 — the menu is data-driven and
+ * Feeds the megamenu (section 23.1 rule 7 - the menu is data-driven and
  * reorderable from admin, never hardcoded). Heavily cached: it changes only
  * when the taxonomy does, and it is needed by every page render.
  *
@@ -60,7 +60,7 @@ final class NavigationController extends Controller
 
     /**
      * Builds the tree in memory from a single flat query rather than recursing
-     * per node — 170 categories would otherwise be 170 queries.
+     * per node - 170 categories would otherwise be 170 queries.
      *
      * @param  Collection<int, Category>  $all
      * @param  array<string, list<array<string, mixed>>>  $brands
@@ -104,7 +104,7 @@ final class NavigationController extends Controller
      * ── Derived, not curated ─────────────────────────────────────────────
      * A brand belongs on a department's panel when it has an active product
      * filed somewhere in that department's subtree. Nothing to maintain and
-     * nothing to go stale — a brand added to the catalogue appears, and one
+     * nothing to go stale - a brand added to the catalogue appears, and one
      * whose last product is retired disappears, without anybody remembering.
      *
      * The alternative was a brand-to-department mapping table. It gives
@@ -130,7 +130,7 @@ final class NavigationController extends Controller
             ->join('product_category', 'product_category.product_id', '=', 'products.id')
             ->join('categories', 'categories.id', '=', 'product_category.category_id')
             // The department is the first path segment, and every descendant
-            // path starts with it — so the subtree comes from a prefix match
+            // path starts with it - so the subtree comes from a prefix match
             // on the materialized path rather than a recursive walk.
             ->join('categories as departments', function ($join): void {
                 $join->on('categories.path', 'like', DB::raw("departments.path || '%'"))
@@ -190,7 +190,7 @@ final class NavigationController extends Controller
      *
      * `logo_media_id` has been a column since Phase 2 with nothing reading it,
      * exactly as `hero_media_id` was. Null until somebody uploads one, and the
-     * storefront falls back to the brand name as text — which is what it has
+     * storefront falls back to the brand name as text - which is what it has
      * always shown, so a missing logo costs nothing.
      *
      * @param  list<int>  $ids

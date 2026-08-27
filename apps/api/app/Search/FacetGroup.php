@@ -9,7 +9,7 @@ namespace App\Search;
  *
  * Counts are mandatory (section 23.2: "Facet counts are mandatory. They
  * prevent dead-end filtering"), and only values with count > 0 are ever
- * returned — which is how section 16's "facets must not offer a combination
+ * returned - which is how section 16's "facets must not offer a combination
  * that returns zero results" is actually satisfied rather than merely
  * intended.
  */

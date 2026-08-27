@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
 /**
  * CSV product import with a dry-run diff (MASTER BUILD PROMPT section 11).
  *
- * The brief is explicit that this "must be genuinely robust, not a toy" — it
+ * The brief is explicit that this "must be genuinely robust, not a toy" - it
  * is how a large catalogue gets corrected over time, and under D-022 (Open
  * Icecat only) it is also the ONLY route for brands Icecat does not cover,
  * Baseus among them.
@@ -20,7 +20,7 @@ use Illuminate\Support\Str;
  * Three properties matter more than features:
  *
  *   Idempotent   Re-running the same file changes nothing. Matching is on
- *                MPN + brand first, then SKU — never on name, which editors
+ *                MPN + brand first, then SKU - never on name, which editors
  *                rewrite.
  *   Previewable  A dry run reports exactly what would change, per row and per
  *                field, before anything is written.
@@ -82,7 +82,7 @@ final class ProductCsvImporter
             }
 
             // Excel writes a UTF-8 BOM, which otherwise makes the first column
-            // name unmatchable — and produces a baffling "sku column missing"
+            // name unmatchable - and produces a baffling "sku column missing"
             // on a file that plainly has one.
             $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', (string) $header[0]) ?? '';
             $header = array_map(static fn ($h): string => Str::of((string) $h)->trim()->lower()->replace(' ', '_')->toString(), $header);
@@ -176,7 +176,7 @@ final class ProductCsvImporter
         }
 
         // Matching order matters. MPN + brand is the manufacturer's identity
-        // and survives renaming; SKU is ours. Name is never a key — editors
+        // and survives renaming; SKU is ours. Name is never a key - editors
         // rewrite names, and matching on them would create duplicates on every
         // title correction, which is exactly the legacy site's problem.
         $existing = $this->match($data, $brand);
@@ -195,7 +195,7 @@ final class ProductCsvImporter
 
                 // Nulls are stripped on CREATE so the column defaults apply.
                 // An omitted min_order_qty means "use the default of 1", not
-                // "insert NULL" — the column is NOT NULL, and passing an
+                // "insert NULL" - the column is NOT NULL, and passing an
                 // explicit null overrides the default rather than falling back
                 // to it. On UPDATE nulls already mean "leave this alone".
                 Product::create(array_filter($attributes, static fn ($v): bool => $v !== null));
@@ -335,7 +335,7 @@ final class ProductCsvImporter
 
         // Categories are never auto-created: the tree is a designed artefact
         // with a maximum depth and hand-written copy (docs/TAXONOMY.md).
-        $report->addError($line, "Category \"{$normalised}\" does not exist. Create it first — categories are not created by import.");
+        $report->addError($line, "Category \"{$normalised}\" does not exist. Create it first - categories are not created by import.");
 
         return false;
     }

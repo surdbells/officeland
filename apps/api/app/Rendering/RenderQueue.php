@@ -60,7 +60,7 @@ final class RenderQueue
             foreach ($request->routes as $route) {
                 // The score is the timestamp at which the route becomes
                 // eligible to render. A route already waiting must KEEP its
-                // original score — otherwise a page being edited repeatedly is
+                // original score - otherwise a page being edited repeatedly is
                 // pushed back on every save and never becomes eligible at all.
                 //
                 // ZADD's NX flag expresses this, but its argument form differs

@@ -17,7 +17,7 @@ use Illuminate\Support\Str;
 /**
  * Brand form.
  *
- * The generated scaffold exposed every column — uuid, logo_media_id,
+ * The generated scaffold exposed every column - uuid, logo_media_id,
  * product_count_cached. The Phase 5 gate is that a NON-TECHNICAL user can
  * complete a create/edit unaided, and a form asking someone to supply a UUID
  * fails that on sight. Internal and derived fields are not editable here.
@@ -53,7 +53,7 @@ final class BrandForm
 
                         RichEditor::make('description_html')
                             ->label('About this brand')
-                            ->helperText('Shown on the brand hub page. Original copy — not the manufacturer’s boilerplate.')
+                            ->helperText('Shown on the brand hub page. Original copy - not the manufacturer’s boilerplate.')
                             ->columnSpanFull(),
                     ])->columns(2),
 
@@ -72,7 +72,7 @@ final class BrandForm
                     Section::make('Product data')->schema([
                         TextInput::make('icecat_supplier_name')
                             ->label('Icecat supplier name')
-                            ->helperText('Only if it differs from the brand name above — for example "HP Inc." vs "HP". Used to match products during import.'),
+                            ->helperText('Only if it differs from the brand name above - for example "HP Inc." vs "HP". Used to match products during import.'),
                     ]),
                 ]),
 

@@ -7,7 +7,7 @@ import type { IconName } from '../../shared/icon';
  * An `icon` column would let the admin change one without a deploy, and that
  * is a real advantage. It also lets the admin type a name the front end has
  * never heard of, which under the closed `IconName` union is a build-time
- * error moved to runtime — a menu item silently missing its icon in
+ * error moved to runtime - a menu item silently missing its icon in
  * production. The choice of glyph is presentation, changes about as often as
  * the taxonomy itself, and belongs where the type system can see it.
  *
@@ -98,7 +98,7 @@ export function iconForCategory(slug: string): IconName {
  * of them were competing. The same map drives the panel's department rail.
  *
  * `printer` appears here and again on the Printers & Consumables panel's own
- * `printers` subcategory. That is not an oversight — a printer is what both
+ * `printers` subcategory. That is not an oversight - a printer is what both
  * of them are, and reaching for a worse glyph to avoid the repetition would
  * make the menu harder to read, not easier.
  */

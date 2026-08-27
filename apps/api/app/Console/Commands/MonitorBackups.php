@@ -13,7 +13,7 @@ use Throwable;
  * Notices when the backups have stopped happening (§13e).
  *
  * ── The failure this exists for ──────────────────────────────────────────
- * Not "the backup errored" — that one is loud. This is for the backup that
+ * Not "the backup errored" - that one is loud. This is for the backup that
  * **silently stopped running**: a host cron entry that was never installed on
  * the new server, a container renamed so `docker compose exec` no longer
  * resolves, a full disk that made the last successful run also the last run.
@@ -26,7 +26,7 @@ use Throwable;
  * WAL archiving failing is worse than a missed base backup and much quieter.
  * Postgres retries a failing `archive_command` forever, `pg_wal` grows without
  * bound, and the first symptom anybody sees is the disk filling and the
- * database stopping — by which point the archive has a hole in it and
+ * database stopping - by which point the archive has a hole in it and
  * point-in-time recovery is broken for that whole window.
  *
  * ── Not a readiness probe, on purpose ────────────────────────────────────
@@ -77,7 +77,7 @@ final class MonitorBackups extends Command
         }
 
         if ($stats === null) {
-            return ['pg_stat_archiver returned nothing — is archive_mode on?'];
+            return ['pg_stat_archiver returned nothing - is archive_mode on?'];
         }
 
         $problems = [];
@@ -113,12 +113,12 @@ final class MonitorBackups extends Command
         if (! is_dir($root)) {
             /*
              * The API container does not mount the backup volume, and it does
-             * not need to — this check is about the database host. Reporting a
+             * not need to - this check is about the database host. Reporting a
              * missing directory as a backup failure would produce an alert
              * every day in an environment where nothing is wrong, and a daily
              * false alarm is how a real one gets ignored.
              */
-            $this->line("No backup directory visible at {$root} — skipping the age check.");
+            $this->line("No backup directory visible at {$root} - skipping the age check.");
             $this->line('That is expected unless this process runs on the database host.');
 
             return [];

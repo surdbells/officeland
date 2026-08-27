@@ -15,14 +15,14 @@ use RuntimeException;
  *
  * The order of operations matters and is deliberate:
  *
- *   1. size check          — cheapest rejection first
- *   2. MIME by CONTENT     — never by extension or declared type
- *   3. decode probe        — a file can carry a valid magic number and still
+ *   1. size check          - cheapest rejection first
+ *   2. MIME by CONTENT     - never by extension or declared type
+ *   3. decode probe        - a file can carry a valid magic number and still
  *                            not be a decodable image
- *   4. SHA-256             — computed on the ORIGINAL bytes
- *   5. dedupe              — identical bytes are stored once, however many
+ *   4. SHA-256             - computed on the ORIGINAL bytes
+ *   5. dedupe              - identical bytes are stored once, however many
  *                            products reference them
- *   6. strip metadata      — EXIF can carry GPS coordinates and camera serials
+ *   6. strip metadata      - EXIF can carry GPS coordinates and camera serials
  *   7. content-addressed write
  *
  * Deduplication is not a micro-optimisation here. Suppliers ship the same
@@ -82,7 +82,7 @@ final class MediaIngestor
         $path = $this->storage->originalPath($checksum, $this->extensionFor($mime));
 
         // Metadata is stripped on write. EXIF routinely carries GPS
-        // coordinates, camera serial numbers and editing history — none of it
+        // coordinates, camera serial numbers and editing history - none of it
         // belongs on a public product image (section 12.1).
         $this->storage->writeOriginalStripped($sourcePath, $path);
 

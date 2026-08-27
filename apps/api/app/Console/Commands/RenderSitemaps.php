@@ -12,7 +12,7 @@ use Illuminate\Console\Command;
  *
  * Invoked directly, and by the full build. RouteResolver also enqueues
  * `/sitemap-*.xml` whenever an indexable record changes, so the incremental
- * renderer keeps them current between builds — this is what makes that
+ * renderer keeps them current between builds - this is what makes that
  * possible, because those routes are not pages and the Angular worker cannot
  * produce them.
  */

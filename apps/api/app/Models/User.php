@@ -66,7 +66,7 @@ final class User extends Authenticatable implements FilamentUser, HasAppAuthenti
      * Gate for the admin panel itself.
      *
      * A deactivated account must lose access immediately, without deleting the
-     * user — the audit log references them, and an audit trail that loses its
+     * user - the audit log references them, and an audit trail that loses its
      * actor is not an audit trail.
      */
     public function canAccessPanel(Panel $panel): bool

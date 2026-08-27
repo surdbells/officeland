@@ -18,8 +18,8 @@ use RuntimeException;
  * transaction. The number is consumed only if that transaction commits, so a
  * failed submission releases it rather than burning it.
  *
- * A sequence cannot do this. `nextval()` is deliberately non-transactional —
- * that is what makes it lock-free — so a rollback leaves a permanent gap. See
+ * A sequence cannot do this. `nextval()` is deliberately non-transactional -
+ * that is what makes it lock-free - so a rollback leaves a permanent gap. See
  * the migration for the full reasoning.
  *
  * ── This MUST be called inside a transaction ─────────────────────────────

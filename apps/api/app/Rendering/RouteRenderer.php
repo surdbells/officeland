@@ -19,7 +19,7 @@ use Throwable;
  * ── The atomic write is the whole point ──────────────────────────────────
  * Caddy serves these files directly, with no application in front of them. A
  * partially written index.html is not a slow page, it is a broken page served
- * at full speed to whoever asks — including a crawler. Writing to a temporary
+ * at full speed to whoever asks - including a crawler. Writing to a temporary
  * file in the same directory and rename()ing over the target makes the swap
  * atomic within the filesystem, so a reader sees either the old page or the
  * new one and never half of either.

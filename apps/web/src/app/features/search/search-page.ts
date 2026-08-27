@@ -20,7 +20,7 @@ import { ProductCard } from '../../shared/product-card';
  * duplicates. `follow` is kept so the product links still pass value.
  *
  * Because it is not prerendered, pagination here is a query parameter rather
- * than a path — there is no file to name, and D-032's reason for path
+ * than a path - there is no file to name, and D-032's reason for path
  * pagination does not apply.
  *
  * ── The zero-result page is a real page ──────────────────────────────────
@@ -64,7 +64,7 @@ import { ProductCard } from '../../shared/product-card';
           <!-- Trigram fallback ran. Saying so is honest, and it stops the
                user assuming an exact match they did not get. -->
           <p class="mt-1 text-sm text-ink-600">
-            Showing close matches &mdash; nothing matched &ldquo;{{ term() }}&rdquo; exactly.
+            Showing close matches - nothing matched &ldquo;{{ term() }}&rdquo; exactly.
           </p>
         }
       }
@@ -103,7 +103,7 @@ import { ProductCard } from '../../shared/product-card';
           </h2>
 
           <ul class="mt-3 list-disc space-y-1 pl-5 text-ink-600">
-            <li>Check the model code &mdash; a single character is enough to miss.</li>
+            <li>Check the model code - a single character is enough to miss.</li>
             <li>Try the manufacturer name on its own, then narrow with the filters.</li>
             <li>Search for what the product does rather than what it is called.</li>
           </ul>

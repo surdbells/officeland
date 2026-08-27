@@ -48,7 +48,7 @@ final class RedirectResource extends Resource
         $user = auth()->user();
 
         // Redirects are an SEO instrument, so both catalogue and content roles
-        // need them — a slug change and a moved guide are the same problem.
+        // need them - a slug change and a moved guide are the same problem.
         return $user instanceof User
             && ($user->role->managesCatalogue() || $user->role->managesContent());
     }

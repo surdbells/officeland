@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 /**
- * The masthead — the brand band that opens every page.
+ * The masthead - the brand band that opens every page.
  *
  * ── Why it sits above everything ─────────────────────────────────────────
  * This is the shape the business asked for and it matches the legacy site:
@@ -17,8 +17,8 @@ import { RouterLink } from '@angular/router';
  * ── Fixed height, not fitted height ──────────────────────────────────────
  * The band's height is set by the band, not by the size of the text inside
  * it. The wordmark scales with the viewport (`clamp`), and if the box grew
- * with the type then every viewport-width change — and every webfont swap
- * once the licensed files land (Q17) — would move the rest of the page.
+ * with the type then every viewport-width change - and every webfont swap
+ * once the licensed files land (Q17) - would move the rest of the page.
  * Fixing the height keeps CLS at 0, which the accessibility gate asserts.
  *
  * ── It is on the LCP path ────────────────────────────────────────────────
@@ -50,7 +50,7 @@ import { RouterLink } from '@angular/router';
       It cannot be a second <header>: that would be a second banner landmark.
       And it cannot be folded into the existing one, because the header below
       is sticky and a sticky element only sticks within its own containing
-      block — wrapping the two would make the nav unstick the moment the
+      block - wrapping the two would make the nav unstick the moment the
       masthead scrolled away.
     -->
     <section aria-label="Office Land Ltd">
@@ -73,7 +73,7 @@ import { RouterLink } from '@angular/router';
   styles: `
     /*
      * Heights are fixed per breakpoint; only the type inside them scales.
-     * See the class comment — a band that grows with its own text moves the
+     * See the class comment - a band that grows with its own text moves the
      * page every time the type resolves differently.
      */
     .ol-masthead {

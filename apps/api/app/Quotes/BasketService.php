@@ -185,7 +185,7 @@ final class BasketService
      * Strips markup and control characters, collapses whitespace, truncates.
      *
      * `strip_tags` rather than escaping, because this text is displayed in
-     * several places — the basket, the confirmation email, the admin panel —
+     * several places - the basket, the confirmation email, the admin panel -
      * and storing it already-escaped means one of them will double-escape it.
      * Storing it clean and escaping at each output point is the rule that
      * survives contact with a new template.

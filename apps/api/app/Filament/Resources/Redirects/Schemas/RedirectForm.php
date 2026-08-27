@@ -27,9 +27,9 @@ final class RedirectForm
                 Select::make('status_code')
                     ->label('Type')
                     ->options([
-                        301 => '301 — moved permanently (use this normally)',
-                        302 => '302 — moved temporarily',
-                        410 => '410 — gone for good, no replacement',
+                        301 => '301 - moved permanently (use this normally)',
+                        302 => '302 - moved temporarily',
+                        410 => '410 - gone for good, no replacement',
                     ])
                     ->default(301)
                     ->required()

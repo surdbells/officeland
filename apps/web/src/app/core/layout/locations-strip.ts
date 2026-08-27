@@ -14,7 +14,7 @@ import { Icon } from '../../shared/icon';
  * ── The Dubai entry is deliberately plain ────────────────────────────────
  * Office Land Solutions DMCC is a registered UAE entity, but **whether it
  * trades is unresolved (Q14)**. So it is listed as an office with an address
- * and nothing more: no "visit us", no directions link, and — importantly — it
+ * and nothing more: no "visit us", no directions link, and - importantly - it
  * must NOT gain `LocalBusiness` markup, which would tell Google the business
  * serves UAE customers. If the answer to Q14 is that it sells, this needs an
  * hreflang decision, not a styling one.
@@ -22,7 +22,7 @@ import { Icon } from '../../shared/icon';
  * ── No `AggregateRating`, and no map embed ───────────────────────────────
  * The 4.4★/138 reviews are Google's, collected on Google. Marking them up as
  * our own rating is self-serving review markup and against Google's
- * structured-data policy — displaying is fine, claiming is not (Q15).
+ * structured-data policy - displaying is fine, claiming is not (Q15).
  *
  * Directions link out rather than embedding a map: a Maps iframe is several
  * hundred KB of third-party JavaScript against a 130 KB total budget, and the
@@ -91,7 +91,7 @@ export class LocationsStrip {
    *
    * The table has existed since Phase 2 with address, coordinates and
    * opening hours for `LocalBusiness` JSON-LD; it was never populated because
-   * nobody had the addresses. They are now known — but opening hours and
+   * nobody had the addresses. They are now known - but opening hours and
    * coordinates still are not, and those are what make the markup worth
    * emitting. This renders the facts we have and no more.
    */
@@ -111,7 +111,7 @@ export class LocationsStrip {
         'https://www.google.com/maps/search/?api=1&query=Office+Land+Ltd+18+Idowu+Martins+Street+Victoria+Island+Lagos',
     },
     {
-      // No directions link, on purpose — see the class comment on Q14.
+      // No directions link, on purpose - see the class comment on Q14.
       name: 'Dubai Office',
       icon: 'building-2' as const,
       address:

@@ -9,13 +9,13 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Authorisation for catalogue records — products, categories, brands,
+ * Authorisation for catalogue records - products, categories, brands,
  * attributes and media.
  *
  * Section 11: "Policy-enforced, not UI-hidden." A hidden button is a UI
  * preference that anyone can defeat by typing a URL; a policy is
  * authorisation. Filament consults these to decide what to render, so the two
- * agree — but the policy is what actually holds.
+ * agree - but the policy is what actually holds.
  *
  * The five roles map to job functions:
  *   super_admin        everything
@@ -75,7 +75,7 @@ class CataloguePolicy
 
     /**
      * Publishing is what makes a page indexable, so it is a narrower
-     * permission than editing (section 14.7 — a product below the content
+     * permission than editing (section 14.7 - a product below the content
      * minimum must not reach the index by accident).
      */
     public function publish(User $user, Model $model): bool

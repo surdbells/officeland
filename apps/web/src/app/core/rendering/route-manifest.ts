@@ -14,7 +14,7 @@
  *   - Local development and the CI typecheck do not have an API. They set
  *     PRERENDER_ALLOW_EMPTY=1 and get an empty manifest with a warning.
  *
- * The alternative — a checked-in list of slugs — was rejected: 15,000 slugs in
+ * The alternative - a checked-in list of slugs - was rejected: 15,000 slugs in
  * git would be stale the day after it was written, and nothing would say so.
  */
 

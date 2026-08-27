@@ -31,7 +31,7 @@ final class GenerateMediaDerivatives implements ShouldQueue
     public int $timeout = 300;
 
     /**
-     * Retry with increasing delay — a transient disk-full recovers, a corrupt
+     * Retry with increasing delay - a transient disk-full recovers, a corrupt
      * image does not.
      *
      * @var list<int>

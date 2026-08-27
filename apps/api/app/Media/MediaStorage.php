@@ -14,7 +14,7 @@ use RuntimeException;
  *   {root}/{sha[0:2]}/{sha[2:4]}/{sha}/{variant}-{w}.{format}
  *
  * The two-level fan-out yields 65,536 leaf directories. At ~1.1M derivative
- * files that is ~18 files per directory — comfortable for any filesystem, and
+ * files that is ~18 files per directory - comfortable for any filesystem, and
  * the reason a flat or date-based layout was rejected (section 12).
  *
  * Because the path contains the hash of the content, a URL can never point at
@@ -122,7 +122,7 @@ final class MediaStorage
      * Writes via a temporary file and renames into place.
      *
      * rename() is atomic within a filesystem, so a reader never observes a
-     * partially written image — which matters because Caddy serves these
+     * partially written image - which matters because Caddy serves these
      * directly while the queue is still generating them.
      *
      * @param  callable(string): mixed  $write

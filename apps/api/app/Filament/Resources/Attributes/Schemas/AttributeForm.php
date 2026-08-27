@@ -14,7 +14,7 @@ use Filament\Schemas\Schema;
  * Attribute form.
  *
  * Facet indexability is a data attribute, never a hardcoded list
- * (MASTER BUILD PROMPT section 14.5 rule 4) — which is precisely why it is
+ * (MASTER BUILD PROMPT section 14.5 rule 4) - which is precisely why it is
  * editable here, and why the helper text explains what turning it on commits
  * you to.
  */
@@ -30,7 +30,7 @@ final class AttributeForm
                     ->required()
                     ->unique(ignoreRecord: true)
                     ->rules(['regex:/^[a-z0-9_]+$/'])
-                    ->helperText('Internal key, lowercase with underscores — e.g. page_yield.'),
+                    ->helperText('Internal key, lowercase with underscores - e.g. page_yield.'),
 
                 Select::make('group_id')
                     ->label('Specification group')
@@ -42,7 +42,7 @@ final class AttributeForm
                 Select::make('data_type')
                     ->options([
                         'string' => 'Text',
-                        'numeric' => 'Number — filterable by range',
+                        'numeric' => 'Number - filterable by range',
                         'boolean' => 'Yes / no',
                         'dimension' => 'Dimension',
                     ])
@@ -70,7 +70,7 @@ final class AttributeForm
 
                 Toggle::make('is_indexable_facet')
                     ->label('Filtered pages for this may be indexed by Google')
-                    ->helperText('Leave off unless this combination has proven search demand. Each one you turn on becomes a page that must earn its place with its own copy — start with fewer than thirty across the whole site.'),
+                    ->helperText('Leave off unless this combination has proven search demand. Each one you turn on becomes a page that must earn its place with its own copy - start with fewer than thirty across the whole site.'),
             ])->columns(3),
         ]);
     }

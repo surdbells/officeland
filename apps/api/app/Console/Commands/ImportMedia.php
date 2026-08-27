@@ -15,9 +15,9 @@ use RuntimeException;
  * Import images from a directory, with their alt text.
  *
  * ── Why this exists ──────────────────────────────────────────────────────
- * The media pipeline has been complete since Phase 4 — validation, decode
+ * The media pipeline has been complete since Phase 4 - validation, decode
  * probing, deduplication by checksum, EXIF stripping, content-addressed
- * storage, derivative generation — and there was no way to put a file into
+ * storage, derivative generation - and there was no way to put a file into
  * it. MediaIngestor is a service with no caller outside tests, there is no
  * Filament resource for media, and the media table has been empty since the
  * project began. That is why the entire storefront is typographic: not a
@@ -26,7 +26,7 @@ use RuntimeException;
  * ── Alt text is required, not optional ───────────────────────────────────
  * §12.6 makes alt text mandatory at attach time, and Media::assertAttachable()
  * enforces it. So this command reads it from a sidecar file next to the image
- * rather than inventing one — "office-chair.jpg" beside "office-chair.txt".
+ * rather than inventing one - "office-chair.jpg" beside "office-chair.txt".
  * An image without its sidecar is skipped and reported, because a made-up alt
  * is a lie to a screen reader and worse than no image.
  *
@@ -35,7 +35,7 @@ use RuntimeException;
  *   php artisan media:import --path=/docs/images --attach-categories
  *
  * With --attach-categories, a file named after a category path with slashes
- * replaced by dashes — `wpc-doors-interiors-wpc-doors.jpg` — becomes that
+ * replaced by dashes - `wpc-doors-interiors-wpc-doors.jpg` - becomes that
  * category's hero image. Naming rather than a mapping file, because a mapping
  * file is one more thing to keep in step with the taxonomy.
  */
@@ -65,7 +65,7 @@ final class ImportMedia extends Command
 
         $this->generator = $generator;
 
-        $apply = (bool) $this->option("apply");
+        $apply = (bool) $this->option('apply');
         $attach = (bool) $this->option('attach-categories');
 
         $imported = 0;
@@ -76,7 +76,7 @@ final class ImportMedia extends Command
             $alt = $this->altFor($file);
 
             if ($alt === null) {
-                $skipped[] = basename($file).' — no .txt sidecar with alt text';
+                $skipped[] = basename($file).' - no .txt sidecar with alt text';
 
                 continue;
             }
@@ -90,7 +90,7 @@ final class ImportMedia extends Command
             try {
                 $media = $ingestor->ingest($file, ['alt_text' => $alt, 'source' => 'manual']);
             } catch (RuntimeException $problem) {
-                $skipped[] = basename($file).' — '.$problem->getMessage();
+                $skipped[] = basename($file).' - '.$problem->getMessage();
 
                 continue;
             }
@@ -101,8 +101,8 @@ final class ImportMedia extends Command
              * Generate the derivatives, synchronously.
              *
              * Ingestion stores the ORIGINAL and nothing else. Every rendered
-             * <picture> is built from rows in media_derivatives — a srcset
-             * only ever advertises derivatives that exist (Phase 4) — so an
+             * <picture> is built from rows in media_derivatives - a srcset
+             * only ever advertises derivatives that exist (Phase 4) - so an
              * imported original with none is an image the storefront cannot
              * show. The first run of this command imported and attached a
              * category hero that rendered as nothing at all, because the

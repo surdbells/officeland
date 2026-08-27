@@ -14,10 +14,10 @@ export interface PageSeo {
    *
    * With a list, the service picks the first that fits the budget whole rather
    * than truncating the first with an ellipsis. The category template
-   * "Laser Printers in Nigeria — Prices & Bulk Supply" overflows by ten
+   * "Laser Printers in Nigeria - Prices & Bulk Supply" overflows by ten
    * characters, and blunt truncation produced
-   * "Laser Printers in Nigeria — Prices… | OfficeLand Nigeria", which throws
-   * away "Bulk Supply" — a phrase chosen for query intent — and ends a snippet
+   * "Laser Printers in Nigeria - Prices… | OfficeLand Nigeria", which throws
+   * away "Bulk Supply" - a phrase chosen for query intent - and ends a snippet
    * on a dangling word. Offering a shorter alternative keeps a whole phrase.
    */
   readonly title: string | readonly string[];
@@ -41,7 +41,7 @@ export interface PageSeo {
    *
    * It has to be separate rather than "the first candidate". Made a candidate,
    * a hand-written title is only used when it is short enough to also carry
-   * " | OfficeLand Nigeria" — 21 characters of a 60-character budget — so the
+   * " | OfficeLand Nigeria" - 21 characters of a 60-character budget - so the
    * template wins for anything longer than about 38 characters, which is most
    * titles worth writing. That is exactly what happened when meta_title was
    * first wired up: 46 categories had titles and not one of them appeared.
@@ -62,7 +62,7 @@ export interface PageSeo {
  * canonical shape, and one place can be tested.
  *
  * It must behave identically on the server and in the browser, because under
- * D-009 every catalogue page is rendered at build time — whatever this writes
+ * D-009 every catalogue page is rendered at build time - whatever this writes
  * during prerender is what a crawler receives.
  */
 @Injectable({ providedIn: 'root' })
@@ -109,7 +109,7 @@ export class SeoService {
       content: seo.indexable === false ? 'noindex, follow' : 'index, follow',
     });
 
-    // Open Graph. og:locale is en_NG — the audience is Nigerian, and the
+    // Open Graph. og:locale is en_NG - the audience is Nigerian, and the
     // default en_US misrepresents it to every social crawler.
     this.meta.updateTag({ property: 'og:title', content: title });
     this.meta.updateTag({ property: 'og:description', content: description });
@@ -150,7 +150,7 @@ export class SeoService {
    * The shell sets Organization and WebSite once; each route then sets its own
    * nodes. With a single scope the route's call wiped the shell's, and every
    * product page shipped a Product and a BreadcrumbList with no Organization
-   * to attach them to — section 14.4 requires all of them. The shell runs
+   * to attach them to - section 14.4 requires all of them. The shell runs
    * before the route, so the loss was silent and total.
    *
    * Two scopes also mean a route change replaces only the page nodes; the
@@ -190,7 +190,7 @@ export class SeoService {
    * Applies the section 14.3 template within the 60-character budget.
    *
    * The order of sacrifice is specified: "drop the brand segment first, then
-   * shorten the name". The site name goes last of all — a snippet that loses
+   * shorten the name". The site name goes last of all - a snippet that loses
    * it stops looking like a merchant.
    */
   private composeTitle(name: string | readonly string[], suffix?: string): string {
@@ -224,7 +224,7 @@ export class SeoService {
      * run 40-55 characters routinely: "CE320A HP 128A Black LaserJet Toner
      * Cartridge" is 45. Add " | OfficeLand Nigeria" and every one of them
      * overflows, so the budget would truncate the model name on essentially
-     * the whole catalogue — and the model name is the part that matches the
+     * the whole catalogue - and the model name is the part that matches the
      * search. "…LaserJet Toner… | OfficeLand Nigeria" loses the query term to
      * keep branding that Google frequently appends by itself.
      *

@@ -44,8 +44,8 @@ final class SearchSynonymForm
 
                 Select::make('type')
                     ->options([
-                        'usage' => 'Everyday wording — biro / pen',
-                        'model_code' => 'Model code — CE320A / 128A',
+                        'usage' => 'Everyday wording - biro / pen',
+                        'model_code' => 'Model code - CE320A / 128A',
                         'brand' => 'Brand name variant',
                         'typo' => 'Common misspelling',
                     ])
@@ -55,7 +55,7 @@ final class SearchSynonymForm
                     ->afterStateUpdated(function (?string $state, Set $set): void {
                         // A misspelling should find the correct term, but the
                         // correct term must not drag in the misspelling's
-                        // matches — so typos default to one-way.
+                        // matches - so typos default to one-way.
                         $set('bidirectional', $state !== 'typo');
                     }),
 

@@ -152,6 +152,8 @@ export interface components {
             hero?: components["schemas"]["Image"] | null;
             description_html?: string | null;
             product_count?: number;
+            /** @description Categories alongside this one, returned only when it has no children of its own. Drives the chip row on a leaf page. */
+            siblings?: components["schemas"]["Category"][];
             /** @description Rendered as real crawlable anchors on every category page (D-011). */
             children?: components["schemas"]["Category"][];
             breadcrumb?: components["schemas"]["BreadcrumbItem"][];

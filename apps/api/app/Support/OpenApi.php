@@ -25,7 +25,7 @@ use OpenApi\Attributes as OA;
 
         The storefront is prerendered to static HTML, so these endpoints are
         consumed mainly by the build-time render worker and by client-side
-        facet filtering — not on the critical path of a page view.
+        facet filtering - not on the critical path of a page view.
 
         No prices are returned anywhere: OfficeLand is quote-first, and
         `pricing_mode` drives the call to action from data rather than from a
@@ -127,7 +127,7 @@ use OpenApi\Attributes as OA;
 )]
 #[OA\Schema(
     schema: 'Image',
-    description: 'One image, shaped for a <picture> element (section 12.5). Only derivatives that actually exist are advertised — generation is resumable, so a srcset must never promise a 404.',
+    description: 'One image, shaped for a <picture> element (section 12.5). Only derivatives that actually exist are advertised - generation is resumable, so a srcset must never promise a 404.',
     required: ['uuid', 'alt', 'sources'],
     properties: [
         new OA\Property(property: 'uuid', type: 'string', format: 'uuid'),

@@ -20,7 +20,7 @@ use Symfony\Component\HttpFoundation\Cookie;
  * The cookie is HttpOnly (script cannot read it), Secure outside local
  * development, and SameSite=Lax. Lax rather than Strict because a buyer
  * arriving from a Google result and adding an item in the same visit must keep
- * the same basket — Strict would drop the cookie on that first cross-site
+ * the same basket - Strict would drop the cookie on that first cross-site
  * navigation and silently start them a new one.
  *
  * ── Why not Laravel's session ────────────────────────────────────────────
@@ -32,7 +32,7 @@ use Symfony\Component\HttpFoundation\Cookie;
  * Under D-009 the storefront is static and cacheable at the edge. Setting a
  * cookie on a page GET would make every page response uncacheable and hand a
  * tracking cookie to visitors who never touch the basket. So the cookie is
- * issued only when a basket is actually created — that is, on the first write.
+ * issued only when a basket is actually created - that is, on the first write.
  */
 final class BasketSession
 {
@@ -92,7 +92,7 @@ final class BasketSession
     /**
      * The cookie to attach to the response, if this request created a basket.
      *
-     * Returns null when the caller already had one — re-issuing an identical
+     * Returns null when the caller already had one - re-issuing an identical
      * cookie on every write is noise, and it would extend the cookie's life
      * past the row's without extending the row's.
      */

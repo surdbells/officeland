@@ -24,7 +24,7 @@ use Illuminate\Support\Carbon;
  * §9a requires the server to be authoritative for line-item identity. A
  * client-side basket would let anyone submit a quote for a product that does
  * not exist, at a quantity the product forbids, with a name and specification
- * of their choosing — and every one of those would be copied verbatim into the
+ * of their choosing - and every one of those would be copied verbatim into the
  * email a salesperson acts on.
  *
  * @property int $id

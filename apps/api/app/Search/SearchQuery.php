@@ -8,7 +8,7 @@ namespace App\Search;
  * What was asked for. Immutable, and deliberately free of SQL.
  *
  * Keeping the request separate from the engine is what makes the
- * SearchEngine interface of section 16 meaningful — Meilisearch would consume
+ * SearchEngine interface of section 16 meaningful - Meilisearch would consume
  * this same object without any caller changing.
  */
 final readonly class SearchQuery

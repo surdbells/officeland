@@ -20,8 +20,8 @@ use Symfony\Component\Mime\MessageConverter;
  *
  * ── Verified against the live documentation, as §10a requires ────────────
  * Endpoint      POST https://api.zeptomail.com/v1.1/email
- *               (EU tenants: https://api.zeptomail.eu/v1.1/email — Q18)
- * Authorization `zoho-enczapikey <token>` — NOT `Bearer`, and the prefix is
+ *               (EU tenants: https://api.zeptomail.eu/v1.1/email - Q18)
+ * Authorization `zoho-enczapikey <token>` - NOT `Bearer`, and the prefix is
  *               part of the header value rather than a scheme name.
  * Body          from{address,name}, to[]{email_address{address,name}},
  *               cc[], bcc[], reply_to[], subject, htmlbody, textbody,
@@ -31,12 +31,12 @@ use Symfony\Component\Mime\MessageConverter;
  *
  * The field names are the trap here: recipients are wrapped in an
  * `email_address` object rather than being flat, and the body fields are
- * `htmlbody`/`textbody` with no separator — neither matches the convention of
+ * `htmlbody`/`textbody` with no separator - neither matches the convention of
  * any other provider, and both fail silently by simply sending nothing.
  *
  * ── Why the API and not SMTP ─────────────────────────────────────────────
  * §13.2 asks for the API. It also gives us `client_reference`, which carries
- * the quote reference into ZeptoMail's own logs — so "did OL-Q-2026-000042
+ * the quote reference into ZeptoMail's own logs - so "did OL-Q-2026-000042
  * ever go out" is answerable without correlating timestamps by hand. That is
  * the question this business will actually ask.
  */
@@ -93,7 +93,7 @@ final class ZeptoMailApiTransport extends AbstractTransport
             /*
              * Thrown, not swallowed. The caller is a queued job with a retry
              * policy (§10c); returning quietly here would mark a failed send
-             * as delivered and lose the lead silently — the exact failure the
+             * as delivered and lose the lead silently - the exact failure the
              * whole quote pipeline exists to avoid.
              */
             throw new TransportException($this->describeFailure($response->status(), $response->json()));
@@ -292,7 +292,7 @@ final class ZeptoMailApiTransport extends AbstractTransport
      * Turns the provider's error envelope into one line worth logging.
      *
      * ZeptoMail nests the useful part in `error.details[].message`, and the
-     * top-level `message` is frequently just "Invalid input" — which tells
+     * top-level `message` is frequently just "Invalid input" - which tells
      * whoever is paged nothing at all.
      */
     private function describeFailure(int $status, mixed $body): string

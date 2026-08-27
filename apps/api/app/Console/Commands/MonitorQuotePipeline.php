@@ -22,7 +22,7 @@ use Throwable;
  * after organic search, and it is the one that fails **silently**. A broken
  * storefront is reported within minutes by anybody who looks at it. A quote
  * pipeline that stopped writing rows, or stopped queueing mail, looks exactly
- * like a quiet week — and the business's own explanation for a quiet week is
+ * like a quiet week - and the business's own explanation for a quiet week is
  * never "our software is broken". By the time somebody asks, the leads are
  * gone and unrecoverable.
  *
@@ -33,7 +33,7 @@ use Throwable;
  * ── What it deliberately does NOT use ────────────────────────────────────
  * The HTTP endpoint. Posting to `/api/v1/quotes` would drag in the anti-abuse
  * guard, and a monitor running every 15 minutes from one address is exactly
- * what AbuseGuard exists to stop — the monitor would either trip the limiter
+ * what AbuseGuard exists to stop - the monitor would either trip the limiter
  * or force us to weaken it. It calls `QuoteSubmitter` instead, which is where
  * everything that can actually break lives; the layer above it is validation
  * and a rate limiter, both covered by tests.
@@ -41,14 +41,14 @@ use Throwable;
  * ── It cleans up after itself, and that matters more than it sounds ──────
  * A synthetic quote left in the queue is a lead somebody tries to answer, and
  * one arriving every 15 minutes would train the sales team to ignore the
- * queue — destroying the thing Phase 11 was built to protect. The whole run
+ * queue - destroying the thing Phase 11 was built to protect. The whole run
  * happens inside a transaction that is rolled back, so nothing is left behind
  * even if the process is killed mid-run.
  *
  * ── And it sends no mail, which is a property of the seam, not of luck ───
  * `QuoteSubmitter::submit()` writes the quote; `QuoteMailer::sendForQuote()`
  * is called separately by the controller afterwards. Because the monitor stops
- * at the submitter, no confirmation and — more importantly — no SALES
+ * at the submitter, no confirmation and - more importantly - no SALES
  * NOTIFICATION is queued. A notification every fifteen minutes would be worse
  * than no monitor at all.
  *
@@ -76,7 +76,7 @@ final class MonitorQuotePipeline extends Command
              * catalogue means the monitor is blind, and a blind monitor
              * reporting success is worse than no monitor.
              */
-            $this->reportBroken('no active product to quote — the monitor cannot run');
+            $this->reportBroken('no active product to quote - the monitor cannot run');
 
             return self::FAILURE;
         }
@@ -109,7 +109,7 @@ final class MonitorQuotePipeline extends Command
 
         Log::info('monitor.quote.ok', ['reference' => $reference, 'elapsed_ms' => $elapsed]);
 
-        $this->info("Quote pipeline healthy — {$reference} in {$elapsed}ms.");
+        $this->info("Quote pipeline healthy - {$reference} in {$elapsed}ms.");
 
         return self::SUCCESS;
     }
@@ -198,11 +198,11 @@ final class MonitorQuotePipeline extends Command
         }
 
         if ($quote->items()->count() < 1) {
-            throw new \RuntimeException('the quote has no line items — snapshotting failed');
+            throw new \RuntimeException('the quote has no line items - snapshotting failed');
         }
 
         if ($quote->events()->where('type', 'submitted')->count() < 1) {
-            throw new \RuntimeException('no submitted event was recorded — the audit trail is broken');
+            throw new \RuntimeException('no submitted event was recorded - the audit trail is broken');
         }
     }
 

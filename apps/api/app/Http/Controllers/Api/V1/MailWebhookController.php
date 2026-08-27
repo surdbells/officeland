@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\Log;
  *
  * A SOFT bounce is not. A full mailbox or a temporary server failure clears on
  * its own, and suppressing on the first soft bounce would permanently stop
- * writing to a customer whose inbox was briefly full — losing orders to fix a
+ * writing to a customer whose inbox was briefly full - losing orders to fix a
  * problem that fixed itself. Soft bounces are logged and left alone.
  *
  * Opens and clicks are ignored entirely: tracking is off by default, and we do
@@ -59,7 +59,7 @@ final class MailWebhookController extends Controller
 
             /*
              * 401 and nothing else. An unverified caller learns only that it
-             * was rejected — not which part failed, and nothing about whether
+             * was rejected - not which part failed, and nothing about whether
              * the address in the payload exists.
              */
             return response()->json(['error' => ['code' => 'InvalidSignature', 'message' => 'Rejected.']], 401);
@@ -98,7 +98,7 @@ final class MailWebhookController extends Controller
         /*
          * updateOrCreate keyed on the address: providers retry webhooks, and a
          * duplicate delivery must not fail on the unique index. An address
-         * already suppressed keeps its original suppressed_at — the first
+         * already suppressed keeps its original suppressed_at - the first
          * bounce is the one that matters.
          */
         EmailSuppression::query()->updateOrCreate(
@@ -138,7 +138,7 @@ final class MailWebhookController extends Controller
      * Digs the recipient out of the nested payload.
      *
      * The shape varies by event type, so several known locations are tried
-     * rather than assuming one — a missed address means a bounce that never
+     * rather than assuming one - a missed address means a bounce that never
      * suppresses, which is the failure this endpoint exists to prevent.
      *
      * @param  array<string, mixed>  $payload
@@ -188,7 +188,7 @@ final class MailWebhookController extends Controller
     }
 
     /**
-     * `b****@example.com` — enough to correlate a report, not enough to make
+     * `b****@example.com` - enough to correlate a report, not enough to make
      * the log a list of customer addresses.
      */
     private function mask(string $email): string

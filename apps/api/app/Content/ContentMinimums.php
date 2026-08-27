@@ -15,8 +15,8 @@ use Illuminate\Database\Eloquent\Model;
  * The Phase 12 gate is "no indexable page below the content minimums". A
  * checkbox with a helpful hint next to it does not achieve that: it takes one
  * bulk edit, one CSV column or one impatient afternoon to put 15,000 thin
- * pages into the sitemap, and the damage — a domain assessed as thin at the
- * moment it first gets crawled — is slow to undo and invisible while it
+ * pages into the sitemap, and the damage - a domain assessed as thin at the
+ * moment it first gets crawled - is slow to undo and invisible while it
  * happens. Same reasoning as alt text in Phase 4f, which is enforced on the
  * model rather than in the form because the importer does not use the form.
  *
@@ -28,7 +28,7 @@ use Illuminate\Database\Eloquent\Model;
  *
  * ── What is deliberately NOT checked ─────────────────────────────────────
  * Quality. Nothing here can tell whether 120 words are worth reading. These
- * are floors — necessary, nowhere near sufficient — and the similarity gate
+ * are floors - necessary, nowhere near sufficient - and the similarity gate
  * (SimilarityGate) plus human approval carry the part a word count cannot.
  */
 final class ContentMinimums
@@ -43,7 +43,7 @@ final class ContentMinimums
      * The upper bound is advisory, not a bar to indexing.
      *
      * A 400-word category intro is not a reason to withhold a page from
-     * Google — it is a reason to tell the editor it reads long. Enforcing it
+     * Google - it is a reason to tell the editor it reads long. Enforcing it
      * would be enforcing a house style as though it were an SEO requirement.
      */
     public const CATEGORY_WORDS_ADVISORY_MAX = 300;
@@ -80,7 +80,7 @@ final class ContentMinimums
          * three times the scale, on a domain with no authority to spend.
          */
         if ($this->isVerbatimSource($product)) {
-            $failures[] = 'description is the supplier text verbatim — rewrite it';
+            $failures[] = 'description is the supplier text verbatim - rewrite it';
         }
 
         /*
@@ -93,7 +93,7 @@ final class ContentMinimums
 
         if ($this->awaitingSimilarityReview($product)) {
             $failures[] = sprintf(
-                'reads %d%% the same as another product in its family — approve or rewrite',
+                'reads %d%% the same as another product in its family - approve or rewrite',
                 (int) round((float) $product->description_similarity * 100),
             );
         }
@@ -116,7 +116,7 @@ final class ContentMinimums
 
         /*
          * "How soon can we have it" is the single most commercially useful
-         * fact this page can carry — D-002 removed prices and there are no
+         * fact this page can carry - D-002 removed prices and there are no
          * stock counts, so without it the page answers nothing a buyer is
          * actually deciding on.
          *
@@ -144,7 +144,7 @@ final class ContentMinimums
         return Readiness::ready();
     }
 
-    /** Advisory only — never a reason to withhold a page. */
+    /** Advisory only - never a reason to withhold a page. */
     public function categoryReadsLong(Category $category): bool
     {
         return $this->words($category->intro_copy) > self::CATEGORY_WORDS_ADVISORY_MAX;
@@ -160,7 +160,7 @@ final class ContentMinimums
 
         /*
          * Counted by whitespace rather than with str_word_count, which is
-         * locale-bound and drops anything non-ASCII — including the model
+         * locale-bound and drops anything non-ASCII - including the model
          * codes and dimensions that make up a real specification sentence.
          */
         return count(preg_split('/\s+/u', $text) ?: []);
@@ -174,8 +174,8 @@ final class ContentMinimums
     /**
      * Whether the published description is still the supplier's own text.
      *
-     * Normalised before comparison so that a copy-paste through the editor —
-     * which changes the markup but not a word of the prose — is still caught.
+     * Normalised before comparison so that a copy-paste through the editor -
+     * which changes the markup but not a word of the prose - is still caught.
      */
     private function isVerbatimSource(Product $product): bool
     {

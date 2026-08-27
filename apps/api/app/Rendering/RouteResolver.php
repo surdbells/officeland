@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
  *
  * This is gap G7, and under D-009 it is the load-bearing piece of the whole
  * architecture. The storefront is prerendered to disk, so correctness comes
- * entirely from regenerating the right routes — there is no TTL to fall back
+ * entirely from regenerating the right routes - there is no TTL to fall back
  * on. Resolve too few and the site serves stale pages indefinitely; resolve
  * too many and a bulk import regenerates the catalogue several times over.
  *
@@ -75,7 +75,7 @@ final class RouteResolver
          * Load what this method reads rather than trusting the caller to.
          *
          * The resolver runs from a model observer, so its callers are every
-         * write path in the application — Filament, the CSV importer, Icecat
+         * write path in the application - Filament, the CSV importer, Icecat
          * ingestion, seeders, tinker. Reading `$product->brand` as a property
          * throws under `preventLazyLoading()` (AppServiceProvider) unless that
          * particular caller happened to eager-load it, which turns a rendering
@@ -88,7 +88,7 @@ final class RouteResolver
 
         $direct = [$product->url()];
 
-        // Every category the product appears in, plus the ancestors of each —
+        // Every category the product appears in, plus the ancestors of each -
         // a listing page shows products from its whole subtree, so a change
         // deep in the tree is visible further up.
         foreach ($product->categories()->get() as $category) {
@@ -130,7 +130,7 @@ final class RouteResolver
     /**
      * Pages whose related-product rails display this product.
      *
-     * Rails are baked into the HTML deliberately — section 14.7 counts them as
+     * Rails are baked into the HTML deliberately - section 14.7 counts them as
      * internal linking, and internal linking is a primary ranking asset for a
      * domain with no accumulated authority. Rendering them client-side would
      * make them invisible to crawlers.
@@ -171,7 +171,7 @@ final class RouteResolver
     {
         // As in forProduct: `$category->children` is read as a property below,
         // so the relation is loaded here rather than assumed. Seeding intro
-        // copy is what surfaced this — every save threw, and the enqueue was
+        // copy is what surfaced this - every save threw, and the enqueue was
         // silently lost with it.
         $category->loadMissing('children');
 

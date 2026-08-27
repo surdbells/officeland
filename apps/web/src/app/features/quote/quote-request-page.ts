@@ -21,7 +21,7 @@ interface Confirmation {
  * ── Anti-abuse is invisible here ─────────────────────────────────────────
  * A honeypot the buyer never sees and a timestamp captured on load. Both are
  * optional server-side, so the form still works for a client that never ran
- * JavaScript — which is traffic this site must not turn away.
+ * JavaScript - which is traffic this site must not turn away.
  *
  * ── A rejection is always shown ──────────────────────────────────────────
  * If the server declines, the buyer is told. Accepting-and-discarding would
@@ -46,7 +46,7 @@ interface Confirmation {
 
           <p class="mt-3 max-w-2xl text-ink-600">
             {{ done.response_expectation ?? 'We respond within one business day.' }}
-            A copy has gone to <strong>{{ done.email }}</strong> &mdash; if it does not arrive,
+            A copy has gone to <strong>{{ done.email }}</strong> - if it does not arrive,
             check your spam folder, then call us on
             <a href="tel:+2347074723165" class="text-brand-600 hover:underline">+234 707 472 3165</a>
             and quote that reference.
@@ -72,7 +72,7 @@ interface Confirmation {
           </p>
         } @else {
           <p class="mt-2 text-ink-600">
-            {{ store.lineCount() }} line{{ store.lineCount() === 1 ? '' : 's' }} &mdash;
+            {{ store.lineCount() }} line{{ store.lineCount() === 1 ? '' : 's' }} -
             <a routerLink="/quote/" class="text-brand-600 hover:underline">review the list</a>
           </p>
 

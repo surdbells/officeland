@@ -95,7 +95,7 @@ final class SearchQueryResource extends Resource
                         ->where('result_count', 0)
                         ->where('occurrences', '>', 1)),
 
-                // Results returned but nobody clicked — usually means the
+                // Results returned but nobody clicked - usually means the
                 // results were wrong rather than absent, which is a ranking
                 // problem rather than a stocking one.
                 Filter::make('no_clicks')

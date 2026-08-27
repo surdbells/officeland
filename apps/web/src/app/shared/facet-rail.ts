@@ -9,7 +9,7 @@ import type { FacetGroup } from '../core/api/catalogue-api';
  * Not a checkbox with a click handler. The URL is the state, so a facet
  * selection is bookmarkable, shareable, back-button-correct and functional
  * before JavaScript loads. RouterLink gives a real `href` in the prerendered
- * HTML and upgrades to client-side navigation once hydrated — the same
+ * HTML and upgrades to client-side navigation once hydrated - the same
  * pattern as the megamenu, and for the same reason.
  *
  * The pages behind those anchors are `noindex, follow` (SEO_SPEC.md §2), so
@@ -20,7 +20,7 @@ import type { FacetGroup } from '../core/api/catalogue-api';
  * ── Counts are mandatory ─────────────────────────────────────────────────
  * §23.2 is explicit. A count is what stops a shopper selecting a combination
  * that returns nothing, and §16 requires that facets never offer a zero-result
- * combination — which is only enforceable if the counts are live against the
+ * combination - which is only enforceable if the counts are live against the
  * current filter set, as they are here.
  */
 @Component({
@@ -55,8 +55,8 @@ import type { FacetGroup } from '../core/api/catalogue-api';
           Two layouts, one component.
 
           A second component would be a second place for the facet URL rules
-          to live — toggling, page-dropping, preserved params, the
-          aria-current handling — and those are the parts that are easy to get
+          to live - toggling, page-dropping, preserved params, the
+          aria-current handling - and those are the parts that are easy to get
           subtly wrong. The markup differs; the behaviour must not.
 
           In "bar" the groups sit side by side above the grid, each one a
@@ -176,7 +176,7 @@ export class FacetRail {
    * 'rail' is a vertical column beside the grid; 'bar' is a horizontal row of
    * dropdowns above it.
    *
-   * Defaulting to 'bar' because that is what most listings use — category,
+   * Defaulting to 'bar' because that is what most listings use - category,
    * brand and search. Only the shop page asks for 'rail', and it is the one
    * page where filtering is the primary act rather than a refinement of a
    * scope the visitor already chose.
@@ -189,8 +189,8 @@ export class FacetRail {
   }
 
   /**
-   * A group with a single value cannot narrow anything — every result already
-   * has it — so it is hidden rather than shown as a no-op. A SELECTED group is
+   * A group with a single value cannot narrow anything - every result already
+   * has it - so it is hidden rather than shown as a no-op. A SELECTED group is
    * kept whatever its length, because hiding it would remove the only control
    * that can deselect it and strand the user on a filtered page.
    */
@@ -214,7 +214,7 @@ export class FacetRail {
   /**
    * Adding a value narrows; clicking a selected value removes it. One anchor
    * does both, so the control that applies a filter is the control that
-   * removes it — there is no separate "remove" affordance to miss.
+   * removes it - there is no separate "remove" affordance to miss.
    *
    * Page is dropped on every change: staying on page 7 of a result set that
    * now has two pages is an empty page.

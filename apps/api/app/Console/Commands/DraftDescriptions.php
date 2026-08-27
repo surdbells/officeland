@@ -16,12 +16,12 @@ use Illuminate\Console\Command;
  * Everything it writes is stamped as generated, and a generated description
  * cannot be indexed until a person approves it. The point is to get 15,000
  * products to a first draft so the editorial work is editing rather than
- * writing — not to skip the editing.
+ * writing - not to skip the editing.
  *
  * ── Dry run by default ───────────────────────────────────────────────────
  * Same reasoning as `media:reap`: this writes to every product in the
  * catalogue, and the report on its own answers the question that actually
- * matters before launch — *how many products have enough structured data to
+ * matters before launch - *how many products have enough structured data to
  * support a description at all?* That number decides whether Q-B is a
  * scheduling problem or a data problem, and it is worth knowing before
  * anything is written.
@@ -101,9 +101,9 @@ final class DraftDescriptions extends Command
             ['Outcome', 'Products'],
             [
                 [$apply ? 'Drafted' : 'Would draft', $drafted],
-                ['Already written — left alone', $skipped],
+                ['Already written - left alone', $skipped],
                 ['Not enough structured data to describe', $insufficient],
-                ['Flagged as near-duplicate', $apply ? $flagged : '—'],
+                ['Flagged as near-duplicate', $apply ? $flagged : '-'],
                 ['Seen', $seen],
             ],
         );
@@ -114,7 +114,7 @@ final class DraftDescriptions extends Command
 
         if ($insufficient > 0) {
             $this->warn(sprintf(
-                '%d product(s) lack the attributes needed for a description. Those need DATA, not copy — '.
+                '%d product(s) lack the attributes needed for a description. Those need DATA, not copy - '.
                 'a description written without specifications is the boilerplate §14.3 forbids.',
                 $insufficient,
             ));

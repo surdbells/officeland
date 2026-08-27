@@ -30,7 +30,7 @@ use Illuminate\Support\Carbon;
  *
  * ── Public holidays are NOT modelled ─────────────────────────────────────
  * Nigerian public holidays are partly declared at short notice, so a hardcoded
- * list would be wrong within a year and wrong in the direction that matters —
+ * list would be wrong within a year and wrong in the direction that matters -
  * flagging a lead as late when the office was shut. Weekends are handled; a
  * holiday shows as one day of overrun, which a salesperson can read correctly.
  * If this ever needs to be exact, it needs a maintained holiday table, not a

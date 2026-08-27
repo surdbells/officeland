@@ -9,11 +9,11 @@ import type { BasketLine } from '../../core/api/catalogue-api';
  * The quote basket page (§9c).
  *
  * Editable quantities, per-line notes, free-text lines, and a CSV export
- * (D-006). No prices and no total anywhere — there is nothing to total until
+ * (D-006). No prices and no total anywhere - there is nothing to total until
  * sales prices it (D-002).
  *
  * `noindex`: it is per-visitor by definition and there is nothing here to
- * index. It is also not prerendered with content — the basket belongs to the
+ * index. It is also not prerendered with content - the basket belongs to the
  * browser, and the page is a shell the store fills in.
  */
 @Component({
@@ -35,7 +35,7 @@ import type { BasketLine } from '../../core/api/catalogue-api';
         <p class="mt-6 max-w-2xl text-ink-600">
           Nothing added yet. Browse the
           <a routerLink="/c/" class="text-brand-600 hover:underline">catalogue</a>
-          and add what you need &mdash; or list it below if we do not have a page for it.
+          and add what you need - or list it below if we do not have a page for it.
         </p>
       } @else {
         <p class="mt-2 text-sm text-ink-600">

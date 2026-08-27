@@ -37,7 +37,7 @@ final class BrandController extends Controller
      * A brand hub listing.
      *
      * This is the surface that replaces the legacy `/product-category/hp/`
-     * pattern (defect 4E), where brands were modelled as categories — 35 of
+     * pattern (defect 4E), where brands were modelled as categories - 35 of
      * 161 taxonomy terms were brand branches. A brand is a facet of the
      * catalogue, not a place in the tree, and it gets its own hub instead.
      *

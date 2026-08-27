@@ -118,8 +118,8 @@ final class ProductResource extends JsonResource
                 continue;
             }
 
-            // An attribute with no group is genuinely ungrouped — group_id is
-            // nullable — and filing it under "General" is a display decision,
+            // An attribute with no group is genuinely ungrouped - group_id is
+            // nullable - and filing it under "General" is a display decision,
             // not a data one.
             $group = $attribute->group;
             $name = 'General';
@@ -134,7 +134,7 @@ final class ProductResource extends JsonResource
             $groups[$name]['items'][] = [
                 'order' => (int) $attribute->display_order,
                 'label' => (string) $attribute->name,
-                // Presentation for display, raw for compare — Icecat is
+                // Presentation for display, raw for compare - Icecat is
                 // explicit that these differ (F-1).
                 'value' => $value->displayValue(),
                 'value_raw' => $value->value_raw,
@@ -168,7 +168,7 @@ final class ProductResource extends JsonResource
     }
 
     /**
-     * Related products keyed by relation type — compatible, accessory,
+     * Related products keyed by relation type - compatible, accessory,
      * consumable and so on (docs/ICECAT_MAPPING.md finding F-3).
      *
      * @return array<string, list<array<string, mixed>>>

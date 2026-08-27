@@ -138,7 +138,7 @@ final class DerivativeGenerator
         //
         // VipsImage::thumbnail() returns a LAZILY EVALUATED image. Each of the
         // three format writes that follow re-runs the pipeline, and the source
-        // is opened for sequential access — readable once. The second and third
+        // is opened for sequential access - readable once. The second and third
         // writes then fail with "error in tile", which libvips reports as a
         // warning on stderr rather than an exception, so derivatives went
         // missing silently and only appeared on a later re-run.
@@ -153,7 +153,7 @@ final class DerivativeGenerator
      *
      * libvips selects its encoder from the FILENAME EXTENSION, and options ride
      * in a `[...]` suffix that is not part of the path. So the temporary file
-     * must already carry the correct extension — a generic `.tmp` name would
+     * must already carry the correct extension - a generic `.tmp` name would
      * make libvips fail to choose an encoder.
      *
      * Atomicity matters because Caddy serves this directory while generation is

@@ -65,7 +65,7 @@ final class ListQuoteRoutingRules extends ListRecords
                         /*
                          * `sendNow`, not `send`. QuoteReceivedMail implements
                          * ShouldQueue, so `send` would enqueue it and return
-                         * immediately — the notification below would report
+                         * immediately - the notification below would report
                          * success before the transport had been touched, and
                          * a wrong token or a dead address would surface only
                          * in a failed job nobody is watching. That is exactly
@@ -82,7 +82,7 @@ final class ListQuoteRoutingRules extends ListRecords
                         /*
                          * Sent synchronously and reported, rather than queued.
                          * A queued test that fails reports success here and
-                         * the failure lands in a log nobody is watching —
+                         * the failure lands in a log nobody is watching -
                          * which defeats the entire point of a test send.
                          */
                         Notification::make()

@@ -78,7 +78,7 @@ final class RouteManifest
      * string. Without these routes the pagination anchors the listing renders
      * would point at files that do not exist: the static host would answer
      * page 2 with the 404 template, and every product past the first 24 in a
-     * category would be unreachable — failing the crawl-depth gate for
+     * category would be unreachable - failing the crawl-depth gate for
      * exactly the large categories that need it most.
      *
      * ── One query, not 248 ───────────────────────────────────────────────

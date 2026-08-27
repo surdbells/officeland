@@ -20,7 +20,7 @@ use Illuminate\Database\Eloquent\Builder;
  * The four questions a salesperson actually opens this screen to ask are
  * "what needs answering", "what is late", "what is mine" and "where is that
  * one from last week". Tabs answer all four in one click and, unlike a
- * pre-applied filter, make it obvious that a narrowed view IS narrowed —
+ * pre-applied filter, make it obvious that a narrowed view IS narrowed -
  * a hidden default filter is how somebody concludes a lead was never received.
  *
  * The filters underneath still compose with whichever tab is open.
@@ -72,7 +72,7 @@ final class ListQuotes extends ListRecords
     }
 
     /**
-     * Overdue is not expressible in SQL — see the filter in QuoteResource.
+     * Overdue is not expressible in SQL - see the filter in QuoteResource.
      *
      * @return array<int, int>
      */

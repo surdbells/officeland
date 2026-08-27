@@ -23,7 +23,7 @@ use UnitEnum;
  * The lead queue (§11a, D-005).
  *
  * D-005 removed the priced-quote cycle: sales prices and responds outside this
- * system. So this is not a CRM — it is a queue whose only job is to make sure
+ * system. So this is not a CRM - it is a queue whose only job is to make sure
  * every lead is seen, owned, and answered within the promise the site makes on
  * every page.
  *
@@ -35,7 +35,7 @@ use UnitEnum;
  * ── Why there is no create form ──────────────────────────────────────────
  * A quote is a record of what a customer asked for. Typing one by hand would
  * produce a lead with a reference, a snapshot and an audit trail that nobody
- * actually submitted — and it would be indistinguishable from a real one
+ * actually submitted - and it would be indistinguishable from a real one
  * afterwards. Phone enquiries belong in whatever sales already uses.
  */
 final class QuoteResource extends Resource
@@ -137,7 +137,7 @@ final class QuoteResource extends Resource
                  * §11c. Working hours, not elapsed hours: a Friday-evening
                  * lead answered Monday morning took one working hour, and a
                  * queue where every weekend row is red is a queue nobody
-                 * reads — which hides the one that is genuinely late.
+                 * reads - which hides the one that is genuinely late.
                  */
                 TextColumn::make('waiting')
                     ->label('Waiting')

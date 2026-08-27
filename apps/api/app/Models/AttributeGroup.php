@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * Icecat CategoryFeatureGroup — OVERVIEW, PERFORMANCE, SCREEN and so on.
+ * Icecat CategoryFeatureGroup - OVERVIEW, PERFORMANCE, SCREEN and so on.
  *
  * Section 23.3 identified the grouped specifications accordion as the single
  * highest-leverage fix for unstructured supplier prose. The grouping arrives

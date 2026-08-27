@@ -11,7 +11,7 @@ use Illuminate\Console\Command;
  * Loads `docs/REDIRECT_MAP.csv` into the `redirects` table (§14a).
  *
  * ── Why the CSV is the source and the table is the copy ──────────────────
- * The map is reviewed, argued over and diffed in pull requests — a spreadsheet
+ * The map is reviewed, argued over and diffed in pull requests - a spreadsheet
  * of "this legacy URL becomes that page" is an editorial artefact, not runtime
  * data. Keeping it in Git means a bad mapping is caught in review; keeping it
  * only in a table means it is caught by a customer.
@@ -71,7 +71,7 @@ final class ImportRedirects extends Command
          * truth the moment anybody needed to retire one. Found the hard way:
          * /shop/ was a legacy WooCommerce redirect to /c/, the storefront grew
          * a real /shop/ page, the line was deleted, the import reported "181
-         * already correct" — and /shop/ still answered 301.
+         * already correct" - and /shop/ still answered 301.
          *
          * Scoped to source = 'migration' so redirects created in the admin,
          * which were never in this file, are not swept away by it.
@@ -175,7 +175,7 @@ final class ImportRedirects extends Command
         ]);
 
         foreach (array_slice($stale, 0, 20) as $path) {
-            $this->comment(($apply ? 'Removed' : 'Would remove').": {$path} — no longer in the map.");
+            $this->comment(($apply ? 'Removed' : 'Would remove').": {$path} - no longer in the map.");
         }
 
         foreach (array_slice($rejected, 0, 20) as $problem) {

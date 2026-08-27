@@ -41,7 +41,7 @@ export const appConfig: ApplicationConfig = {
      * fetched, and duplicate hydration requests are a gate failure. The
      * transfer cache serialises GET responses into the HTML.
      *
-     * includePostRequests stays false — the quote submission (Phase 9) is a
+     * includePostRequests stays false - the quote submission (Phase 9) is a
      * POST, and replaying it from a cache would be a duplicate lead.
      */
     provideClientHydration(

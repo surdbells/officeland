@@ -13,8 +13,8 @@ use Illuminate\Http\Request;
  * The listing envelope shared by the PLP, search results and brand hubs.
  *
  * These three surfaces render with one card component (§23.5), so they must
- * answer with one payload shape. Written once here because the alternative —
- * three controllers each assembling `meta` and `facets` by hand — drifts the
+ * answer with one payload shape. Written once here because the alternative -
+ * three controllers each assembling `meta` and `facets` by hand - drifts the
  * first time a field is added to one of them, and the storefront cannot tell
  * which surface it is on.
  */
@@ -32,7 +32,7 @@ trait BuildsListingResponses
      * Accepts `filters[capacity]=480&filters[colour]=black` and the
      * comma-delimited `filters[colour]=black,grey`. Values are strings because
      * they are compared against `value_raw`, which is text for every data
-     * type — a numeric attribute still filters on its raw representation.
+     * type - a numeric attribute still filters on its raw representation.
      *
      * @return array<string, list<string>>
      */

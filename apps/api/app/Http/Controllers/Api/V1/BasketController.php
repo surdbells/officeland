@@ -21,8 +21,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  *
  * ── The server owns line-item identity ───────────────────────────────────
  * Every mutation names a product by SLUG or a line by UUID, and the server
- * resolves both. Nothing about a line — its name, its specification, its
- * allowed quantities — is accepted from the client, because all of it is
+ * resolves both. Nothing about a line - its name, its specification, its
+ * allowed quantities - is accepted from the client, because all of it is
  * copied into an email that a salesperson acts on.
  *
  * ── Why a GET never creates a basket ─────────────────────────────────────
@@ -134,7 +134,7 @@ final class BasketController extends Controller
      * A line is addressed by its own id, but only within the caller's basket.
      *
      * Scoping the lookup to the basket is what stops one visitor editing
-     * another's line by guessing an id — the ids are sequential, so this is
+     * another's line by guessing an id - the ids are sequential, so this is
      * not a hypothetical.
      */
     private function requireItem(QuoteBasket $basket, string $item): QuoteBasketItem

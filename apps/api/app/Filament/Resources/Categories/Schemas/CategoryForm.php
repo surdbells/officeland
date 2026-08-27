@@ -23,8 +23,8 @@ use Illuminate\Support\Str;
  * Category form.
  *
  * `path` and `depth` are derived, never typed. They are what the whole tree
- * depends on — a hand-edited path that disagrees with its parent silently
- * breaks subtree queries and every listing beneath it — so they are computed
+ * depends on - a hand-edited path that disagrees with its parent silently
+ * breaks subtree queries and every listing beneath it - so they are computed
  * from the parent and the slug and shown read-only.
  */
 final class CategoryForm
@@ -63,7 +63,7 @@ final class CategoryForm
                                 'path',
                                 // Depth 3 is the maximum, so a depth-3 category
                                 // cannot be a parent (enforced by a CHECK
-                                // constraint too — this just avoids the error).
+                                // constraint too - this just avoids the error).
                                 fn ($query) => $query->where('depth', '<', Category::MAX_DEPTH)->orderBy('path'),
                             )
                             ->searchable()
@@ -76,7 +76,7 @@ final class CategoryForm
                             ->label('Web address')
                             ->disabled()
                             ->dehydrated()
-                            ->helperText('Built from the parent and the slug. Not editable — the whole tree depends on it.'),
+                            ->helperText('Built from the parent and the slug. Not editable - the whole tree depends on it.'),
 
                         TextInput::make('depth')
                             ->numeric()
@@ -142,7 +142,7 @@ final class CategoryForm
         $words = str_word_count(strip_tags((string) $state));
 
         if ($words >= 150) {
-            return new HtmlString('<span style="color:#15803d;font-weight:600">'.$words.' words — long enough to index.</span>');
+            return new HtmlString('<span style="color:#15803d;font-weight:600">'.$words.' words - long enough to index.</span>');
         }
 
         return new HtmlString(

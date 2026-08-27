@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 use RuntimeException;
 
 /**
- * Quote submission — the three-field form (D-004, §9d).
+ * Quote submission - the three-field form (D-004, §9d).
  *
  * Email, phone, optional message. No name, no company, no address, no account.
  * Every additional field is a reason not to submit, and sales can ask for
@@ -73,7 +73,7 @@ final class QuoteController extends Controller
             /*
              * 429 rather than 422: this is a rate or abuse decision, not a
              * validation failure, and the storefront shows it differently.
-             * The submission is NOT silently dropped — a real buyer caught by
+             * The submission is NOT silently dropped - a real buyer caught by
              * a heuristic must know their request did not arrive.
              */
             return $this->error($rejection, 'QuoteRejected', 429);
@@ -132,7 +132,7 @@ final class QuoteController extends Controller
             'referrer' => $this->param($request, 'referrer'),
             'landing_page' => $this->param($request, 'landing_page'),
 
-            // Hashed, never raw — see QuoteSubmitter.
+            // Hashed, never raw - see QuoteSubmitter.
             'ip_hash' => hash('sha256', (string) $request->ip()),
             'user_agent' => mb_substr((string) $request->userAgent(), 0, 500),
         ];

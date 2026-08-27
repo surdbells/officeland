@@ -75,8 +75,8 @@ describe('SeoService', () => {
     it('prefers a whole shorter candidate over a truncated longer one', () => {
       seo.apply({
         title: [
-          'Ergonomic & Task Chairs in Nigeria — Prices & Bulk Supply',
-          'Ergonomic & Task Chairs — Prices & Bulk Supply',
+          'Ergonomic & Task Chairs in Nigeria - Prices & Bulk Supply',
+          'Ergonomic & Task Chairs - Prices & Bulk Supply',
           'Ergonomic & Task Chairs in Nigeria',
           'Ergonomic & Task Chairs',
         ],

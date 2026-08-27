@@ -15,7 +15,7 @@ use RuntimeException;
  * The Phase 12 gate is *no indexable page below the content minimums*. Three
  * routes write `is_indexable` and only one of them is a form: the Filament
  * editor, the CSV importer, and any future Icecat sync. A form validator sees
- * one of the three, and the two it does not see are the bulk ones — which are
+ * one of the three, and the two it does not see are the bulk ones - which are
  * exactly how 15,000 thin pages would enter the sitemap in a single afternoon.
  *
  * This is the same reasoning that puts alt-text enforcement on the Media model
@@ -52,7 +52,7 @@ trait EnforcesContentMinimums
             }
 
             throw new RuntimeException(sprintf(
-                '%s cannot be indexed yet — %s.',
+                '%s cannot be indexed yet - %s.',
                 class_basename($model),
                 $readiness->summary(),
             ));

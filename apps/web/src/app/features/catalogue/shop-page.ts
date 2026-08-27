@@ -11,7 +11,7 @@ import { Pagination } from '../../shared/pagination';
 import { ProductCard } from '../../shared/product-card';
 
 /**
- * The shop page — the whole catalogue behind one set of filters.
+ * The shop page - the whole catalogue behind one set of filters.
  *
  * ── Why it exists when every category already has a page ─────────────────
  * Category pages answer "show me chairs". This answers the questions that do
@@ -25,15 +25,15 @@ import { ProductCard } from '../../shared/product-card';
  * pages put their facets in a horizontal bar above the grid instead.
  *
  * The split follows how the pages are used. A category page arrives with the
- * scope already narrowed — you are inside "Seating" — so filtering is a
+ * scope already narrowed - you are inside "Seating" - so filtering is a
  * secondary act, and a bar above the grid keeps the products at full width
  * where they belong. This page starts from the entire catalogue, so filtering
  * IS the page: there are more groups, more values, and more traffic through
  * them. A rail holds that without collapsing anything, and it stays visible
  * while the grid scrolls.
  *
- * The DOM order is grid first, filters second, so that on a phone — where the
- * two columns stack — the products are what appears under the heading rather
+ * The DOM order is grid first, filters second, so that on a phone - where the
+ * two columns stack - the products are what appears under the heading rather
  * than a long rail of filters. CSS "order" puts the rail on the left at
  * desktop widths without moving it in the markup.
  *
@@ -68,7 +68,7 @@ import { ProductCard } from '../../shared/product-card';
       <h1 class="mt-4 font-heading text-3xl font-bold">Shop the catalogue</h1>
       <p class="mt-3 max-w-3xl text-ink-600">
         Everything we list, filterable by brand and specification. If you are
-        working from a requisition list, send it to us instead &mdash;
+        working from a requisition list, send it to us instead -
         <a routerLink="/quote/" class="text-brand-600 hover:underline">we quote from a schedule</a>
         and we supply far more than appears here.
       </p>
@@ -112,7 +112,7 @@ import { ProductCard } from '../../shared/product-card';
               } @else {
                 Nothing is listed yet.
                 <a routerLink="/quote/" class="text-brand-600 hover:underline">Ask us for a quote</a>
-                &mdash; we supply far more than we list.
+                - we supply far more than we list.
               }
             </p>
           }
@@ -232,7 +232,7 @@ export class ShopPage {
   constructor() {
     effect(() => {
       this.seo.apply({
-        title: ['Shop the Catalogue — Filter by Brand and Specification', 'Shop the catalogue', 'Shop'],
+        title: ['Shop the Catalogue - Filter by Brand and Specification', 'Shop the catalogue', 'Shop'],
         description:
           'Filter the OfficeLand catalogue by brand and specification. Quotes answered within one business day.',
         path: '/shop/',

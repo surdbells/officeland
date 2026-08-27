@@ -50,7 +50,7 @@ final class Media extends Model
     /**
      * Alt text is a REQUIRED field on any image attached to a product or
      * article (MASTER BUILD PROMPT section 12.6), enforced at the model layer
-     * rather than only in a form — the CSV importer and Icecat ingestion write
+     * rather than only in a form - the CSV importer and Icecat ingestion write
      * media too, and a form validator would not see them.
      *
      * It is nullable in the database because media exists briefly between

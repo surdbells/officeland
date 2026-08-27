@@ -42,7 +42,7 @@ final class EditProduct extends EditRecord
                 ->requiresConfirmation()
                 ->modalHeading('Approve this description?')
                 ->modalDescription(
-                    'Confirm you have read it and it describes THIS product — its own specifications, '.
+                    'Confirm you have read it and it describes THIS product - its own specifications, '.
                     'not a sibling\'s with the name changed. Your name is recorded against it.'
                 )
                 ->action(function (Product $record): void {
@@ -63,7 +63,7 @@ final class EditProduct extends EditRecord
             /*
              * Re-runs the gate on demand, so an editor who has just rewritten
              * a flagged description gets an answer now rather than at the next
-             * batch run — otherwise the flag sits there contradicting the work
+             * batch run - otherwise the flag sits there contradicting the work
              * they just did.
              */
             Action::make('recheckSimilarity')

@@ -13,14 +13,14 @@ use Illuminate\Support\Facades\RateLimiter;
  * The requirement is "invisible to legitimate users", which rules out a
  * challenge on every submission. These four checks cost a real buyer nothing:
  *
- *   1. honeypot     — a field a human never sees and never fills
- *   2. timing       — a form submitted faster than it can be read
- *   3. per-IP rate  — one source flooding the pipeline
- *   4. per-email    — one address submitting repeatedly
+ *   1. honeypot     - a field a human never sees and never fills
+ *   2. timing       - a form submitted faster than it can be read
+ *   3. per-IP rate  - one source flooding the pipeline
+ *   4. per-email    - one address submitting repeatedly
  *
  * ── What this deliberately does NOT do ───────────────────────────────────
  * It does not silently discard. A rejected submission returns an error the
- * caller can see, because the alternative — accepting and dropping — means a
+ * caller can see, because the alternative - accepting and dropping - means a
  * real buyer whose submission tripped a heuristic believes their request was
  * sent and waits for a reply that will never come. That is the worst failure
  * this form has, and it is unrecoverable because nobody knows it happened.
@@ -37,7 +37,7 @@ final class AbuseGuard
      * The honeypot field name.
      *
      * Innocuous enough that a naive bot fills it, and not so tempting that a
-     * password manager or a browser autofill does — which is why it is not
+     * password manager or a browser autofill does - which is why it is not
      * called "email", "name" or "company".
      */
     public const HONEYPOT = 'website_url';
@@ -55,7 +55,7 @@ final class AbuseGuard
     private const MIN_SECONDS = 3;
 
     /**
-     * And one submitted after this has been sitting open all day — a stale tab,
+     * And one submitted after this has been sitting open all day - a stale tab,
      * or a replayed timestamp. Not a rejection on its own; see check().
      */
     private const MAX_SECONDS = 86400;
@@ -105,7 +105,7 @@ final class AbuseGuard
      * Records a successful submission against both limits.
      *
      * Called only on success, so a rejected attempt does not consume a real
-     * buyer's allowance — otherwise a few typos would lock someone out.
+     * buyer's allowance - otherwise a few typos would lock someone out.
      */
     public function record(Request $request, string $email): void
     {

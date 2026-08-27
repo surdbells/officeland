@@ -23,7 +23,7 @@ use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
 /**
- * Product form — the Phase 5 gate.
+ * Product form - the Phase 5 gate.
  *
  * The gate is that a NON-TECHNICAL user can complete a create/edit unaided,
  * so this is written for a merchandiser rather than for the schema:
@@ -50,7 +50,7 @@ final class ProductForm
                             ->required()
                             ->maxLength(255)
                             ->live(onBlur: true)
-                            ->helperText('How buyers see it. Lead with the brand, then what it is, then the model code — for example "HP 128A Black LaserJet Toner Cartridge (CE320A)".')
+                            ->helperText('How buyers see it. Lead with the brand, then what it is, then the model code - for example "HP 128A Black LaserJet Toner Cartridge (CE320A)".')
                             ->afterStateUpdated(function (string $operation, $state, Set $set): void {
                                 if ($operation === 'create') {
                                     $set('slug', Str::slug(Str::limit((string) $state, 75, '')));
@@ -133,7 +133,7 @@ final class ProductForm
 
                         // §14.7 lists this among the product minimums. It is
                         // also the question buyers ask most often after price
-                        // — "does it come with the cable?" — and the one the
+                        // - "does it come with the cable?" - and the one the
                         // supplier data almost never answers.
                         Textarea::make('box_contents')
                             ->label('In the box')
@@ -179,7 +179,7 @@ final class ProductForm
                         Select::make('pricing_mode')
                             ->label('Pricing')
                             ->options([
-                                'quote_only' => 'Quote only — no price shown',
+                                'quote_only' => 'Quote only - no price shown',
                                 'public' => 'Show a price',
                             ])
                             ->default('quote_only')
@@ -205,7 +205,7 @@ final class ProductForm
                     ])->columns(2),
 
                     Section::make('Variants')
-                        ->description('Colourways, sizes, toner yields — anything a buyer picks between without it being a separate product.')
+                        ->description('Colourways, sizes, toner yields - anything a buyer picks between without it being a separate product.')
                         ->schema([
                             Repeater::make('variants')
                                 ->relationship()
@@ -226,7 +226,7 @@ final class ProductForm
                                 ->columns(2)
                                 // Repeater::reorderable() takes a bool; the
                                 // column is named separately. Table::reorderable()
-                                // takes the column — the two APIs differ.
+                                // takes the column - the two APIs differ.
                                 ->reorderable()
                                 ->orderColumn('sort_order')
                                 ->collapsible()
@@ -241,9 +241,9 @@ final class ProductForm
                     Section::make()->schema([
                         Select::make('status')
                             ->options([
-                                'draft' => 'Draft — not visible on the site',
-                                'active' => 'Active — visible on the site',
-                                'archived' => 'Archived — hidden, kept for reference',
+                                'draft' => 'Draft - not visible on the site',
+                                'active' => 'Active - visible on the site',
+                                'archived' => 'Archived - hidden, kept for reference',
                             ])
                             ->default('draft')
                             ->required(),
@@ -298,7 +298,7 @@ final class ProductForm
         if ($words === 0) {
             return new HtmlString(
                 '<span style="color:#6b7280">Aim for at least '.$minimum.' words of original description. '
-                .'Do not paste the manufacturer\'s text — every other reseller publishes the same words, and Google has seen them.</span>'
+                .'Do not paste the manufacturer\'s text - every other reseller publishes the same words, and Google has seen them.</span>'
             );
         }
 
@@ -310,7 +310,7 @@ final class ProductForm
         }
 
         return new HtmlString(
-            '<span style="color:#15803d;font-weight:600">'.$words.' words — long enough to index.</span>'
+            '<span style="color:#15803d;font-weight:600">'.$words.' words - long enough to index.</span>'
         );
     }
 }

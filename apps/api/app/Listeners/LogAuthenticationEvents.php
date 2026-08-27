@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Log;
  *
  * ── What was missing ─────────────────────────────────────────────────────
  * Nothing recorded a failed login. Filament caps attempts at five per minute
- * per key, so a brute-force attempt cannot succeed quickly — but "cannot
+ * per key, so a brute-force attempt cannot succeed quickly - but "cannot
  * succeed quickly" is not the same as "somebody will notice". Without this,
  * a fortnight of patient credential stuffing against the admin panel leaves no
  * trace anywhere, and the first evidence of a compromise is its consequences.
@@ -26,9 +26,9 @@ use Illuminate\Support\Facades\Log;
  *
  * ── What is deliberately NOT logged ──────────────────────────────────────
  * Never the password, and never the whole request. The email is recorded on a
- * FAILED attempt because that is the fact that makes the log useful — one
+ * FAILED attempt because that is the fact that makes the log useful - one
  * address tried against many passwords looks completely different from many
- * addresses tried once — and because a failed attempt's email is, by
+ * addresses tried once - and because a failed attempt's email is, by
  * definition, either a real user being attacked or an attacker's guess.
  *
  * ── Why `warning` for a failure ──────────────────────────────────────────

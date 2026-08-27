@@ -117,7 +117,7 @@ final class Category extends Model
             $paths[] = $accumulated.'/';
         }
 
-        // Drops the final entry — that is this category, not an ancestor.
+        // Drops the final entry - that is this category, not an ancestor.
         array_pop($paths);
 
         if ($paths === []) {
@@ -133,7 +133,7 @@ final class Category extends Model
     /**
      * The entire subtree beneath this category.
      *
-     * A single index-backed prefix scan — the reason the tree uses a
+     * A single index-backed prefix scan - the reason the tree uses a
      * materialized path (docs/ARCHITECTURE.md section 3).
      */
     /**

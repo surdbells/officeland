@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Cache;
  * for the same product, and without this only one of them finds it.
  *
  * Stored in the database rather than compiled into a PostgreSQL dictionary so
- * merchandising staff can add a term without a deploy — the terms are learned
+ * merchandising staff can add a term without a deploy - the terms are learned
  * from the zero-result report, which is a weekly activity, not a release.
  */
 final class SynonymExpander
@@ -56,7 +56,7 @@ final class SynonymExpander
     }
 
     /**
-     * The full expanded term set, flattened — used for trigram fallback where
+     * The full expanded term set, flattened - used for trigram fallback where
      * token structure does not matter.
      *
      * @return list<string>

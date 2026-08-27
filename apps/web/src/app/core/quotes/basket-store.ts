@@ -113,9 +113,9 @@ export class BasketStore {
       },
       error: (error: { error?: { error?: { message?: string } } }) => {
         /*
-         * The server's message is shown verbatim. It is written for a buyer —
+         * The server's message is shown verbatim. It is written for a buyer -
          * "A quote request is limited to 100 lines. Send this one and start
-         * another, or call us." — and replacing it with a generic failure
+         * another, or call us." - and replacing it with a generic failure
          * would throw away the only actionable part.
          */
         this.failure.set(

@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * A quote records what the buyer asked for at the moment they asked. If it
  * rendered live from `products`, then renaming a product, correcting its
  * specification or deleting it would retroactively change what a customer is
- * on record as having requested — and the email they already hold would no
+ * on record as having requested - and the email they already hold would no
  * longer match the quote we hold.
  *
  * `product_id` is kept alongside so sales can still reach the live page, and

@@ -2,7 +2,7 @@ import { TrailingSlashUrlSerializer } from './trailing-slash-url-serializer';
 
 /**
  * D-028. Angular's default serializer drops trailing slashes, so every
- * internal link would point at a URL Caddy answers with a redirect — one
+ * internal link would point at a URL Caddy answers with a redirect - one
  * avoidable hop per link, across 15,000 pages, in direct conflict with the
  * canonicals SeoService emits.
  *
@@ -33,7 +33,7 @@ describe('TrailingSlashUrlSerializer', () => {
   });
 
   /**
-   * The slash belongs to the path, so it goes before the query — not after.
+   * The slash belongs to the path, so it goes before the query - not after.
    * Appending it to the end would produce '/search?q=toner/', which is a
    * different query, not a different path.
    */

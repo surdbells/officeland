@@ -11,7 +11,7 @@ import { RouterLink } from '@angular/router';
  * uses the top band for a loyalty scheme signup; there is no equivalent here
  * (D-002: no prices, no accounts, no orders), so it carries the only action
  * this business actually wants from a visitor who has reached the bottom of a
- * page — send us the list and we will price it.
+ * page - send us the list and we will price it.
  *
  * ── Dark, and the contrast is deliberate ─────────────────────────────────
  * Link colour is white at 70% over ink-900, not an ink token. The ink ramp is
@@ -22,7 +22,7 @@ import { RouterLink } from '@angular/router';
  *
  * Three legacy defects are fixed here specifically:
  *
- *  4G  Social links pointed at `http://officeland` — not a valid URL — in five
+ *  4G  Social links pointed at `http://officeland` - not a valid URL - in five
  *      places. They are OMITTED entirely until the real profile URLs arrive
  *      (Q17), because a broken link is worse than no link and these also feed
  *      Organization.sameAs.
@@ -151,7 +151,7 @@ import { RouterLink } from '@angular/router';
             <!--
               Social profile links are intentionally absent until the real URLs
               arrive (Q17). The legacy footer linked five platforms to
-              http://officeland — not a URL — and those links also feed
+              http://officeland - not a URL - and those links also feed
               Organization.sameAs, so asserting broken URLs as the company
               identity is worse than asserting none.
 
@@ -197,6 +197,6 @@ import { RouterLink } from '@angular/router';
 })
 export class SiteFooter {
   // Static per render. Under D-009 pages are prerendered, so this is the year
-  // at build time — which is why a full rebuild is part of the deploy routine.
+  // at build time - which is why a full rebuild is part of the deploy routine.
   protected readonly year = new Date().getFullYear();
 }

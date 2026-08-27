@@ -7,7 +7,7 @@ import type { Listing } from '../core/api/catalogue-api';
  * The category page, the brand hub and the search page all decode the same
  * things from the same URL shapes. Three copies would disagree the first time
  * a filter syntax or a pagination rule changed, and the failure would be
- * silent — a page listing the wrong products still renders perfectly.
+ * silent - a page listing the wrong products still renders perfectly.
  */
 
 /**
@@ -41,8 +41,8 @@ export const EMPTY_LISTING: Listing = {
  * be separated before the API is asked for a category or brand called "page".
  *
  * The trailing segment must be an integer above 1, so a resource legitimately
- * slugged `page` is not mistaken for pagination, and `page/1` — which should
- * never be linked — does not become a second URL for the first page.
+ * slugged `page` is not mistaken for pagination, and `page/1` - which should
+ * never be linked - does not become a second URL for the first page.
  *
  * @param prefix the literal route segment to drop, e.g. 'c' or 'brands'
  */

@@ -62,8 +62,8 @@ final class EmailSuppressionResource extends Resource
 
     public static function canCreate(): bool
     {
-        // Adding by hand is legitimate — a customer asking not to be written
-        // to — but it is rare enough to belong behind the create form rather
+        // Adding by hand is legitimate - a customer asking not to be written
+        // to - but it is rare enough to belong behind the create form rather
         // than as a bulk surface.
         return true;
     }
@@ -109,7 +109,7 @@ final class EmailSuppressionResource extends Resource
 
                 TextColumn::make('released_by')
                     ->label('Released by')
-                    ->placeholder('—')
+                    ->placeholder('-')
                     ->toggleable(),
             ])
             ->defaultSort('suppressed_at', 'desc')
@@ -138,7 +138,7 @@ final class EmailSuppressionResource extends Resource
                     ->requiresConfirmation()
                     ->modalHeading('Send to this address again?')
                     ->modalDescription(
-                        'Only do this if you know the mailbox works — the customer confirmed it, '.
+                        'Only do this if you know the mailbox works - the customer confirmed it, '.
                         'or you have reached them another way. Sending to a dead address again '.
                         'earns another bounce, and repeated bounces damage delivery for everyone.'
                     )

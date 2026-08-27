@@ -15,7 +15,7 @@ import { organizationSchema, webSiteSchema } from './core/seo/structured-data';
  * Application shell.
  *
  * Fetches navigation once and passes it down. Under D-009 this runs at build
- * time, so the megamenu's level 1 and 2 anchors are baked into every page —
+ * time, so the megamenu's level 1 and 2 anchors are baked into every page -
  * which is what makes deep categories crawlable (section 23.1 rule 1).
  */
 @Component({
@@ -28,7 +28,7 @@ import { organizationSchema, webSiteSchema } from './core/seo/structured-data';
       Section 23.5: the first focusable element on every page.
 
       It lives here rather than in the header because the header is no longer
-      what opens the document — the masthead is. Left where it was, the first
+      what opens the document - the masthead is. Left where it was, the first
       thing a keyboard user reached would have been the brand link, and the
       bypass would have been second.
     -->

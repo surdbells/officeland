@@ -37,12 +37,22 @@ final class CategoryController extends Controller
         // Two levels of children, not one.
         //
         // A department that lists only its subcategories puts every leaf 2
-        // clicks from home and every product 4 — which breaks the 3-click
+        // clicks from home and every product 4 - which breaks the 3-click
         // guarantee (D-011, SEO_SPEC 10.4) the moment a catalogue is big
         // enough that products stop fitting on page 1 of an ancestor listing.
         // With ten products in the database it passed; with a real catalogue
         // 224 products were 4 clicks deep.
-        $category->load(['children.children', 'heroMedia.derivatives']);
+        //
+        // `parent.children` is for the sibling row a leaf page shows in place
+        // of children it does not have. Loaded here rather than fetched by the
+        // storefront: it is one query alongside the others, and the navigation
+        // payload the client already holds does not carry hero images.
+        $category->load([
+            'children.children',
+            'children.heroMedia.derivatives',
+            'parent.children.heroMedia.derivatives',
+            'heroMedia.derivatives',
+        ]);
 
         return response()->json(['data' => new CategoryResource($category)]);
     }
@@ -50,7 +60,7 @@ final class CategoryController extends Controller
     /**
      * Products in a category, including its whole subtree.
      *
-     * A department listing must show products filed against its leaves —
+     * A department listing must show products filed against its leaves -
      * otherwise /c/office-furniture/ appears empty while every chair sits three
      * levels down.
      *
@@ -97,7 +107,7 @@ final class CategoryController extends Controller
      * Resolves a category from its materialized path.
      *
      * The route delivers 'office-furniture/seating', while the stored path is
-     * '/office-furniture/seating/' — normalising here keeps the slash
+     * '/office-furniture/seating/' - normalising here keeps the slash
      * convention in exactly one place.
      */
     private function resolve(string $path): Category

@@ -9,7 +9,7 @@ import { localBusinessSchema } from '../../core/seo/structured-data';
  * About, Contact and Showrooms.
  *
  * Three components in one file because they are one lazy-loaded chunk of
- * static text — roughly 4 KB between them. Splitting them into three chunks
+ * static text - roughly 4 KB between them. Splitting them into three chunks
  * would add two round trips to save nothing.
  *
  * These are indexable. Unlike the shop page and the basket, they are the
@@ -32,7 +32,7 @@ import { localBusinessSchema } from '../../core/seo/structured-data';
         OfficeLand Limited works from Victoria Island, Lagos, with a head office at
         Century 21 Mall and a furniture showroom a few doors away on Idowu Martins
         Street. Most of what we sell is bought by somebody buying on behalf of an
-        organisation rather than for themselves &mdash; a facilities manager, a school
+        organisation rather than for themselves - a facilities manager, a school
         bursar, a procurement officer working to a schedule and a deadline.
       </p>
       <p>
@@ -48,7 +48,7 @@ import { localBusinessSchema } from '../../core/seo/structured-data';
         Nine departments: office furniture, IT products, smart tech and power backup,
         printers and consumables, office supplies, paper and notebooks, filing and
         storage, school supplies, and WPC doors and interiors. The last of those is a
-        fit-out business rather than a catalogue &mdash; doors, wardrobes, kitchens
+        fit-out business rather than a catalogue - doors, wardrobes, kitchens
         and panelling made to a site measure.
       </p>
       <p>
@@ -86,7 +86,7 @@ export class AboutPage {
 
   constructor() {
     this.seo.apply({
-      title: ['About OfficeLand — Office Supply Partner in Lagos', 'About OfficeLand'],
+      title: ['About OfficeLand - Office Supply Partner in Lagos', 'About OfficeLand'],
       description:
         'OfficeLand Limited supplies and installs office furniture, IT and consumables for business, schools and government across Nigeria. Two Victoria Island showrooms.',
       path: '/about/',
@@ -109,7 +109,7 @@ export class AboutPage {
       <h2>Get a price</h2>
       <p>
         The quickest way to a number is to
-        <a routerLink="/quote/">send us the list</a> &mdash; a requisition schedule, a
+        <a routerLink="/quote/">send us the list</a> - a requisition schedule, a
         drawing, a photograph of what you need to match, or a description. You do not
         need to find the products on this site first.
       </p>
@@ -127,12 +127,12 @@ export class AboutPage {
         <li class="flex items-center gap-2.5">
           <ol-icon name="mail" [size]="18" class="text-brand-600" />
           <a href="mailto:sales@officelandng.com" class="ol-wrap-anywhere">sales&#64;officelandng.com</a>
-          &mdash; quotes, orders, tenders
+          - quotes, orders, tenders
         </li>
         <li class="flex items-center gap-2.5">
           <ol-icon name="mail" [size]="18" class="text-brand-600" />
           <a href="mailto:support@officelandng.com" class="ol-wrap-anywhere">support&#64;officelandng.com</a>
-          &mdash; deliveries, warranty, anything after the sale
+          - deliveries, warranty, anything after the sale
         </li>
       </ul>
 
@@ -157,7 +157,7 @@ export class ContactPage {
 
   constructor() {
     this.seo.apply({
-      title: ['Contact OfficeLand — Lagos Office Supplies', 'Contact OfficeLand', 'Contact'],
+      title: ['Contact OfficeLand - Lagos Office Supplies', 'Contact OfficeLand', 'Contact'],
       description:
         'Call, WhatsApp or email OfficeLand Lagos. Quotes answered within one business day. Two Victoria Island showrooms.',
       path: '/contact/',
@@ -216,7 +216,7 @@ export class ContactPage {
         Plot JLT-PH1-12, Jumeirah Lakes Towers, Dubai, UAE
       </p>
       <p>
-        A registered office, not a showroom &mdash; there is nothing to visit and no
+        A registered office, not a showroom - there is nothing to visit and no
         counter. It is listed because it appears on company documentation and buyers
         ask.
       </p>
@@ -243,7 +243,7 @@ export class LocationsPage {
     this.seo.apply({
       title: [
         'Office Furniture Showrooms in Victoria Island, Lagos',
-        'Showrooms — Victoria Island, Lagos',
+        'Showrooms - Victoria Island, Lagos',
         'Showrooms',
       ],
       description:
@@ -262,7 +262,7 @@ export class LocationsPage {
      * is where "office furniture showroom Victoria Island" is actually
      * searched. A map on a page somebody has already found helps less.
      *
-     * Dubai is absent on purpose — a registered office whose trading status
+     * Dubai is absent on purpose - a registered office whose trading status
      * is unresolved (Q14), and asserting LocalBusiness there tells Google the
      * business serves UAE customers.
      */

@@ -54,7 +54,7 @@ final class Product extends Model
      * (MASTER BUILD PROMPT section 14.7).
      *
      * The rule itself lives in ContentMinimums, which enforces it along with
-     * the rest of §14.7 — the spec table, the "in the box" list, warranty and
+     * the rest of §14.7 - the spec table, the "in the box" list, warranty and
      * lead time. This constant is kept because it is referenced from the admin
      * form's word counter.
      */
@@ -63,7 +63,7 @@ final class Product extends Model
     protected $guarded = ['id'];
 
     /**
-     * search_vector is GENERATED ALWAYS — PostgreSQL rejects any attempt to
+     * search_vector is GENERATED ALWAYS - PostgreSQL rejects any attempt to
      * write it, so it must never appear in an insert or update.
      *
      * @var list<string>
@@ -191,7 +191,7 @@ final class Product extends Model
         return $query->where('is_indexable', true)->where('status', 'active');
     }
 
-    /** Flat product URL — one product, one URL, regardless of category (D-008). */
+    /** Flat product URL - one product, one URL, regardless of category (D-008). */
     public function url(): string
     {
         return '/p/'.$this->slug.'/';
@@ -201,7 +201,7 @@ final class Product extends Model
      * The description a person is on record as having approved.
      *
      * Generated copy that nobody has read since is not approved, however long
-     * it is — see EnforcesContentMinimums and DescriptionDrafter.
+     * it is - see EnforcesContentMinimums and DescriptionDrafter.
      */
     public function descriptionIsApproved(): bool
     {

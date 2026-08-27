@@ -67,14 +67,14 @@ final class ProductsTable
                  * ones can be found and fixed first.
                  */
                 Filter::make('thin_content')
-                    ->label('Thin content — needs a description')
+                    ->label('Thin content - needs a description')
                     ->query(fn (Builder $query): Builder => $query->whereRaw(
                         "array_length(regexp_split_to_array(trim(coalesce(regexp_replace(description_html, '<[^>]+>', ' ', 'g'), '')), '\\s+'), 1) < ?",
                         [Product::CONTENT_MINIMUM_WORDS]
                     )),
 
                 /*
-                 * Published but not indexable — usually an oversight, and
+                 * Published but not indexable - usually an oversight, and
                  * every one of these is a page earning nothing.
                  */
                 Filter::make('live_but_hidden')

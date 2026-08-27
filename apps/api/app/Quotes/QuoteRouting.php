@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Collection;
  *
  * ── Why route at all ─────────────────────────────────────────────────────
  * One shared inbox works until it doesn't. When every salesperson receives
- * every lead, the ones nobody owns are the ones nobody answers — the diffusion
+ * every lead, the ones nobody owns are the ones nobody answers - the diffusion
  * of responsibility is the failure mode, not the volume. Routing furniture
  * enquiries to the furniture team makes ownership the default.
  *
@@ -59,7 +59,7 @@ final class QuoteRouting
      * queue that somebody then tries to answer, and it must not disclose a
      * real customer's details to an address typed into a form.
      *
-     * The reference is deliberately not in the OL-Q-YYYY-NNNNNN format — a
+     * The reference is deliberately not in the OL-Q-YYYY-NNNNNN format - a
      * test that looks exactly like the real thing is a test somebody chases.
      */
     public static function sampleQuote(): Quote
@@ -75,7 +75,7 @@ final class QuoteRouting
         ]);
 
         $item = new QuoteItem([
-            'product_name_snapshot' => 'SAMPLE — Ergonomic Task Chair',
+            'product_name_snapshot' => 'SAMPLE - Ergonomic Task Chair',
             'sku_snapshot' => 'SAMPLE-001',
             'brand_name_snapshot' => 'Sample',
             'qty' => 12,
@@ -104,7 +104,7 @@ final class QuoteRouting
      *
      * Database rules win over config ones for the same path. Config routing
      * predates the admin screen and is kept as a seedable default, but once
-     * somebody has set a rule in the UI, the UI is the truth — otherwise a
+     * somebody has set a rule in the UI, the UI is the truth - otherwise a
      * change made in the admin appears to do nothing, which is worse than
      * having no admin at all.
      *

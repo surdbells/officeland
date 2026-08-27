@@ -12,7 +12,7 @@ import type { SpecificationGroup } from '../core/api/catalogue-api';
  * `<details>` would be less code and would work without JavaScript. But a
  * closed `<details>` hides its content from in-page find, and more
  * importantly the first group needs to be open on load while the rest are
- * closed — which `<details open>` can express, but not while also being
+ * closed - which `<details open>` can express, but not while also being
  * controllable as a set. The compromise chosen here keeps the semantics
  * explicit: a real `<button aria-expanded>` per group, and panels that are
  * always rendered and hidden with `hidden` when collapsed.

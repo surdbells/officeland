@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Search;
 
 /**
- * Typeahead results, grouped as section 16 requires — products, categories
+ * Typeahead results, grouped as section 16 requires - products, categories
  * and brands are different kinds of answer and a flat list buries the one the
  * buyer wanted.
  */

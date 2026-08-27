@@ -22,7 +22,7 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
  * The specification table is here rather than deferred for two reasons.
  * Section 23.3 calls the grouped spec table "the single highest-leverage fix"
  * for the legacy site's unstructured supplier prose. And it requires accordion
- * CONTENT to be present in the HTML whether or not a panel is expanded —
+ * CONTENT to be present in the HTML whether or not a panel is expanded -
  * collapsed is a CSS and ARIA state, not absent content, because content
  * rendered only on click is content Google may never see.
  */
@@ -51,7 +51,7 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
           Brand and model, separated.
 
           These were two adjacent @if blocks with only source whitespace
-          between them, and Angular collapses that — so the page read
+          between them, and Angular collapses that - so the page read
           "OfficeLandModel EX900". A flex row with a gap makes the separation
           structural rather than dependent on a space surviving compilation.
         -->
@@ -203,7 +203,7 @@ export class ProductPage {
 
   /**
    * Lead time is the B2B equivalent of the consumer stock check
-   * (section 23.2) — the thing buyers actually ask about.
+   * (section 23.2) - the thing buyers actually ask about.
    */
   protected readonly availabilityLabel = computed(() => {
     const p = this.product();

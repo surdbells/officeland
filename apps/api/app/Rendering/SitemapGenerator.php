@@ -26,7 +26,7 @@ use Illuminate\Support\Carbon;
  * is the invariant, and it only holds in one direction.
  *
  * ── lastmod is real or absent ────────────────────────────────────────────
- * Google demotes sitemaps whose lastmod is not trustworthy — a file whose
+ * Google demotes sitemaps whose lastmod is not trustworthy - a file whose
  * every entry claims today's date is worse than one with no dates at all,
  * because it teaches the crawler to ignore the signal. These come from
  * `updated_at`, which the render pipeline already keys off.
@@ -45,8 +45,8 @@ final class SitemapGenerator
     /**
      * Indexable pages that are not rows in a table.
      *
-     * The generator was built from the catalogue outwards — categories,
-     * brands, products — and so the sitemap did not contain the homepage.
+     * The generator was built from the catalogue outwards - categories,
+     * brands, products - and so the sitemap did not contain the homepage.
      * Nor, once they were written, the twelve editorial pages, which are the
      * ones a search for "office furniture showroom Victoria Island" or
      * "bulk office supply tender Nigeria" should land on.

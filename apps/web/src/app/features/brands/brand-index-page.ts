@@ -12,7 +12,7 @@ import { breadcrumbSchema, itemListSchema } from '../../core/seo/structured-data
  * ── Why brands are not categories ────────────────────────────────────────
  * The legacy tree modelled them as categories: 35 of its 161 terms were brand
  * branches, under `/product-category/hp/` (defect 4E). That conflates two
- * different axes — what a thing IS and who made it — so a chair and a toner
+ * different axes - what a thing IS and who made it - so a chair and a toner
  * cartridge ended up as siblings because HP made both, and the taxonomy could
  * never answer "office chairs" cleanly.
  *
@@ -37,7 +37,7 @@ import { breadcrumbSchema, itemListSchema } from '../../core/seo/structured-data
       <h1 class="mt-4 font-heading text-3xl font-bold">Brands we supply</h1>
       <p class="mt-3 max-w-3xl text-ink-600">
         We supply and support the manufacturers below across Nigeria. If you need a brand that is
-        not listed, ask &mdash; we source far more than we list.
+        not listed, ask - we source far more than we list.
       </p>
 
       @if (featured().length) {

@@ -7,8 +7,8 @@ namespace App\Rendering;
 /**
  * A set of routes that must be regenerated, with the reason and priority.
  *
- * Priority is not cosmetic. Direct routes — the page a buyer would land on
- * after an edit — must regenerate promptly. Cascade routes, where a product
+ * Priority is not cosmetic. Direct routes - the page a buyer would land on
+ * after an edit - must regenerate promptly. Cascade routes, where a product
  * merely appears in someone else's related rail, can lag by minutes with no
  * user or SEO cost. Treating them identically is what turns one edit into
  * hundreds of synchronous renders (docs/ARCHITECTURE.md section 4.3).

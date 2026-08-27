@@ -16,7 +16,7 @@ import { ProductCard } from '../../shared/product-card';
  * This is the surface that replaces the legacy `/product-category/hp/`
  * pattern, where brands were modelled as taxonomy terms (defect 4E). It uses
  * the same card, facet rail and pagination as the PLP, because a brand hub IS
- * a listing — only the filter differs.
+ * a listing - only the filter differs.
  */
 @Component({
   selector: 'ol-brand-page',
@@ -80,7 +80,7 @@ import { ProductCard } from '../../shared/product-card';
               <p class="mt-6 text-ink-600">
                 Nothing from {{ b.name }} is listed yet.
                 <a routerLink="/quote/" class="text-brand-600 hover:underline">Ask us for a quote</a>
-                &mdash; we source far more than we list.
+                - we source far more than we list.
               </p>
             }
           </section>
@@ -167,9 +167,9 @@ export class BrandPage {
 
     this.seo.apply({
       title: paged
-        ? [`${brand.name} products — Page ${page}`, `${brand.name} — Page ${page}`]
+        ? [`${brand.name} products - Page ${page}`, `${brand.name} - Page ${page}`]
         : [
-            `${brand.name} Products in Nigeria — Bulk Supply`,
+            `${brand.name} Products in Nigeria - Bulk Supply`,
             `${brand.name} Products in Nigeria`,
             `${brand.name} Products`,
           ],

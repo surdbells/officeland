@@ -8,7 +8,7 @@ namespace App\Rendering;
  * What one render pass did.
  *
  * Failures are keyed by route rather than counted, because a render failure is
- * silent by nature — the old page keeps being served — and the route name is
+ * silent by nature - the old page keeps being served - and the route name is
  * the only thing that makes it actionable.
  */
 final readonly class RenderResult

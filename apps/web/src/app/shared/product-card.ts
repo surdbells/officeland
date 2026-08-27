@@ -4,7 +4,7 @@ import type { ProductCard as ProductCardData } from '../core/api/catalogue-api';
 import { ResponsiveImage } from './responsive-image';
 
 /**
- * The product card — one component, one prop set, one test suite (8b).
+ * The product card - one component, one prop set, one test suite (8b).
  *
  * Used by the PLP, search results, related rails and brand hubs. Section 23.5
  * is explicit that this is a single component: the legacy site has four card
@@ -117,7 +117,7 @@ export class ProductCard {
    * Model code, MPN or SKU, in that order.
    *
    * This is the string B2B buyers search and cross-reference, and it is how
-   * consumables are matched to machines — the most valuable identifier on the
+   * consumables are matched to machines - the most valuable identifier on the
    * card, so it is shown rather than hidden in the payload.
    */
   protected readonly modelCode = computed(() => {

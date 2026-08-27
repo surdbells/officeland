@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
  * Removes every product DemoCatalogueSeeder created.
  *
  * The seeder exists so the design can be judged against a full catalogue.
- * This exists so that catalogue can be taken out again in one step — before a
+ * This exists so that catalogue can be taken out again in one step - before a
  * real import, or the moment anybody is tempted to point production at this
  * database.
  *

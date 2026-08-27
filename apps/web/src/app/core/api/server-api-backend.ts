@@ -12,7 +12,7 @@ const API_PREFIX = '/api/';
  * Application code requests '/api/v1/navigation'. In the browser that is
  * same-origin and correct. During prerendering, platform-server's
  * `relativeUrlsTransformerInterceptorFn` resolves every relative URL against
- * the current document origin — which, in a prerender, is the throwaway HTTP
+ * the current document origin - which, in a prerender, is the throwaway HTTP
  * server the Angular builder starts on a random port to invoke server.ts. The
  * request therefore arrives back at the application's own Express handler,
  * which has no /api route:
@@ -30,7 +30,7 @@ const API_PREFIX = '/api/';
  * sees it. It is registered before platform-server's transformer, so on the
  * server it keys on the RELATIVE url, exactly as the browser will. Rewriting
  * anywhere in the interceptor chain risks keying the server's entries on a
- * random localhost port that the browser could never reproduce — every entry
+ * random localhost port that the browser could never reproduce - every entry
  * would miss and all 15,000 pages would re-fetch on hydration.
  *
  * A backend sits below every interceptor, so the cache keys stay untouched.

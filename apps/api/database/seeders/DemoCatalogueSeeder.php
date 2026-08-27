@@ -21,7 +21,7 @@ use RuntimeException;
  * are not real, the specifications are generic, and nothing here corresponds
  * to stock OfficeLand actually holds. It exists so that listings, facets,
  * brand rows, pagination and the megamenu can be evaluated with realistic
- * volume — which is impossible against ten products spread over 170
+ * volume - which is impossible against ten products spread over 170
  * categories.
  *
  * ── Why every one of them is noindex ─────────────────────────────────────
@@ -40,7 +40,7 @@ use RuntimeException;
  * storefront and they never reach the index.
  *
  * Real products get real copy, and then the floor lets them through on their
- * own — as it already does for the 46 categories with written intros.
+ * own - as it already does for the 46 categories with written intros.
  *
  * ── Identifiable and reversible ──────────────────────────────────────────
  * Every SKU starts with DEMO-, which makes them obvious in the admin, in any
@@ -175,8 +175,8 @@ final class DemoCatalogueSeeder extends Seeder
     /**
      * Brands, created if absent and left alone if present.
      *
-     * `is_featured` is not set here. The megamenu no longer reads it — brand
-     * rows are derived from what a department actually stocks — and flipping
+     * `is_featured` is not set here. The megamenu no longer reads it - brand
+     * rows are derived from what a department actually stocks - and flipping
      * it would only affect surfaces that still do.
      *
      * @return array<string, Brand>
@@ -229,7 +229,7 @@ final class DemoCatalogueSeeder extends Seeder
             'qty_step' => 1,
             'lead_time_days' => $index % 4 === 0 ? 21 : 3,
             'short_description' => "{$descriptor} {$singular} supplied and delivered nationwide. Quoted per order.",
-            // 'demo' is not an allowed source — the column is constrained to
+            // 'demo' is not an allowed source - the column is constrained to
             // icecat/csv/manual. The DEMO- SKU prefix is what identifies
             // these, and it is checked rather than assumed by demo:purge.
             'source' => 'manual',

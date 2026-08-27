@@ -18,7 +18,7 @@ use Illuminate\Support\Collection;
  * is stamped `description_generated_at`, and ContentMinimums refuses to let a
  * product be indexed while that stamp is newer than a human approval. That is
  * not caution for its own sake: §14.3 forbids *a boilerplate string with the
- * name swapped in*, and a template — however carefully written — is a
+ * name swapped in*, and a template - however carefully written - is a
  * boilerplate string with the name swapped in. What makes the output
  * defensible is the editing pass afterwards, so the pipeline is built to make
  * that pass mandatory rather than encouraged.
@@ -32,7 +32,7 @@ use Illuminate\Support\Collection;
  * SEO_SPEC §7.2: the line between defensible generated copy and spun
  * boilerplate is whether the output conveys each product's actual
  * DIFFERENTIATING specifications. So the draft is built from the attributes
- * that vary within the product's family, most-distinguishing first — not from
+ * that vary within the product's family, most-distinguishing first - not from
  * whatever attributes happen to be present. Two products in one family
  * therefore produce genuinely different drafts, or the drafter declines to
  * produce one at all.
@@ -40,7 +40,7 @@ use Illuminate\Support\Collection;
  * ── Why it refuses rather than padding ───────────────────────────────────
  * A product with three generic attributes cannot support 120 words of specific
  * prose. The alternative to refusing is padding with phrases that carry no
- * information — which is the exact failure mode, dressed as success. A refusal
+ * information - which is the exact failure mode, dressed as success. A refusal
  * puts the product in the review queue where a human can see it needs data
  * before it needs copy.
  */
@@ -245,7 +245,7 @@ final class DescriptionDrafter
             return null;
         }
 
-        return implode(' ', $parts).' Ask us if you need a different configuration — '.
+        return implode(' ', $parts).' Ask us if you need a different configuration - '.
             'we quote against the specification you actually need rather than the one on the box.';
     }
 

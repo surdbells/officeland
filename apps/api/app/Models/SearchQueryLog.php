@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * Every search, with its result count (section 14.10).
  *
- * Zero-result queries are "a merchandising and content goldmine" — they are
+ * Zero-result queries are "a merchandising and content goldmine" - they are
  * literally a list of things buyers asked for and did not find, ranked by how
  * many asked. Each one is either a product to stock, a synonym to add, or a
  * category page to write.

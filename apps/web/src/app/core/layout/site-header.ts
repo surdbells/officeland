@@ -22,7 +22,7 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
  *     it were a menubar.
  *  4. Never hover-only: hover with intent delay on pointer devices, click and
  *     Enter/Space for keyboard and touch, Escape closes and returns focus.
- *  5. No layout shift when a panel opens — it overlays rather than pushes.
+ *  5. No layout shift when a panel opens - it overlays rather than pushes.
  */
 @Component({
   selector: 'ol-site-header',
@@ -99,20 +99,28 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
 
         <div class="ml-auto flex shrink-0 items-center gap-3">
           <!-- Section 23.1: WhatsApp converts better than a phone number in
-               this market, and the reference site has no equivalent. -->
+               this market, and the reference site has no equivalent.
+
+               The icon is decorative and the text is the accessible name;
+               Icon sets aria-hidden itself, so nothing here announces
+               "message circle" before the label. -->
           <a
             href="https://wa.me/2347074723165"
-            class="hidden rounded-lg border border-ink-200 px-3 py-2 text-sm font-medium hover:border-brand-600 sm:block"
+            class="hidden items-center gap-2 rounded-lg border border-ink-200 px-3 py-2 text-sm font-medium hover:border-brand-600 sm:flex"
             rel="noopener"
-          >WhatsApp us</a>
+          >
+            <ol-icon name="message-circle" [size]="17" class="text-brand-600" />
+            WhatsApp us
+          </a>
 
           <a
             routerLink="/quote/"
-            class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+            class="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
           >
-            Quote basket
+            <ol-icon name="file-text" [size]="17" />
+            Quote
             @if (quoteCount() > 0) {
-              <span class="ml-1 rounded-full bg-white px-2 text-brand-700">{{ quoteCount() }}</span>
+              <span class="rounded-full bg-white px-2 text-brand-700">{{ quoteCount() }}</span>
             }
           </a>
         </div>
@@ -136,7 +144,7 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
         in the prerendered HTML before any script runs.
 
         The overflow departments are still in that HTML. They are hidden with
-        a class, never with @if — an @if would remove three department
+        a class, never with @if - an @if would remove three department
         anchors from every page on the site, which is exactly the internal
         linking the megamenu exists to provide. Same rule as the PDP gallery.
       -->
@@ -208,7 +216,7 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
           One panel for whichever department is open, rendered OUTSIDE the
           loop.
 
-          Only the open department's subtree is ever in the DOM — that is
+          Only the open department's subtree is ever in the DOM - that is
           §23.1 rule 2's "level 3 on intent", and it is what keeps the header
           under the ~150-anchor budget. Rendering all seven departments' trees
           eagerly would put roughly 250 anchors on every page and dilute the
@@ -265,7 +273,7 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
 
                     The reference megamenu puts a merchandising tile here and
                     spends it on a seasonal offer. This business has no offers
-                    to run — no prices, no deals, no stock (D-002, D-005) — so
+                    to run - no prices, no deals, no stock (D-002, D-005) - so
                     a "10% off" card would be an invention. What it does have
                     is one thing it wants from a visitor big enough to be
                     browsing a whole department, and that is the schedule.
@@ -275,8 +283,8 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
                     nine cards that go stale are worse than one that stays
                     true.
 
-                    No image. It is sized to take one — this is where a
-                    department hero would go now that categories carry them —
+                    No image. It is sized to take one - this is where a
+                    department hero would go now that categories carry them -
                     but a card whose picture is a grey rectangle is worse than
                     a card that never promised one.
                   -->
@@ -414,7 +422,7 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
      * Six departments plus "More" and "Shop all" fit comfortably at 1366 and
      * above, which is what the fixed split was chosen against. But this bar
      * is shown from 768px up, and between roughly 768 and 1000 the same six
-     * do not fit — with flex-nowrap and shrink-0 they widened the document
+     * do not fit - with flex-nowrap and shrink-0 they widened the document
      * and gave the whole site a horizontal scrollbar. Caught by measuring
      * scrollWidth against clientWidth in the browser, not by any gate.
      *
@@ -447,7 +455,7 @@ export class SiteHeader {
    *
    * A fixed number, not a measured one. Measuring requires JavaScript and a
    * layout pass, and under D-009 the bar has to be right in the prerendered
-   * HTML before any of that happens — a bar that reflows on hydration is a
+   * HTML before any of that happens - a bar that reflows on hydration is a
    * bar that shifts the page.
    *
    * Six is what fits with icons on a 1366 laptop, which is the narrowest
@@ -472,7 +480,7 @@ export class SiteHeader {
    *
    * A method, not a pipe or a computed: it is a pure lookup over a constant,
    * called once per subcategory heading, and only for the one department whose
-   * panel is open — six times on the widest of them.
+   * panel is open - six times on the widest of them.
    */
   protected iconFor(slug: string): IconName {
     return iconForCategory(slug);

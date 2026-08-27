@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * Caddy already sets X-Robots-Tag on every non-production response. This
  * covers production, where the storefront is indexable and the admin panel
- * still must not be — and it is set in the application so it survives a
+ * still must not be - and it is set in the application so it survives a
  * change of edge, a misconfigured proxy, or someone serving the panel from a
  * different host.
  */

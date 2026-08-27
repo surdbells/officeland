@@ -33,7 +33,7 @@ import { SeoService } from '../../core/seo/seo.service';
  *
  * ── Everything here is server-rendered ───────────────────────────────────
  * D-009 prerenders to static HTML, so no section may depend on JavaScript to
- * appear — a JS-only rail is invisible to a crawler and to the raw-HTML gate.
+ * appear - a JS-only rail is invisible to a crawler and to the raw-HTML gate.
  * Every destination is a real <a href> for the same reason (D-011).
  */
 @Component({
@@ -46,7 +46,7 @@ import { SeoService } from '../../core/seo/seo.service';
       Hero: 65 / 35 on desktop, stacking below 1024px.
 
       Slide 1 is the LCP element, so it is eager and high priority. Every
-      slide is in the HTML — a crawler must see all destinations — and
+      slide is in the HTML - a crawler must see all destinations - and
       non-active slides are hidden with CSS, never @if. Same rule as the PDP
       gallery and the spec accordions.
 
@@ -91,7 +91,7 @@ import { SeoService } from '../../core/seo/seo.service';
             <!--
               text-white on the heading itself, not just the parent. The base
               layer sets "h1,h2,h3,h4 { color: ink-900 }", which beats an
-              inherited colour — so this heading rendered ink-900 on ink-900
+              inherited colour - so this heading rendered ink-900 on ink-900
               and was completely invisible. Contrast measured 1.0.
             -->
             <h2 class="font-heading text-xl font-semibold text-white">Bulk &amp; tender supply</h2>
@@ -113,7 +113,7 @@ import { SeoService } from '../../core/seo/seo.service';
       </div>
     </section>
 
-    <!-- §23.4 item 2. Trust signals, not discounts — the price substitute. -->
+    <!-- §23.4 item 2. Trust signals, not discounts - the price substitute. -->
     <section aria-label="Why OfficeLand" class="border-b border-ink-100">
       <ul class="mx-auto grid max-w-(--container-page) gap-6 px-(--spacing-gutter) py-8 sm:grid-cols-2 lg:grid-cols-4">
         <li>
@@ -140,7 +140,7 @@ import { SeoService } from '../../core/seo/seo.service';
 
       CSS scroll-snap, not a JavaScript carousel: it works before hydration,
       it is keyboard-navigable for free, and it costs nothing against the
-      130 KB budget. The RAIL scrolls, never the page — horizontal page
+      130 KB budget. The RAIL scrolls, never the page - horizontal page
       overflow at 375px is a gate failure.
 
       Sourced from the navigation endpoint rather than hardcoded, so it cannot
@@ -164,14 +164,14 @@ import { SeoService } from '../../core/seo/seo.service';
 
             The rail was a plain overflow-x container, which put a browser
             scrollbar across the bottom of the section. That reads as a bug
-            rather than a control — nobody expects a horizontal scrollbar in
-            the middle of a page — so the bar is hidden and replaced with
+            rather than a control - nobody expects a horizontal scrollbar in
+            the middle of a page - so the bar is hidden and replaced with
             buttons.
 
             ── Still a scroll container underneath ──────────────────────────
             The buttons drive "scrollBy"; they do not reimplement scrolling.
             That keeps every native behaviour intact: trackpad swipe, shift +
-            wheel, touch drag, and — the one that matters for accessibility —
+            wheel, touch drag, and - the one that matters for accessibility -
             tabbing to a link off-screen scrolls it into view on its own.
             Hiding a scrollbar is only safe because none of that depends on it
             being visible.
@@ -213,7 +213,7 @@ import { SeoService } from '../../core/seo/seo.service';
                     <!--
                       The count only when there is one. Every department read
                       "0 products" while the catalogue is being populated,
-                      which is both discouraging and misleading — we supply
+                      which is both discouraging and misleading - we supply
                       far more than we list, and the tile was saying the
                       opposite.
                     -->
@@ -258,14 +258,14 @@ import { SeoService } from '../../core/seo/seo.service';
     <!--
       WPC Doors & Interiors.
 
-      A separate DIVISION, not a product category — kitchens, wardrobes,
+      A separate DIVISION, not a product category - kitchens, wardrobes,
       furniture and interiors, sold on material properties rather than on a
       catalogue listing. It gets its own band with its own visual treatment
       for that reason: folding it into the department rail would file a
       fit-out business under "office supplies" and lose it.
 
       Note it is absent from the Phase 0 taxonomy (124 categories, 7
-      departments). That is a real gap, not a styling one — see the handover.
+      departments). That is a real gap, not a styling one - see the handover.
 
       Scroll-snap again, not a JS carousel: same reasoning as the department
       rail, and it keeps the JS budget for the parts of the site that need it.
@@ -274,7 +274,7 @@ import { SeoService } from '../../core/seo/seo.service';
       <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-16 sm:py-20">
         <div class="max-w-3xl">
           <p class="font-heading text-sm font-semibold uppercase tracking-[0.2em] text-accent-400">
-            OfficeLand WPC &mdash; Doors &amp; Interiors
+            OfficeLand WPC - Doors &amp; Interiors
           </p>
           <h2 id="wpc-heading" class="mt-4 font-heading text-display-sm font-bold text-white sm:text-display">
             The beauty you see. The strength you don&rsquo;t.
@@ -289,7 +289,7 @@ import { SeoService } from '../../core/seo/seo.service';
         <!--
           The six properties are the entire sales argument for WPC over MDF or
           plywood in this climate. Termite and moisture resistance is not a
-          feature list here — it is why the material exists.
+          feature list here - it is why the material exists.
         -->
         <ul class="mt-10 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3 lg:grid-cols-6">
           @for (property of wpcProperties; track property.name) {
@@ -486,7 +486,7 @@ export class HomePage {
    * WPC's material properties.
    *
    * Hardcoded rather than pulled from attributes because these describe a
-   * DIVISION, not a product — there is no WPC product in the catalogue to
+   * DIVISION, not a product - there is no WPC product in the catalogue to
    * carry them, and inventing one to hold six marketing claims would put
    * copy into the catalogue where the content floor (D-048) expects
    * specifications.
@@ -508,7 +508,7 @@ export class HomePage {
      *
      * The buttons were absent on load without this: they are derived from
      * scrollWidth and clientWidth, and those were only read in the scroll
-     * handler — so nothing had measured the rail until somebody scrolled it,
+     * handler - so nothing had measured the rail until somebody scrolled it,
      * which is precisely what the buttons exist to let them do.
      *
      * afterNextRender is browser-only by contract, which is what makes it

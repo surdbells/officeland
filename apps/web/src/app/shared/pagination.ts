@@ -89,14 +89,14 @@ export class Pagination {
   /**
    * How a page is addressed: a path segment, or a query parameter.
    *
-   * 'path' is the default and the right answer for anything prerendered —
+   * 'path' is the default and the right answer for anything prerendered -
    * every page of a category listing is a real file, crawlable and
    * indexable, which is the whole reason it is not a query string.
    *
    * 'query' exists for /shop/, which is prerendered as a single shell and
    * driven entirely by query parameters. Pointing path-based pagination at
-   * it produced links to /shop/page/2/ — files that do not exist and never
-   * will — while the page itself was reading `?page=`. Two bugs pointing at
+   * it produced links to /shop/page/2/ - files that do not exist and never
+   * will - while the page itself was reading `?page=`. Two bugs pointing at
    * each other, and the link gate found them.
    *
    * A query-paginated listing must be noindex, or those URLs become
@@ -143,7 +143,7 @@ export class Pagination {
    *
    * Angular prerenders paths; it cannot emit a file for a query string. Under
    * D-009 every page of every listing has to be a file on disk, so
-   * query-string pagination would leave pages 2..N with no file behind them —
+   * query-string pagination would leave pages 2..N with no file behind them -
    * served as page 1 by the static host, and therefore duplicate content that
    * lists the wrong products.
    *

@@ -17,7 +17,7 @@ import { RouterLink } from '@angular/router';
  *
  * ── The measure is deliberate ────────────────────────────────────────────
  * `max-w-3xl` on the prose, not the full 1564px container. Long-form text set
- * across a page that wide is unreadable — the eye loses the line on the
+ * across a page that wide is unreadable - the eye loses the line on the
  * return sweep. The container width was raised for grids and menus, not for
  * paragraphs.
  */
@@ -77,6 +77,6 @@ import { RouterLink } from '@angular/router';
 export class ContentPage {
   readonly heading = input.required<string>();
 
-  /** One sentence under the title. Optional — a policy page does not need one. */
+  /** One sentence under the title. Optional - a policy page does not need one. */
   readonly lede = input<string>('');
 }

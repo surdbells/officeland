@@ -228,6 +228,11 @@ components:
             - 'null'
         product_count:
           type: integer
+        siblings:
+          description: 'Categories alongside this one, returned only when it has no children of its own. Drives the chip row on a leaf page.'
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
         children:
           description: 'Rendered as real crawlable anchors on every category page (D-011).'
           type: array

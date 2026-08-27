@@ -13,7 +13,7 @@ use App\Models\User;
  *
  * It records who did what, including actions by people who can see it. An
  * audit log that its subjects can read selectively, edit or delete is not
- * evidence — hence every mutation returns false, backed by the model refusing
+ * evidence - hence every mutation returns false, backed by the model refusing
  * update and delete outright.
  */
 final class AuditLogEntryPolicy

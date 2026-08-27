@@ -23,7 +23,7 @@ final class ProductController extends Controller
     public function __construct(private readonly SearchEngine $engine) {}
 
     /**
-     * The whole catalogue as one listing — the shop page.
+     * The whole catalogue as one listing - the shop page.
      *
      * Same engine, same envelope and same facets as a category listing, with
      * the category filter left out. That is the entire difference, and it is

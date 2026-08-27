@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * The listing payload — one shape used by PLP, search, related rails and
+ * The listing payload - one shape used by PLP, search, related rails and
  * collections, matching the single shared card component of section 23.5.
  *
  * Deliberately lighter than ProductResource: a 24-item listing must not carry
@@ -25,8 +25,8 @@ final class ProductCardResource extends JsonResource
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
-        // A product may legitimately have no brand — unbranded stationery,
-        // own-label furniture — so this is nullable rather than assumed.
+        // A product may legitimately have no brand - unbranded stationery,
+        // own-label furniture - so this is nullable rather than assumed.
         $brand = $this->relationLoaded('brand') ? $this->brand : null;
 
         return [

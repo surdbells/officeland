@@ -16,8 +16,8 @@ use RuntimeException;
  * ── Why generate images rather than commit them ──────────────────────────
  * Committing binaries to satisfy a seeder is how repositories rot, and a
  * checked-in JPEG would bypass the thing worth exercising. This runs the real
- * Phase 4 path — ingest, strip metadata, content-address by SHA-256, generate
- * 5 variants x 3 formats — so the storefront's `<picture>` markup is built
+ * Phase 4 path - ingest, strip metadata, content-address by SHA-256, generate
+ * 5 variants x 3 formats - so the storefront's `<picture>` markup is built
  * from derivatives that were actually produced by libvips, not from rows
  * inserted to look like they were.
  *

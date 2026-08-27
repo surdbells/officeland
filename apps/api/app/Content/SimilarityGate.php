@@ -36,7 +36,7 @@ use Illuminate\Support\Facades\DB;
  * ── Why the identifiers are stripped first ───────────────────────────────
  * The defect being caught is precisely "a boilerplate string with the name
  * swapped in" (§14.3). If the name, SKU and MPN stay in the text, they are the
- * one part guaranteed to differ, so they drag the similarity score DOWN — the
+ * one part guaranteed to differ, so they drag the similarity score DOWN - the
  * gate reads lowest exactly where the defect is worst. Removing them first
  * makes two boilerplate descriptions score ~1.0, which is what they are.
  */
@@ -46,7 +46,7 @@ final class SimilarityGate
      * Above this, two descriptions in one family are treated as the same text.
      *
      * Set high on purpose. Genuine variants differ by a colour, a page yield
-     * or a capacity, and that difference is small in trigram terms — a lower
+     * or a capacity, and that difference is small in trigram terms - a lower
      * threshold would flag most of a legitimate family and teach reviewers to
      * approve without reading, which is worse than not flagging at all.
      */
@@ -102,8 +102,8 @@ final class SimilarityGate
      * The product's family: same brand, same primary category.
      *
      * The closest thing to "family" the schema carries. It is the grouping
-     * within which shared phrasing is legitimate — a manufacturer's range in
-     * one product type — and outside which it is not.
+     * within which shared phrasing is legitimate - a manufacturer's range in
+     * one product type - and outside which it is not.
      *
      * @return list<Product>
      */
@@ -130,7 +130,7 @@ final class SimilarityGate
      * Trigram similarity, computed by Postgres rather than in PHP.
      *
      * pg_trgm is already enabled for typo-tolerant search, and `similarity()`
-     * is the same measure used there — so a score here means the same thing it
+     * is the same measure used there - so a score here means the same thing it
      * means everywhere else in the system.
      */
     public function score(string $left, string $right): float
@@ -148,7 +148,7 @@ final class SimilarityGate
     /**
      * The comparable prose: description text with the identifiers removed.
      *
-     * The spec table never reaches here — it is rendered from attributes at
+     * The spec table never reaches here - it is rendered from attributes at
      * display time and is not part of `description_html`.
      */
     public function prose(Product $product): string

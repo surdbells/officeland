@@ -17,7 +17,7 @@ use Illuminate\Console\Command;
  * ── When this is required, and why it cannot be inferred ─────────────────
  * The incremental renderer regenerates the routes a DATA change affects. It
  * cannot see a change to a TEMPLATE, a global SEO rule, the header, the footer
- * or a design token — nothing in the database moved, so no event fires, and
+ * or a design token - nothing in the database moved, so no event fires, and
  * every page silently keeps the old markup.
  *
  * So a full build is part of the deploy routine rather than an emergency
@@ -28,7 +28,7 @@ use Illuminate\Console\Command;
  * `ng build` compiles the bundles and prerenders in one pass, which is what
  * CI does. This renders from the ALREADY BUILT bundle through the running
  * worker, one route at a time, which is what a production host does when the
- * bundle has not changed but the content has — a bulk import, a re-categorisa-
+ * bundle has not changed but the content has - a bulk import, a re-categorisa-
  * tion, or a restore.
  */
 final class RenderFullBuild extends Command
@@ -110,7 +110,7 @@ final class RenderFullBuild extends Command
             $this->error(count($failures).' route(s) failed:');
 
             foreach ($failures as $route => $reason) {
-                $this->error("  {$route} — {$reason}");
+                $this->error("  {$route} - {$reason}");
             }
 
             /*

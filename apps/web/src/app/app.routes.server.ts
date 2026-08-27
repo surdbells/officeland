@@ -69,7 +69,7 @@ export const serverRoutes: ServerRoute[] = [
   {
     /*
      * Prerendered as an empty shell. Results arrive client side (the page is
-     * noindex either way), but the URL still has to resolve to a FILE — a
+     * noindex either way), but the URL still has to resolve to a FILE - a
      * static host cannot route /search?q=toner to anything else.
      */
     path: 'search',

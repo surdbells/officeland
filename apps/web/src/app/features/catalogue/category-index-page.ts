@@ -21,7 +21,7 @@ import { breadcrumbSchema, itemListSchema } from '../../core/seo/structured-data
     <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8">
       <!-- Every non-home page carries breadcrumbs (section 23.5), matching the
            BreadcrumbList emitted below. This page is one level down, so the
-           trail is short — but a hub with no trail is still a page a crawler
+           trail is short - but a hub with no trail is still a page a crawler
            cannot place in the hierarchy. -->
       <nav aria-label="Breadcrumb">
         <ol class="flex flex-wrap items-center gap-2 text-sm text-ink-600">
@@ -71,7 +71,7 @@ export class CategoryIndexPage {
     /*
      * An effect because the ItemList depends on the fetched departments.
      * The BreadcrumbList inside it is static, but emitting the two separately
-     * would mean the second call cleared the first — page-scope structured
+     * would mean the second call cleared the first - page-scope structured
      * data is replaced wholesale, by design.
      */
     effect(() => {

@@ -12,9 +12,9 @@ use Throwable;
 /**
  * Liveness and readiness probes (MASTER BUILD PROMPT section 19.1).
  *
- * live()  — is the process up? Never touches a dependency. If this fails the
+ * live()  - is the process up? Never touches a dependency. If this fails the
  *           container is dead and should be restarted.
- * ready() — can this instance serve traffic? Checks every dependency a request
+ * ready() - can this instance serve traffic? Checks every dependency a request
  *           can touch. A failure here should remove the instance from the load
  *           balancer, not restart it.
  *
@@ -69,7 +69,7 @@ final class HealthController extends Controller
     /**
      * Application path: through PgBouncer, transaction pooling.
      *
-     * `SELECT 1` with a bound parameter rather than a literal is deliberate —
+     * `SELECT 1` with a bound parameter rather than a literal is deliberate -
      * it exercises the prepared-statement path that transaction pooling
      * breaks when PDO emulation is misconfigured (docs/ARCHITECTURE.md 5).
      * A literal query would pass even with the pooler misconfigured.

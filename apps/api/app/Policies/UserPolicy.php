@@ -35,7 +35,7 @@ final class UserPolicy
     /**
      * Nobody deletes themselves. Locking the last super admin out of the panel
      * is a recoverable-only-by-console mistake, and deleting an actor damages
-     * the audit trail — deactivate instead.
+     * the audit trail - deactivate instead.
      */
     public function delete(User $user, User $model): bool
     {

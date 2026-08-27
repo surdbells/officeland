@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
- * A submitted quote request — the lead (D-004).
+ * A submitted quote request - the lead (D-004).
  *
  * There is no priced-quote cycle here: sales reads this, prices it in their own
  * system, and replies. So this table is the record of what a buyer asked for

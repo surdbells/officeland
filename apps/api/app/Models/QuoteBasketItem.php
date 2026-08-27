@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * One line in a basket.
  *
- * A line is either a catalogue product or a free-text request — the schema
+ * A line is either a catalogue product or a free-text request - the schema
  * enforces that at least one is present. Free text exists because OfficeLand
  * supplies far more than it lists, and a buyer with a requisition list should
  * not have to drop the items we do not happen to have a page for.
@@ -52,7 +52,7 @@ final class QuoteBasketItem extends Model
     /**
      * Nullable, and deliberately so: the FK is ON DELETE SET NULL. A product
      * removed from the catalogue must not delete a line out of somebody's
-     * basket without trace — the line keeps its description and becomes a
+     * basket without trace - the line keeps its description and becomes a
      * free-text request.
      *
      * @return BelongsTo<Product, $this>

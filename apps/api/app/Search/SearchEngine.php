@@ -9,7 +9,7 @@ namespace App\Search;
  * PostgresSearchEngine implementation, so Meilisearch/Typesense can be
  * introduced later without touching callers."
  *
- * The interface is therefore free of anything Postgres-specific — no tsquery,
+ * The interface is therefore free of anything Postgres-specific - no tsquery,
  * no SQL, no Eloquent builders leaking outward.
  */
 interface SearchEngine

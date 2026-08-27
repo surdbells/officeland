@@ -11,7 +11,7 @@ use App\Models\Product;
  *
  * ── Coerce, do not reject ────────────────────────────────────────────────
  * A buyer who types 7 against a product sold in multiples of 5 has not made
- * an error worth an error message — they want about seven. Rounding UP to 10
+ * an error worth an error message - they want about seven. Rounding UP to 10
  * and saying so is the behaviour that gets the quote sent; a validation error
  * is the behaviour that loses it.
  *
@@ -23,7 +23,7 @@ use App\Models\Product;
  * The storefront applies the same rules in its steppers, but that is a
  * convenience. §9a makes the server authoritative, and quantity is exactly the
  * field where a crafted request would otherwise put "1" against a product with
- * a minimum order of 50 — producing a quote a salesperson would have to catch
+ * a minimum order of 50 - producing a quote a salesperson would have to catch
  * by eye.
  */
 final readonly class QuantityRules
@@ -31,7 +31,7 @@ final readonly class QuantityRules
     /**
      * A hard ceiling on any single line.
      *
-     * Not a business rule — a genuine order of 10,000 chairs is welcome — but
+     * Not a business rule - a genuine order of 10,000 chairs is welcome - but
      * a bound on what one request can put into an email. Anything above it is
      * either a typo or an attempt to make the confirmation email enormous.
      */
@@ -66,7 +66,7 @@ final readonly class QuantityRules
         if ($this->step > 1) {
             /*
              * Steps count FROM the minimum, not from zero. A product with a
-             * minimum of 4 sold in multiples of 5 allows 4, 9, 14 — not 5, 10,
+             * minimum of 4 sold in multiples of 5 allows 4, 9, 14 - not 5, 10,
              * 15, which would exclude the minimum the product itself declares.
              */
             $above = $qty - $this->minimum;

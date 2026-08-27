@@ -34,7 +34,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 final class ImageResource extends JsonResource
 {
     /**
-     * Format preference, best first — the `<source>` order of §12.5. A browser
+     * Format preference, best first - the `<source>` order of §12.5. A browser
      * takes the first type it understands, so AVIF must precede WebP, and JPEG
      * is the `<img>` fallback rather than a `<source>`.
      */

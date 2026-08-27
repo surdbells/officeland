@@ -17,13 +17,13 @@ use Illuminate\Support\Facades\DB;
  * **Neither exists yet**: Search Console has no data until the site is live and
  * crawled, and no keyword-tool subscription is in scope. Ordering by a number
  * we do not have would mean inventing one, and an invented priority order is
- * worse than an admitted proxy — people trust it.
+ * worse than an admitted proxy - people trust it.
  *
  * So this ranks by the best signals actually available before launch:
  *
  *   1. **Internal search demand.** Someone typed it into our own search box.
  *      This is real, first-party demand for a real product, and it is the
- *      single most reliable signal in the system — better than a keyword tool
+ *      single most reliable signal in the system - better than a keyword tool
  *      in one important way: it is *our* buyers, not the market at large.
  *   2. **Searches that returned nothing.** Weighted higher, not lower. A query
  *      with no results is demand we are visibly failing to meet, and a page
@@ -85,7 +85,7 @@ final class ContentValue
      * How valuable it is to finish this one product's description.
      *
      * A product inherits its category's demand, because nobody searches for a
-     * specific SKU often enough for it to register — but a brand within a
+     * specific SKU often enough for it to register - but a brand within a
      * category is a real query shape ("hp toner"), so a branded product in a
      * high-demand category ranks above an unbranded one.
      *

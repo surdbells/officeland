@@ -11,8 +11,8 @@ use Illuminate\Database\Seeder;
  * Category title tags and meta descriptions (SEO_SPEC §5).
  *
  * ── Why these are written and not templated ──────────────────────────────
- * The storefront already composes a title from a template — "{name} in
- * Nigeria — Prices & Bulk Supply" — and falls back to the first 155
+ * The storefront already composes a title from a template - "{name} in
+ * Nigeria - Prices & Bulk Supply" - and falls back to the first 155
  * characters of the intro copy for the description. Both are reasonable
  * defaults and neither earns a click.
  *
@@ -28,13 +28,13 @@ use Illuminate\Database\Seeder;
  * the one place a stranger is judging the business.
  *
  * The budgets are asserted by CategorySeoSeederTest rather than checked at
- * run time. A runtime check was written first and PHPStan called it dead —
+ * run time. A runtime check was written first and PHPStan called it dead -
  * it could prove every string in the constant already fits, which is the
  * check passing rather than the check being unnecessary. A test says the same
  * thing in the place that fails a pull request.
  *
  * ── Titles ───────────────────────────────────────────────────────────────
- * Only where the template is weak. "Voltage Stabilisers in Nigeria — Prices &
+ * Only where the template is weak. "Voltage Stabilisers in Nigeria - Prices &
  * Bulk Supply" is fine and needs no help; "Wall & Ceiling Panels" says
  * nothing about WPC, which is the word people search. An empty title here
  * means the template wins, which is the intended default.
@@ -84,7 +84,7 @@ final class CategorySeoSeeder extends Seeder
         ],
         '/smart-tech/security-surveillance/video-doorbells/' => [
             '',
-            'Video doorbells for receptions, clinics and unmanned gates. Wired is the right answer for anything that matters — a flat battery is no doorbell.',
+            'Video doorbells for receptions, clinics and unmanned gates. Wired is the right answer for anything that matters - a flat battery is no doorbell.',
         ],
         '/smart-tech/security-surveillance/access-control/' => [
             'Access Control Systems & Card Readers in Nigeria',
@@ -104,7 +104,7 @@ final class CategorySeoSeeder extends Seeder
         ],
         '/smart-tech/conferencing-av/conference-speakerphones/' => [
             'Conference Speakerphones for Boardrooms in Nigeria',
-            'The cheapest real improvement to a meeting room. Pickup range is the specification that matters — a four-person unit will not cover eight.',
+            'The cheapest real improvement to a meeting room. Pickup range is the specification that matters - a four-person unit will not cover eight.',
         ],
         '/smart-tech/conferencing-av/webcams/' => [
             'Webcams for Desks & Huddle Rooms in Nigeria',
@@ -128,7 +128,7 @@ final class CategorySeoSeeder extends Seeder
         ],
         '/smart-tech/smart-office/smart-climate/' => [
             'Smart Air Conditioning Control for Offices in Nigeria',
-            'Control for split units and central plant — usually the largest load in the building and the least managed. Infrared controllers retrofit.',
+            'Control for split units and central plant - usually the largest load in the building and the least managed. Infrared controllers retrofit.',
         ],
         '/smart-tech/smart-office/smart-locks/' => [
             'Smart Locks & Keyless Entry for Offices in Nigeria',
@@ -265,7 +265,7 @@ final class CategorySeoSeeder extends Seeder
         $this->command->info("Search appearance written for {$written} categor(y/ies).");
 
         foreach ($missing as $path) {
-            $this->command->warn("No category at {$path} — skipped.");
+            $this->command->warn("No category at {$path} - skipped.");
         }
     }
 }

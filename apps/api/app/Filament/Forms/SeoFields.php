@@ -16,7 +16,7 @@ use Illuminate\Support\HtmlString;
  * preview (MASTER BUILD PROMPT section 14.3).
  *
  * The budgets are the point. The legacy homepage title is 389 characters, so
- * every SERP snippet it produces is truncated — an editor who cannot see the
+ * every SERP snippet it produces is truncated - an editor who cannot see the
  * limit has no way to avoid it. Section 14.3 is explicit that truncation must
  * be a validation warning, never a silent trim, so the field warns and still
  * saves rather than quietly cutting an editor's words off.
@@ -32,7 +32,7 @@ final class SeoFields
     {
         return [
             Section::make('Search appearance')
-                ->description('How this page appears in Google. Character limits are what Google actually displays — over them, your text is cut off mid-sentence.')
+                ->description('How this page appears in Google. Character limits are what Google actually displays - over them, your text is cut off mid-sentence.')
                 ->schema([
                     TextInput::make('meta_title')
                         ->label('Meta title')
@@ -84,7 +84,7 @@ final class SeoFields
         $colour = $over ? '#b91c1c' : ($length > $budget * 0.9 ? '#b45309' : '#15803d');
 
         $message = $over
-            ? sprintf('%d / %d — Google will truncate this.', $length, $budget)
+            ? sprintf('%d / %d - Google will truncate this.', $length, $budget)
             : sprintf('%d / %d characters.', $length, $budget);
 
         return new HtmlString(
@@ -106,7 +106,7 @@ final class SeoFields
             '<div style="font-family:arial,sans-serif;max-width:600px;padding:12px;border:1px solid #dadce0;border-radius:8px;background:#fff">'
             .'<div style="color:#202124;font-size:12px">officelandng.com'.e($path).'</div>'
             .'<div style="color:#1a0dab;font-size:20px;line-height:1.3;margin:2px 0">'.e($title ?: 'Untitled').'</div>'
-            .'<div style="color:#4d5156;font-size:14px;line-height:1.58">'.e($description ?: 'No meta description set — Google will invent one from the page content.').'</div>'
+            .'<div style="color:#4d5156;font-size:14px;line-height:1.58">'.e($description ?: 'No meta description set - Google will invent one from the page content.').'</div>'
             .'</div>'
         );
     }

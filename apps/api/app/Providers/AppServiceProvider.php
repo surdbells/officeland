@@ -55,7 +55,7 @@ final class AppServiceProvider extends ServiceProvider
     {
         /*
          * Under D-009 a page that is not regenerated serves stale content
-         * indefinitely — there is no TTL to fall back on. Invalidation is
+         * indefinitely - there is no TTL to fall back on. Invalidation is
          * therefore bound to the model rather than to controllers, so that
          * Filament, the CSV importer, Icecat ingestion and tinker all
          * invalidate without each remembering to.
@@ -95,7 +95,7 @@ final class AppServiceProvider extends ServiceProvider
          * Until this existed the public API had no limit of any kind: the only
          * throttled surfaces were the admin panel and quote submission. Search
          * in particular runs FTS, then a trigram fallback, then facet
-         * aggregation — it was both the most expensive endpoint in the system
+         * aggregation - it was both the most expensive endpoint in the system
          * and completely open, which is the cheapest way to take the site down.
          *
          * See config/api.php for why the numbers differ per surface and why

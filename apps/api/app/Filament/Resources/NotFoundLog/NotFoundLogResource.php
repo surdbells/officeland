@@ -30,7 +30,7 @@ use UnitEnum;
  * repeatedly is one somebody still links to, and every one of those is link
  * equity arriving at a dead end. Sorting by hit count puts the most valuable
  * fixes at the top, and the action turns a finding into a redirect without
- * retyping the path — which is what makes the loop actually get used.
+ * retyping the path - which is what makes the loop actually get used.
  */
 final class NotFoundLogResource extends Resource
 {
@@ -62,7 +62,7 @@ final class NotFoundLogResource extends Resource
                 TextColumn::make('hits')->numeric()->sortable()
                     ->description('Requests'),
                 TextColumn::make('referrer')->limit(50)->toggleable()
-                    ->placeholder('— typed or unknown —'),
+                    ->placeholder('- typed or unknown -'),
                 TextColumn::make('last_seen_at')->label('Last seen')->dateTime('d M Y H:i')->sortable(),
             ])
             ->filters([
@@ -97,8 +97,8 @@ final class NotFoundLogResource extends Resource
                         Select::make('status_code')
                             ->label('Type')
                             ->options([
-                                301 => '301 — send visitors somewhere useful',
-                                410 => '410 — gone for good',
+                                301 => '301 - send visitors somewhere useful',
+                                410 => '410 - gone for good',
                             ])
                             ->default(301)
                             ->live()

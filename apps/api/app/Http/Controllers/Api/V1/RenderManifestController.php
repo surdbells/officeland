@@ -26,7 +26,7 @@ use Illuminate\Http\JsonResponse;
  * the tree is linked from the megamenu and from its parent's child list
  * (D-011), and every taxonomy category currently seeds with
  * `is_indexable = false` pending intro copy. An indexable-only manifest would
- * therefore render almost nothing while the header linked to all 124 of them —
+ * therefore render almost nothing while the header linked to all 124 of them -
  * failing the orphan gate and the crawl-depth gate at once, and turning an
  * editorial state ("no intro copy yet") into a broken link.
  *

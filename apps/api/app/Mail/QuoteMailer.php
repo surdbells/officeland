@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Log;
  *
  * ── The internal notification is never suppressed by a customer bounce ───
  * The two messages have different recipients and different consequences. If a
- * customer's address hard-bounced, sales must STILL be told the lead exists —
+ * customer's address hard-bounced, sales must STILL be told the lead exists -
  * they can phone. Dropping both would turn a bad email address into a lost
  * order, which is precisely backwards.
  */
@@ -96,7 +96,7 @@ final class QuoteMailer
         } catch (\Throwable $e) {
             /*
              * Queueing itself failing means Redis is unreachable, which is a
-             * different and more serious problem than a provider rejection —
+             * different and more serious problem than a provider rejection -
              * and one that will not retry, because nothing was enqueued.
              */
             $quote->events()->create([

@@ -66,8 +66,8 @@ final class QuoteSubmitter
                 'landing_page' => $attribution['landing_page'] ?? null,
                 /*
                  * The IP is HASHED, never stored raw. It exists for abuse
-                 * investigation — "did these fifty submissions come from one
-                 * place" — which a hash answers just as well, and NDPA
+                 * investigation - "did these fifty submissions come from one
+                 * place" - which a hash answers just as well, and NDPA
                  * compliance is easier to argue for a hash than for an address
                  * we had no need to keep.
                  */
@@ -114,7 +114,7 @@ final class QuoteSubmitter
             /*
              * A free-text line, or a line whose product has since been
              * deleted. The description IS the product name for a salesperson
-             * reading the email — leaving it blank would produce a quantity
+             * reading the email - leaving it blank would produce a quantity
              * with nothing attached to it.
              */
             $quoteItem['product_name_snapshot'] = (string) ($item->free_text_description ?? 'Unspecified item');

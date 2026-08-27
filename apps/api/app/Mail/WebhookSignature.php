@@ -12,7 +12,7 @@ namespace App\Mail;
  * Format  `ts=<milliseconds>;s=<base64 HMAC-SHA256>;s-algorithm=HmacSHA256`
  *
  * The HMAC is computed over the raw request body using the Authentication Key
- * configured in ZeptoMail — a DIFFERENT secret from the send token. Reusing
+ * configured in ZeptoMail - a DIFFERENT secret from the send token. Reusing
  * the send token here fails every verification, silently, and the symptom is
  * bounces that never reach the suppression list.
  *

@@ -17,7 +17,7 @@ use Illuminate\Console\Command;
  * reports counts rather than succeeding quietly.
  *
  * Run continuously by the render worker container, or on demand. Safe to run
- * concurrently with itself — RenderQueue::claim() pops atomically, so two
+ * concurrently with itself - RenderQueue::claim() pops atomically, so two
  * workers cannot claim the same route.
  */
 final class RenderQueuedRoutes extends Command
@@ -63,7 +63,7 @@ final class RenderQueuedRoutes extends Command
                  * turns one broken page into an infinite loop that starves
                  * every other route behind it.
                  */
-                $this->error("render failed: {$route} — {$reason}");
+                $this->error("render failed: {$route} - {$reason}");
             }
 
             $this->info("rendered {$result->rendered} route(s) in {$result->durationMs}ms");

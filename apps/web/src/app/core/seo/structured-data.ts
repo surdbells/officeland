@@ -5,7 +5,7 @@
  * a browser, which matters because the structured-data CI gate validates their
  * output against Schema.org.
  *
- * The legacy site emits a BreadcrumbList and nothing else — no Product, no
+ * The legacy site emits a BreadcrumbList and nothing else - no Product, no
  * Organization, no WebSite. Everything here is net new.
  */
 
@@ -84,7 +84,7 @@ export function webSiteSchema(): Record<string, unknown> {
 }
 
 /**
- * BreadcrumbList — required on every product, category, brand and article page
+ * BreadcrumbList - required on every product, category, brand and article page
  * (section 14.4), driven by primary_category_id.
  */
 export function breadcrumbSchema(entries: readonly BreadcrumbEntry[]): Record<string, unknown> {
@@ -214,7 +214,7 @@ export function itemListSchema(
  * One physical location that a customer can walk into.
  *
  * ── This is the map, and it is on Google rather than on us ───────────────
- * D-053 rules out a Maps iframe — several hundred KB of third-party
+ * D-053 rules out a Maps iframe - several hundred KB of third-party
  * JavaScript against a 130 KB budget, and the CSP has no `frame-src`. That
  * decision stands, and this is the thing worth doing instead: LocalBusiness
  * markup is what puts the business on Google's own map, in the knowledge
@@ -252,7 +252,7 @@ export function localBusinessSchema(location: LocationInput): Record<string, unk
     '@context': 'https://schema.org',
     '@type': 'FurnitureStore',
     '@id': `${ORIGIN}${location.url}#${location.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-    name: `OfficeLand — ${location.name}`,
+    name: `OfficeLand - ${location.name}`,
     // The specific type is deliberate. "LocalBusiness" is the generic
     // fallback; FurnitureStore is a recognised subtype and tells Google what
     // kind of result this is, which is what decides the local pack it appears

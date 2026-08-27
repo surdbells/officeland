@@ -28,7 +28,7 @@ export const routes: Routes = [
      * The shop page: the whole catalogue behind one set of filters, for
      * buyers who did not arrive through the taxonomy.
      *
-     * Prerendered as a shell and noindex, like /search — the listing depends
+     * Prerendered as a shell and noindex, like /search - the listing depends
      * on query parameters, which a static file cannot vary on, and every
      * filter combination would otherwise be another crawlable URL of the
      * same products (SEO_SPEC §10.3).
@@ -40,7 +40,7 @@ export const routes: Routes = [
    * Editorial pages (Phase 12c/12d/12e).
    *
    * These twelve were linked from the header and footer for months before
-   * they existed — 404s on all 194 pages, roughly one internal link in seven.
+   * they existed - 404s on all 194 pages, roughly one internal link in seven.
    * `npm run gate:links` now fails the build if that recurs.
    *
    * Grouped into four lazy chunks rather than twelve. They are static text,
@@ -149,7 +149,7 @@ export const routes: Routes = [
      * An explicit path so the 404 template PRERENDERS to a real file.
      * A wildcard route cannot: Angular has no parameter to render it under,
      * so the build emitted no 404 page at all and Caddy fell back to serving
-     * the homepage for every unknown URL — the home content under a 404
+     * the homepage for every unknown URL - the home content under a 404
      * status, which is neither a 404 page nor a useful one.
      */
     path: '404',

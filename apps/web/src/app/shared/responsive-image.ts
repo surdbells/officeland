@@ -22,7 +22,7 @@ import type { Image } from '../core/api/catalogue-api';
  * uses them to reserve space before any stylesheet has applied.
  *
  * ── priority ─────────────────────────────────────────────────────────────
- * The LCP element — the first PDP gallery image, or nothing at all on a grid —
+ * The LCP element - the first PDP gallery image, or nothing at all on a grid -
  * takes `fetchpriority="high"` and eager loading. Everything else is lazy.
  * Marking several images high priority is the same as marking none.
  */
@@ -63,7 +63,7 @@ import type { Image } from '../core/api/catalogue-api';
         than broken.
 
         Aspect ratio is held, so a catalogue part-way through ingestion does
-        not reflow as real images land — the reason this is a sized box and
+        not reflow as real images land - the reason this is a sized box and
         not a collapsed one.
 
         aria-hidden with no alt: there is nothing to describe. An empty alt
@@ -99,7 +99,7 @@ export class ResponsiveImage {
   /**
    * Defaults to the PLP grid, which is the overwhelmingly common case.
    * Without a `sizes` attribute the browser assumes 100vw and downloads the
-   * widest candidate for a card that renders at 400px — the single most
+   * widest candidate for a card that renders at 400px - the single most
    * common way a responsive image wastes bandwidth.
    */
   readonly sizes = input<string>('(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw');

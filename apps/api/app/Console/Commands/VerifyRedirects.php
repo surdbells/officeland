@@ -16,7 +16,7 @@ use Throwable;
  * The redirects live in a table, are generated into a Caddy snippet, and are
  * served by the edge. Checking the table proves the data; checking the file
  * proves the generator. **Neither proves a browser gets a 301**, and the whole
- * of D-007 — the argument for keeping 5,063 legacy URLs' organic equity —
+ * of D-007 - the argument for keeping 5,063 legacy URLs' organic equity -
  * rests on what a crawler actually receives.
  *
  * Every failure this catches has been real at some point in this project: a
@@ -83,7 +83,7 @@ final class VerifyRedirects extends Command
         $this->newLine(2);
 
         if ($failures === []) {
-            $this->info("PASSED — {$checked} redirect(s), correct status and destination, no chains, no loops.");
+            $this->info("PASSED - {$checked} redirect(s), correct status and destination, no chains, no loops.");
 
             return self::SUCCESS;
         }
@@ -96,7 +96,7 @@ final class VerifyRedirects extends Command
             $this->warn(sprintf('…and %d more.', count($failures) - (int) $this->option('show')));
         }
 
-        $this->error(sprintf('FAILED — %d of %d redirect(s) are wrong.', count($failures), $checked));
+        $this->error(sprintf('FAILED - %d of %d redirect(s) are wrong.', count($failures), $checked));
 
         return self::FAILURE;
     }
@@ -113,7 +113,7 @@ final class VerifyRedirects extends Command
             // 301, or a two-hop chain.
             $response = Http::withoutRedirecting()->timeout(15)->get($base.$from);
         } catch (Throwable $e) {
-            return "{$from}: request failed — {$e->getMessage()}";
+            return "{$from}: request failed - {$e->getMessage()}";
         }
 
         $status = $response->status();
@@ -148,7 +148,7 @@ final class VerifyRedirects extends Command
         /*
          * A chain: the destination is itself a redirect. Checked against the
          * table rather than by making a second request, because the table is
-         * where it gets fixed — and because at 5,000 rows a second round trip
+         * where it gets fixed - and because at 5,000 rows a second round trip
          * each would double an already slow gate.
          */
         if (isset($byPath[$actual])) {

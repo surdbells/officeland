@@ -24,7 +24,7 @@ use Illuminate\Queue\SerializesModels;
  *
  * ── Why this is queued ───────────────────────────────────────────────────
  * §10c: never inline in a web request. A provider timeout would otherwise make
- * the buyer wait, and a provider outage would fail the submission itself —
+ * the buyer wait, and a provider outage would fail the submission itself -
  * losing a lead we had already captured. The quote is committed first and the
  * email follows.
  *
