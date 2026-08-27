@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Media\DerivativeGenerator;
 use App\Media\MediaIngestor;
 use App\Models\Category;
 use App\Models\Media;
@@ -47,9 +48,11 @@ final class ImportMedia extends Command
 
     protected $description = 'Import images from a directory into the media library';
 
+    private DerivativeGenerator $generator;
+
     private const EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'avif'];
 
-    public function handle(MediaIngestor $ingestor): int
+    public function handle(MediaIngestor $ingestor, DerivativeGenerator $generator): int
     {
         $path = (string) ($this->option('path') ?? '') ?: '/docs/images';
 
@@ -60,7 +63,9 @@ final class ImportMedia extends Command
             return self::FAILURE;
         }
 
-        $apply = (bool) $this->option('apply');
+        $this->generator = $generator;
+
+        $apply = (bool) $this->option("apply");
         $attach = (bool) $this->option('attach-categories');
 
         $imported = 0;
@@ -91,6 +96,23 @@ final class ImportMedia extends Command
             }
 
             $imported++;
+
+            /*
+             * Generate the derivatives, synchronously.
+             *
+             * Ingestion stores the ORIGINAL and nothing else. Every rendered
+             * <picture> is built from rows in media_derivatives — a srcset
+             * only ever advertises derivatives that exist (Phase 4) — so an
+             * imported original with none is an image the storefront cannot
+             * show. The first run of this command imported and attached a
+             * category hero that rendered as nothing at all, because the
+             * generation is a queued job and the caller never dispatched it.
+             *
+             * Run here rather than queued: this is a one-shot command, and
+             * dispatching to a queue nobody is working leaves the same
+             * invisible image with an extra step in between.
+             */
+            $this->generator->generate($media);
 
             if ($attach && $this->attachToCategory($file, $media)) {
                 $attached++;

@@ -1,3 +1,2 @@
-*
-!README.md
-!.gitignore
+# Keep the sources so `media:import` can be re-run on any machine,
+# including the server. See SOURCES.md for licence and attribution.
