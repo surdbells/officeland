@@ -51,6 +51,32 @@ final class CategoryResource extends JsonResource
             'children' => CategoryResource::collection($this->whenLoaded('children')),
 
             /*
+             * The nearest ancestor's hero, for a category without one.
+             *
+             * 161 of 170 categories have no photograph and will not have one
+             * until somebody shoots them. A page with a hero band above it
+             * and nothing in the band looks broken; a page carrying its
+             * department's photograph looks like a department page, which is
+             * what it is. Category imagery is editorial rather than a
+             * depiction of one product, so a Seating page showing the office
+             * furniture photograph is accurate, not a substitute.
+             *
+             * Deliberately NOT folded into `hero`. Chips and child cards read
+             * `hero`, and if that inherited, every one of five sibling leaves
+             * would show the same picture — which is worse than the distinct
+             * per-category icons they show now. Inheritance is right for one
+             * large hero and wrong for a row of thumbnails, so the storefront
+             * gets both and picks per surface.
+             *
+             * Only on the show route: it costs an ancestor query, and the
+             * megamenu asking for 170 nodes must not pay it.
+             */
+            'hero_inherited' => $this->when(
+                $request->routeIs('api.categories.show') && $this->hero_media_id === null,
+                fn (): ?ImageResource => $this->inheritedHero(),
+            ),
+
+            /*
              * Siblings, and only for a category with no children of its own.
              *
              * A leaf page has nothing to show in the "browse deeper" row that
@@ -81,6 +107,36 @@ final class CategoryResource extends JsonResource
                 'is_indexable' => $this->is_indexable,
             ],
         ];
+    }
+
+    /**
+     * The closest ancestor that has a hero image.
+     *
+     * Walks from the nearest parent outward, so a leaf under a subcategory
+     * with its own photograph gets that one rather than the department's.
+     * Today every hit is the department, because only departments have
+     * images; the walk is what makes adding a subcategory photograph improve
+     * its whole subtree without touching anything else.
+     *
+     * `ancestors()` is one indexed query against the materialized path, not a
+     * recursive climb.
+     */
+    private function inheritedHero(): ?ImageResource
+    {
+        $ancestors = $this->ancestors()->reverse();
+
+        foreach ($ancestors as $ancestor) {
+            /** @var Category $ancestor */
+            if ($ancestor->hero_media_id === null) {
+                continue;
+            }
+
+            $ancestor->load('heroMedia.derivatives');
+
+            return $ancestor->heroMedia === null ? null : new ImageResource($ancestor->heroMedia);
+        }
+
+        return null;
     }
 
     /**

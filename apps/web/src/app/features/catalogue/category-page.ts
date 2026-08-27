@@ -5,6 +5,7 @@ import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
 import {
   CatalogueApi,
   type Category,
+  type Image,
   type ProductCard as ProductCardData,
 } from '../../core/api/catalogue-api';
 import { SeoService } from '../../core/seo/seo.service';
@@ -72,15 +73,15 @@ import { ProductCard } from '../../shared/product-card';
           page that has one, and the whole point of setting width and height
           on it is that arriving late must not move the grid below.
         -->
-        <div [class]="cat.hero ? 'mt-4 gap-8 lg:grid lg:grid-cols-[1fr_22rem] lg:items-start' : 'mt-4'">
+        <div [class]="heroFor(cat) ? 'mt-4 gap-8 lg:grid lg:grid-cols-[1fr_22rem] lg:items-start' : 'mt-4'">
           <div>
             <h1 class="font-heading text-3xl font-bold sm:text-4xl">{{ cat.name }}</h1>
           </div>
 
-          @if (cat.hero) {
+          @if (heroFor(cat); as hero) {
             <div class="mt-4 overflow-hidden rounded-2xl bg-ink-50 lg:mt-0">
               <ol-image
-                [image]="cat.hero"
+                [image]="hero"
                 [priority]="true"
                 sizes="(min-width: 1024px) 22rem, 100vw"
                 imgClass="h-full w-full object-cover"
@@ -152,8 +153,21 @@ import { ProductCard } from '../../shared/product-card';
             it is more useful than one that makes you click a subcategory to
             find out.
           -->
-          <nav aria-label="Subcategories" class="mt-8">
-            <h2 class="font-heading text-sm font-semibold uppercase tracking-wide">Browse by category</h2>
+          <!--
+            Labelled by its own visible heading rather than an aria-label.
+
+            Both this and the chip row above are nav landmarks about
+            categories, and both were named "Subcategories" - two landmarks
+            with one accessible name, which axe rates a violation on 120
+            pages because landmark navigation then offers the same
+            destination twice with no way to tell them apart.
+
+            Pointing at the h2 also ties the landmark to text a sighted user
+            can see, which is the better habit: the name cannot drift away
+            from the heading because it IS the heading.
+          -->
+          <nav aria-labelledby="category-index-heading" class="mt-8">
+            <h2 id="category-index-heading" class="font-heading text-sm font-semibold uppercase tracking-wide">Browse by category</h2>
             <ul class="mt-3 grid gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
               @for (child of cat.children; track child.slug) {
                 <li class="rounded-xl border border-ink-100 px-4 py-3">
@@ -244,6 +258,22 @@ import { ProductCard } from '../../shared/product-card';
   `,
 })
 export class CategoryPage {
+
+  /**
+   * The image this page shows: its own, or its nearest ancestor's.
+   *
+   * 161 of 170 categories have no photograph. A hero band with nothing in
+   * it looks broken; a subcategory carrying its department's photograph
+   * looks like what it is. Category imagery is editorial rather than a
+   * depiction of one product, so the inherited one is accurate.
+   *
+   * The chips deliberately do NOT do this. They read `hero` alone, so five
+   * sibling leaves show five distinct icons rather than the same photograph
+   * five times.
+   */
+  protected heroFor(category: Category): Image | null {
+    return category.hero ?? category.hero_inherited ?? null;
+  }
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(CatalogueApi);
   private readonly seo = inject(SeoService);
@@ -414,7 +444,7 @@ export class CategoryPage {
       // og:image from the hero when there is one. The `og` derivative is a
       // 1200x630 crop made for exactly this; `src` is the page variant and
       // would be cropped badly by every social card renderer.
-      image: cat.hero?.src ?? undefined,
+      image: (cat.hero ?? cat.hero_inherited)?.src ?? undefined,
       path: paged ? `${cat.url}page/${page}/` : cat.url,
       indexable: filtered ? false : cat.seo?.is_indexable !== false,
       canonicalOverride: cat.seo?.canonical_override ?? null,

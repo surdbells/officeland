@@ -10,11 +10,30 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, of } from 'rxjs';
-import { CatalogueApi } from '../../core/api/catalogue-api';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
+import { CatalogueApi, type ProductCard as ProductCardData } from '../../core/api/catalogue-api';
 import { Icon, type IconName } from '../../shared/icon';
 import { SeoService } from '../../core/seo/seo.service';
+import { EMPTY_LISTING } from '../../shared/listing-state';
+import { DepartmentShowcase, type ShowcaseStyle } from './department-showcase';
+
+/** One homepage section: a department, its products, and the shape it takes. */
+interface ShowcaseSection {
+  readonly name: string;
+  readonly slug: string;
+  readonly url: string;
+  readonly products: readonly ProductCardData[];
+  readonly style: ShowcaseStyle;
+}
+
+/**
+ * Cycled across the departments so no two adjacent sections look alike.
+ *
+ * Three is enough to break the rhythm without the page feeling like a
+ * catalogue of layouts.
+ */
+const SHOWCASE_STYLES: readonly ShowcaseStyle[] = ['grid', 'feature', 'rail'];
 
 /**
  * Homepage (§23.4, and docs/HOMEPAGE_BRIEF.md).
@@ -40,7 +59,7 @@ import { SeoService } from '../../core/seo/seo.service';
   selector: 'ol-home-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon],
+  imports: [RouterLink, Icon, DepartmentShowcase],
   template: `
     <!--
       Hero: 65 / 35 on desktop, stacking below 1024px.
@@ -253,6 +272,27 @@ import { SeoService } from '../../core/seo/seo.service';
           </div>
         </div>
       </section>
+    }
+
+    <!--
+      A product section per department, each in one of three shapes.
+
+      This is what turns the homepage from a set of signposts into something
+      with the catalogue actually on it. It is also the largest internal
+      linking surface the page has: nine departments, up to eight products
+      each, all real anchors in the prerendered HTML.
+
+      Sections with no products render nothing rather than an empty heading,
+      so a department mid-import is simply absent instead of looking broken.
+    -->
+    @for (section of sections(); track section.slug) {
+      <ol-department-showcase
+        [name]="section.name"
+        [slug]="section.slug"
+        [url]="section.url"
+        [products]="section.products"
+        [style]="section.style"
+      />
     }
 
     <!--
@@ -481,6 +521,63 @@ export class HomePage {
   );
 
   protected readonly departments = computed(() => this.navigation()?.departments ?? []);
+
+  /**
+   * Products for each department's homepage section.
+   *
+   * ── Nine requests, all at build time ─────────────────────────────────
+   * This page is prerendered (D-009), so these run once during the build
+   * against a local API and never on a visitor's request. TransferState
+   * carries the results into hydration, so the browser does not repeat
+   * them — which the duplicate-hydration-request gate would otherwise
+   * fail.
+   *
+   * A dedicated /home/showcase endpoint would be one round trip instead of
+   * nine. It would also be a second place that decides what a homepage
+   * section contains, and the listing endpoint already answers exactly this
+   * question with the same envelope, the same subtree resolution and the
+   * same card shape. Nine build-time requests is the cheaper trade.
+   *
+   * `switchMap` on the navigation signal rather than a fixed list: the
+   * departments come from the taxonomy, so adding one gives it a homepage
+   * section without touching this file.
+   */
+  private readonly showcases = toSignal(
+    toObservable(this.departments).pipe(
+      switchMap((departments) => {
+        if (departments.length === 0) {
+          return of([] as ShowcaseSection[]);
+        }
+
+        return forkJoin(
+          departments.map((department, index) =>
+            this.api
+              .categoryProducts(department.url.replace(/^\/c/, ''), { perPage: 8 })
+              .pipe(
+                // One department failing must not empty the homepage. It
+                // yields no section; the other eight still render.
+                catchError(() => of(EMPTY_LISTING)),
+                map((listing): ShowcaseSection => ({
+                  name: department.name,
+                  slug: department.slug,
+                  url: department.url,
+                  products: listing.data,
+                  // Cycled, not random: random re-rolls every build, so the
+                  // homepage would change shape for no reason and no
+                  // screenshot would be reproducible.
+                  style: SHOWCASE_STYLES[index % SHOWCASE_STYLES.length],
+                })),
+              ),
+          ),
+        );
+      }),
+    ),
+    { initialValue: [] as ShowcaseSection[] },
+  );
+
+  protected readonly sections = computed(() =>
+    this.showcases().filter((section) => section.products.length > 0),
+  );
 
   /**
    * WPC's material properties.

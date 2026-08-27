@@ -228,6 +228,11 @@ components:
             - 'null'
         product_count:
           type: integer
+        hero_inherited:
+          description: 'The nearest ancestor category''s hero, returned only when this category has none of its own. Used for the page hero so every category page carries an image; NOT used for chips or child cards, where inheriting would show one photograph five times.'
+          oneOf:
+            - $ref: '#/components/schemas/Image'
+            - type: 'null'
         siblings:
           description: 'Categories alongside this one, returned only when it has no children of its own. Drives the chip row on a leaf page.'
           type: array
