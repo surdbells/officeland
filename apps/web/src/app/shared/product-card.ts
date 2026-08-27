@@ -66,30 +66,49 @@ import { ResponsiveImage } from './responsive-image';
       }
 
       <!--
-        Brand under the name, as a link. Above the stretched ::after so it
+        Brand, product code and availability as three chips on one line.
+
+        They are the three things a buyer checks before adding a line to a
+        requisition: who makes it, which one it is, and whether they can get
+        it. Grouping them as chips puts all three in one glance instead of
+        three stacked paragraphs, and gives the card a fixed-height band
+        under the title regardless of how long the name is.
+
+        The row wraps rather than truncating: on a narrow card a long brand
+        and a long code will not fit, and a chip cut in half is worse than a
+        chip on the next line.
+
+        The brand chip is a link and sits above the stretched ::after so it
         stays clickable inside a card that is otherwise one big target.
       -->
-      @if (product().brand; as brand) {
-        <p class="relative z-10 mt-1 text-xs text-ink-600">
-          <a [routerLink]="brand.url" class="hover:text-brand-600">{{ brand.name }}</a>
-        </p>
-      }
+      <div class="mt-2 flex flex-wrap items-center gap-1.5">
+        @if (product().brand; as brand) {
+          <a
+            [routerLink]="brand.url"
+            class="relative z-10 inline-block rounded border border-ink-200 px-2 py-0.5 text-[0.6875rem] font-medium text-ink-700 hover:border-brand-600 hover:text-brand-600"
+          >{{ brand.name }}</a>
+        }
 
-      <!--
-        The product code as a chip.
-
-        It is the field a B2B buyer matches against a requisition line, and
-        on a grid of near-identical chairs it is often the only thing that
-        distinguishes two cards. A bordered pill rather than grey text
-        because it is an identifier to be read and copied, not a caption.
-      -->
-      @if (modelCode(); as code) {
-        <p class="mt-2">
+        @if (modelCode(); as code) {
           <span class="inline-block rounded border border-ink-200 px-2 py-0.5 font-mono text-[0.6875rem] tracking-tight text-ink-600">
             {{ code }}
           </span>
-        </p>
-      }
+        }
+
+        <!--
+          Availability is tinted, the other two are not. It is the only one
+          of the three that carries a judgement rather than a fact, and a
+          buyer scanning a grid for what they can have this week should be
+          able to find it without reading. Colour is not the only signal —
+          the text says which it is.
+        -->
+        <span
+          class="inline-block rounded border px-2 py-0.5 text-[0.6875rem] font-medium"
+          [class]="inStock()
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+            : 'border-amber-200 bg-amber-50 text-amber-800'"
+        >{{ availabilityLabel() }}</span>
+      </div>
 
       @if (product().key_specs?.length) {
         <ul class="mt-3 space-y-1 text-xs text-ink-600">
@@ -108,16 +127,14 @@ import { ResponsiveImage } from './responsive-image';
         names wrap to different heights.
       -->
       <div class="mt-auto pt-3">
-        <p class="text-xs font-medium">{{ availabilityLabel() }}</p>
-
         @if (minimumLabel(); as minimum) {
-          <p class="mt-1 text-xs text-ink-400">{{ minimum }}</p>
+          <p class="mb-2 text-xs text-ink-400">{{ minimum }}</p>
         }
 
         <!-- Above the stretched ::after so the button is reachable. -->
         <button
           type="button"
-          class="relative z-10 mt-3 w-full rounded-lg bg-brand-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
+          class="relative z-10 w-full rounded-lg bg-brand-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
           (click)="addToQuote.emit(product())"
         >
           Add to quote
@@ -148,6 +165,18 @@ export class ProductCard {
     return p.model_code ?? p.mpn ?? p.sku ?? null;
   });
 
+
+  /**
+   * Whether the availability chip is green or amber.
+   *
+   * Only in_stock earns green. "Made to order" is a legitimate answer for a
+   * supplier who fabricates to a measure, but tinting it as available tells
+   * a buyer with a deadline the opposite of what they need to know.
+   *
+   * The chip's text says which state it is, so colour is reinforcement
+   * rather than the only signal.
+   */
+  protected readonly inStock = computed(() => this.product().availability === 'in_stock');
   /** Mirrors the PDP so a product does not describe itself two ways. */
   protected readonly availabilityLabel = computed(() => {
     const p = this.product();

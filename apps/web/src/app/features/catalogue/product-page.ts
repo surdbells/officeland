@@ -199,15 +199,28 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
               everything is the table it was meant to summarise.
             -->
             @if (keySpecs().length) {
-              <dl class="mt-6 rounded-2xl border border-ink-100 p-6 text-sm">
+              <!--
+                The heading sits OUTSIDE the <dl>.
+
+                A <dl> may only directly contain dt/dd groups wrapped in
+                div, plus script and template. A <p> in there is invalid,
+                and axe rates it SERIOUS because assistive technology walks
+                a definition list by its term/description pairing — a stray
+                child breaks that traversal rather than just looking odd.
+                Caught by the gate on 1,200 product pages.
+              -->
+              <div class="mt-6 rounded-2xl border border-ink-100 p-6 text-sm">
                 <p class="font-heading font-semibold text-ink-900">At a glance</p>
-                @for (spec of keySpecs(); track spec.label) {
-                  <div class="mt-3 flex justify-between gap-4 border-t border-ink-50 pt-3">
-                    <dt class="text-ink-600">{{ spec.label }}</dt>
-                    <dd class="text-right font-medium text-ink-900">{{ spec.value }}</dd>
-                  </div>
-                }
-              </dl>
+
+                <dl>
+                  @for (spec of keySpecs(); track spec.label) {
+                    <div class="mt-3 flex justify-between gap-4 border-t border-ink-50 pt-3">
+                      <dt class="text-ink-600">{{ spec.label }}</dt>
+                      <dd class="text-right font-medium text-ink-900">{{ spec.value }}</dd>
+                    </div>
+                  }
+                </dl>
+              </div>
             }
           </div>
         </div>
