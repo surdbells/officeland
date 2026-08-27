@@ -10,6 +10,7 @@ import {
 import { ProductGallery } from '../../shared/product-gallery';
 import { SpecAccordion } from '../../shared/spec-accordion';
 import { ProductCard } from '../../shared/product-card';
+import { Icon } from '../../shared/icon';
 import { SeoService } from '../../core/seo/seo.service';
 import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data';
 
@@ -30,7 +31,7 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
   selector: 'ol-product-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ProductGallery, SpecAccordion, ProductCard],
+  imports: [RouterLink, ProductGallery, SpecAccordion, ProductCard, Icon],
   template: `
     @if (product(); as p) {
       <article class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8">
@@ -76,32 +77,137 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
             <ol-product-gallery [images]="p.images ?? []" />
           </div>
 
-          <div>
-            <p class="text-sm font-medium">{{ availabilityLabel() }}</p>
+          <!--
+            The buy box.
 
-            <!-- D-002: no prices anywhere. pricing_mode drives this from data,
-                 so enabling posture C later is a data change, not a code one. -->
-            @if (p.pricing_mode === 'quote_only') {
-              <p class="mt-4 font-heading text-xl font-semibold">Request a quote for pricing</p>
-              <p class="mt-1 text-sm text-ink-600">
-                We respond within one business day. Volume pricing available.
+            Sticky above lg, because the gallery is tall and a buyer
+            comparing images against specifications should never have to
+            scroll back up to act. "top" clears the sticky site header.
+
+            Everything a B2B buyer needs before raising a requisition, in the
+            order they need it: what it is, whether you can get it, when, in
+            what quantity, and who they are dealing with.
+          -->
+          <div class="lg:sticky lg:top-28 lg:self-start">
+            <div class="rounded-2xl border border-ink-100 p-6 shadow-xs">
+              <p class="flex items-center gap-2 text-sm font-medium">
+                <span
+                  class="inline-block h-2 w-2 rounded-full"
+                  [class]="inStock() ? 'bg-emerald-500' : 'bg-amber-500'"
+                  aria-hidden="true"
+                ></span>
+                {{ availabilityLabel() }}
               </p>
-            }
 
-            <div class="mt-6 flex flex-wrap gap-3">
-              <button type="button" class="rounded-lg bg-brand-600 px-6 py-3 font-semibold text-white hover:bg-brand-700">
-                Add to quote
-              </button>
-              <a href="https://wa.me/2347074723165" rel="noopener"
-                 class="rounded-lg border border-ink-200 px-6 py-3 font-semibold hover:border-brand-600">
+              <!-- D-002: no prices anywhere. pricing_mode drives this from data,
+                   so enabling posture C later is a data change, not a code one. -->
+              @if (p.pricing_mode === 'quote_only') {
+                <p class="mt-4 font-heading text-xl font-semibold">Request a quote for pricing</p>
+                <p class="mt-1 text-sm text-ink-600">
+                  We respond within one business day. Volume pricing available.
+                </p>
+              }
+
+              <!--
+                Quantity, because this is a trade counter rather than a shop.
+
+                A facilities manager ordering forty chairs should say forty
+                here rather than in a free-text note, and min_order_qty and
+                qty_step are already on the product for exactly this. Stepped
+                to the product's own multiple so an invalid quantity cannot
+                be entered rather than being rejected later.
+              -->
+              <div class="mt-6 flex flex-wrap items-end gap-3">
+                <div>
+                  <label for="quote-qty" class="block text-sm font-medium">Quantity</label>
+                  <input
+                    id="quote-qty"
+                    type="number"
+                    class="mt-1 w-24 rounded-lg border border-ink-200 px-3 py-2.5"
+                    [min]="p.min_order_qty ?? 1"
+                    [step]="p.qty_step ?? 1"
+                    [value]="p.min_order_qty ?? 1"
+                    #qty
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  class="flex-1 rounded-lg bg-brand-600 px-6 py-3 font-semibold text-white hover:bg-brand-700"
+                >
+                  Add to quote
+                </button>
+              </div>
+
+              @if (showQuantityRules()) {
+                <p class="mt-3 text-sm text-ink-600">
+                  Minimum order {{ p.min_order_qty }}, sold in multiples of {{ p.qty_step }}.
+                </p>
+              }
+
+              <a
+                href="https://wa.me/2347074723165"
+                rel="noopener"
+                class="mt-3 flex items-center justify-center gap-2 rounded-lg border border-ink-200 px-6 py-3 font-semibold hover:border-brand-600"
+              >
+                <ol-icon name="message-circle" [size]="18" class="text-brand-600" />
                 Ask on WhatsApp
               </a>
+
+              <!--
+                The assurances a procurement officer checks before raising an
+                order, on the page rather than three clicks away. Every line
+                is a fact this business can stand behind; none of it is a
+                claim invented for the layout.
+              -->
+              <ul class="mt-6 space-y-3 border-t border-ink-100 pt-5 text-sm text-ink-600">
+                <li class="flex items-start gap-2.5">
+                  <ol-icon name="truck" [size]="18" class="mt-0.5 shrink-0 text-brand-600" />
+                  <span>
+                    Nationwide delivery, installed in Lagos.
+                    <a routerLink="/delivery/" class="text-brand-600 hover:underline">Lead times</a>
+                  </span>
+                </li>
+                <li class="flex items-start gap-2.5">
+                  <ol-icon name="shield-check" [size]="18" class="mt-0.5 shrink-0 text-brand-600" />
+                  <span>
+                    Manufacturer warranty, claims handled by us.
+                    <a routerLink="/warranty/" class="text-brand-600 hover:underline">How it works</a>
+                  </span>
+                </li>
+                <li class="flex items-start gap-2.5">
+                  <ol-icon name="badge-check" [size]="18" class="mt-0.5 shrink-0 text-brand-600" />
+                  <span>Authorised reseller, certified by the Standards Organisation of Nigeria.</span>
+                </li>
+                <li class="flex items-start gap-2.5">
+                  <ol-icon name="file-text" [size]="18" class="mt-0.5 shrink-0 text-brand-600" />
+                  <span>
+                    Buying in volume?
+                    <a routerLink="/bulk-supply/" class="text-brand-600 hover:underline">Send the schedule</a>
+                    and we price the whole list.
+                  </span>
+                </li>
+              </ul>
             </div>
 
-            @if (showQuantityRules()) {
-              <p class="mt-3 text-sm text-ink-600">
-                Minimum order {{ p.min_order_qty }}, sold in multiples of {{ p.qty_step }}.
-              </p>
+            <!--
+              Key specifications, above the fold and beside the gallery.
+
+              A spec accordion further down the page is where somebody
+              confirms a detail; this is where they decide whether to keep
+              reading. Four is the limit on purpose — a summary that lists
+              everything is the table it was meant to summarise.
+            -->
+            @if (keySpecs().length) {
+              <dl class="mt-6 rounded-2xl border border-ink-100 p-6 text-sm">
+                <p class="font-heading font-semibold text-ink-900">At a glance</p>
+                @for (spec of keySpecs(); track spec.label) {
+                  <div class="mt-3 flex justify-between gap-4 border-t border-ink-50 pt-3">
+                    <dt class="text-ink-600">{{ spec.label }}</dt>
+                    <dd class="text-right font-medium text-ink-900">{{ spec.value }}</dd>
+                  </div>
+                }
+              </dl>
             }
           </div>
         </div>
@@ -199,6 +305,36 @@ export class ProductPage {
   protected readonly showQuantityRules = computed(() => {
     const p = this.product();
     return !!p && ((p.min_order_qty ?? 1) > 1 || (p.qty_step ?? 1) > 1);
+  });
+
+  /**
+   * Whether the dot beside the availability line is green or amber.
+   *
+   * Only in_stock earns green. "Made to order" and "lead time" are real
+   * answers rather than problems, but colouring them as available would
+   * tell a buyer with a deadline the opposite of what they need to know.
+   */
+  protected readonly inStock = computed(() => this.product()?.availability === 'in_stock');
+
+  /**
+   * The first few specifications, for the summary beside the gallery.
+   *
+   * Taken from the same grouped payload the accordion renders, so the
+   * summary can never disagree with the table below it — the failure mode
+   * of a hand-picked "key specs" list is that it goes stale against the
+   * real data and nobody notices.
+   *
+   * Four, because a summary that lists everything is the table it was
+   * meant to summarise.
+   */
+  protected readonly keySpecs = computed<ReadonlyArray<{ label: string; value: string }>>(() => {
+    const groups = this.product()?.specifications ?? [];
+
+    return groups
+      .flatMap((group) => group.items ?? [])
+      .slice(0, 4)
+      .map((row) => ({ label: String(row.label ?? ''), value: String(row.value ?? '') }))
+      .filter((row) => row.label !== '' && row.value !== '');
   });
 
   /**

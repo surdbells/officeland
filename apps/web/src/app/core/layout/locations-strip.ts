@@ -39,7 +39,7 @@ import { Icon } from '../../shared/icon';
       <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-14">
         <div class="flex flex-wrap items-baseline justify-between gap-4">
           <h2 id="locations-heading" class="font-heading text-display-sm font-semibold">
-            Come and see it first
+            See it before you buy
           </h2>
           <a
             routerLink="/locations/"
@@ -52,12 +52,41 @@ import { Icon } from '../../shared/icon';
 
         <ul class="mt-8 grid gap-6 md:grid-cols-3">
           @for (location of locations; track location.name) {
-            <li class="rounded-2xl border border-ink-100 p-6 shadow-xs transition-shadow hover:shadow-md">
-              <span class="inline-flex rounded-xl bg-brand-50 p-2.5 text-brand-600">
-                <ol-icon [name]="location.icon" [size]="22" />
-              </span>
+            <li class="overflow-hidden rounded-2xl border border-ink-100 shadow-xs transition-shadow hover:shadow-md">
+              <!--
+                A photograph where there is one, the icon where there is not.
 
-              <h3 class="mt-4 font-heading text-lg font-semibold">{{ location.name }}</h3>
+                The photographs are the missing half: a supplier telling you
+                to come and look at the furniture, without showing you the
+                place, is asking for a trip on trust. The field is here and
+                the layout is here; the files are not, and drawing a fake
+                storefront would be worse than the icon.
+
+                Served from public/images/locations/ rather than the media
+                pipeline: these are three fixed brand assets that never
+                change per environment, not catalogue content somebody
+                uploads, so a content-addressed store buys nothing.
+              -->
+              @if (location.photo) {
+                <img
+                  [src]="location.photo"
+                  [alt]="location.alt"
+                  width="640"
+                  height="360"
+                  loading="lazy"
+                  decoding="async"
+                  class="aspect-[16/9] w-full object-cover"
+                />
+              }
+
+              <div class="p-6">
+                @if (!location.photo) {
+                  <span class="inline-flex rounded-xl bg-brand-50 p-2.5 text-brand-600">
+                    <ol-icon [name]="location.icon" [size]="22" />
+                  </span>
+                }
+
+                <h3 [class]="location.photo ? 'font-heading text-lg font-semibold' : 'mt-4 font-heading text-lg font-semibold'">{{ location.name }}</h3>
 
               <address class="mt-2 text-sm not-italic leading-relaxed text-ink-600">
                 {{ location.address }}
@@ -78,6 +107,7 @@ import { Icon } from '../../shared/icon';
                   Registered office
                 </p>
               }
+              </div>
             </li>
           }
         </ul>
@@ -98,6 +128,8 @@ export class LocationsStrip {
   protected readonly locations = [
     {
       name: 'Head Office',
+      photo: null as string | null,
+      alt: 'The OfficeLand head office at Century 21 Mall, Victoria Island',
       icon: 'building-2' as const,
       address: 'Century 21 Mall, 14B Idowu Martins Street, Victoria Island, Lagos',
       directions:
@@ -105,6 +137,8 @@ export class LocationsStrip {
     },
     {
       name: 'Furniture Showroom',
+      photo: null as string | null,
+      alt: 'The OfficeLand furniture showroom on Idowu Martins Street',
       icon: 'store' as const,
       address: 'No 18, Idowu Martins Street, Victoria Island, Lagos State',
       directions:
@@ -113,10 +147,12 @@ export class LocationsStrip {
     {
       // No directions link, on purpose - see the class comment on Q14.
       name: 'Dubai Office',
+      photo: null as string | null,
+      alt: 'Platinum Tower, Jumeirah Lakes Towers, Dubai',
       icon: 'building-2' as const,
       address:
         'Office Land Solutions DMCC, Unit 808-001 Platinum Tower, Plot JLT-PH1-12, Jumeirah Lakes Towers, Dubai, UAE',
       directions: null,
     },
-  ] as const;
+  ];
 }
