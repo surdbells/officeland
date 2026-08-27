@@ -12,6 +12,24 @@ from outside — a file, a credential, a decision. Everything else is work.
 
 Last updated: 2026-08-23.
 
+
+---
+
+## 0. Landed since the last snapshot
+
+- **Catalogue populated.** `DemoCatalogueSeeder` creates 1,190 products —
+  10 per leaf category, 119 leaves, 23 brands — so every department, listing,
+  facet and brand row has realistic volume. **Every product is invented and
+  every one is `noindex`.** See §6.
+- **Megamenu brands now match the department**, derived from what each
+  department actually stocks rather than one global featured list.
+- Search bar fills the header row.
+- Department rail is a carousel with no scrollbar.
+- Category images, title tags and meta descriptions wired end to end;
+  46 categories have written titles and descriptions.
+- Twelve missing pages built, plus a link gate so dead internal links fail
+  the build.
+- Deployment procedure for Debian 13 + aaPanel.
 ---
 
 ## 1. Blocked on assets or decisions
@@ -39,34 +57,28 @@ These are not estimates. Each one is stopped on something specific.
 
 In the order asked.
 
-- [ ] **Design tokens: premium feel**, referencing
-      `essentials.pixfort.com/store-elementor`. Asked twice. The ramp, display
-      type, shadows, radii and easings were reworked once already, so a second
-      pass needs to know what specifically still reads as cheap — spacing,
-      type scale, colour, density, or the absence of imagery. Probably the
-      last, which makes it partly blocked on §1.
-- [ ] **Secondary colour `#004f9a`.** Not yet in the token ramp. Needs a
-      contrast check against every surface it will land on before it ships.
-- [ ] **Walmart-style promo band on the homepage** — headline, "Shop now",
-      three product tiles, carousel arrows. Buildable now; the tiles want
-      product imagery to be worth much.
+- [ ] **Brand logos in the megamenu** — the row renders a logo the moment one
+      exists; 23 brands, none with a file. Needs `--attach-brands` (§3) and
+      the files.
 - [ ] **Subcategory circles above the listing**, per the pixfort reference:
-      a row of round category thumbnails between the breadcrumb and the grid
-      on a category page. Buildable now, tinted until images exist.
-- [ ] **Multiple display layouts** on listings — the 2/3/4-column and list
-      toggles in the reference. URL-driven so the choice survives a reload
-      and stays prerenderable.
+      round category thumbnails between the breadcrumb and the grid. The
+      layout is buildable now; the circles are image wells, so tinted until
+      §1 lands.
+- [ ] **Multiple display layouts** on listings — 2/3/4-column and list
+      toggles. URL-driven so the choice survives a reload and stays
+      prerenderable.
+- [ ] **Walmart-style promo band on the homepage** — headline, "Shop now",
+      three product tiles, carousel arrows.
 - [ ] **Tailwind throughout.** Some components carry hand-written CSS in
-      `styles:` blocks — the carousel buttons, the masthead, `.ol-prose`.
-      Audit which of those are genuinely outside Tailwind's reach (`:host`,
-      `::-webkit-scrollbar`, injected-HTML descendants) and convert the rest.
-- [ ] **Seed products, categories, brands and their images properly.** The
-      catalogue is 10 products against 170 categories, which is why seven
-      departments show no brands and every listing is nearly empty. This is
-      the single change that would make the site look finished, and it is
-      mostly §1 — images — plus a decision about whether to seed
-      representative demo data or wait for the real import.
-
+      `styles:` blocks — carousel buttons, masthead, `.ol-prose`. Audit which
+      are genuinely outside Tailwind's reach (`:host`, `::-webkit-scrollbar`,
+      injected-HTML descendants) and convert the rest.
+- [ ] **Secondary colour `#004f9a`.** Needs a contrast check against every
+      surface it will land on. It is close enough to `#0046bf` that the job
+      it does — hover, dark surfaces, accents — decides where it belongs.
+- [ ] **Design tokens: premium feel** (pixfort reference). Asked three times.
+      Reworked once. The remaining gap is most likely photography rather than
+      tokens, which makes it partly §1.
 ---
 
 ## 3. Known gaps in what has shipped
@@ -132,3 +144,36 @@ now; production is not, and these are why.
 - [ ] **No images anywhere** (§1).
 - [ ] 124 categories without intro copy stay `noindex` by design (D-048) —
       correct behaviour, but it means most of the site is not indexable yet.
+
+---
+
+## 6. The demo catalogue
+
+`DemoCatalogueSeeder` fills the storefront so the design can be judged
+against realistic volume. It is not a substitute for the real catalogue and
+it is built so it can never be mistaken for one.
+
+```bash
+docker compose exec api php artisan db:seed --class=DemoCatalogueSeeder
+docker compose exec api php artisan demo:purge --apply     # take it out again
+```
+
+**Every product is invented** — plausible names, fabricated SKUs, generic
+specifications, nothing corresponding to real stock. Three things keep that
+contained:
+
+- Every SKU begins `DEMO-`, so they are obvious in the admin and to
+  `demo:purge`.
+- The seeder **throws** if `APP_ENV=production`. Invented products on a live
+  site get quoted against, and somebody then has to have that conversation
+  with a customer.
+- **Every one is `noindex`, and that is the point rather than a limitation.**
+  §14.7 wants 120 words of original description per product and D-050
+  rejects near-duplicates within a family. Generating 1,190 descriptions
+  would either fail that floor or pass it with exactly the thin, templated
+  content the floor exists to keep out of Google. Real products earn their
+  way in with real copy, as the 46 written categories already do.
+
+**Cost:** the build goes from ~3 minutes to roughly 15, because every active
+product is a prerendered page (`RouteManifest::productSlugs`). Worth knowing
+before a deploy; `demo:purge` reverses it.
