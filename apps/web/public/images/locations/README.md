@@ -3,8 +3,8 @@
 Three files, referenced by `core/layout/locations-strip.ts`:
 
 ```
-head-office.jpg          Century 21 Mall, 14B Idowu Martins Street
-furniture-showroom.jpg   No 18, Idowu Martins Street
+head-office.webp         Century 21 Mall, 14B Idowu Martins Street
+furniture-showroom.webp  No 18, Idowu Martins Street
 dubai-office.jpg         Platinum Tower, Jumeirah Lakes Towers
 ```
 
@@ -23,3 +23,25 @@ ratio, so anything squarer will be cropped top and bottom.
 Alt text lives beside the `photo` field in the same file, because it describes
 what the picture shows and belongs with the picture rather than in a sidecar
 nobody opens.
+
+## What is actually here
+
+| File | Format | Size | Shows |
+| --- | --- | --- | --- |
+| `head-office.webp` | WebP | 600x450 | The counter inside Century 21 Mall, HP authorised reseller signage |
+| `furniture-showroom.webp` | WebP | 600x450 | The showroom frontage on Idowu Martins Street |
+| `dubai-office.jpg` | JPEG | 600x450 | Towers at Jumeirah Lakes Towers |
+
+**Two arrived as WebP named `.jpg`.** The bytes were WebP; the extension said
+JPEG. Browsers mostly sniff and would have rendered them anyway, but the
+server sends `Content-Type: image/jpeg` from the extension, and anything that
+trusts the header rather than the bytes — a CDN, an image proxy, a social
+scraper — is entitled to reject them. Renamed to match their contents.
+
+**The card renders 4:3**, because that is what these are. 16:9 would have
+cropped top and bottom, and on both Lagos photographs the signage is the
+part that would have gone.
+
+**600px is smaller than ideal.** They are sharp enough at the card's rendered
+width and noticeably soft on a high-density screen. Worth replacing with
+1280px or wider when originals are available.

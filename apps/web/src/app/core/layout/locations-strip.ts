@@ -71,11 +71,11 @@ import { Icon } from '../../shared/icon';
                 <img
                   [src]="location.photo"
                   [alt]="location.alt"
-                  width="640"
-                  height="360"
+                  width="600"
+                  height="450"
                   loading="lazy"
                   decoding="async"
-                  class="aspect-[16/9] w-full object-cover"
+                  class="aspect-[4/3] w-full object-cover"
                 />
               }
 
@@ -128,8 +128,8 @@ export class LocationsStrip {
   protected readonly locations = [
     {
       name: 'Head Office',
-      photo: null as string | null,
-      alt: 'The OfficeLand head office at Century 21 Mall, Victoria Island',
+      photo: '/images/locations/head-office.webp',
+      alt: 'The OfficeLand counter inside Century 21 Mall, with HP authorised reseller signage and shelves of stationery and IT supplies',
       icon: 'building-2' as const,
       address: 'Century 21 Mall, 14B Idowu Martins Street, Victoria Island, Lagos',
       directions:
@@ -137,8 +137,8 @@ export class LocationsStrip {
     },
     {
       name: 'Furniture Showroom',
-      photo: null as string | null,
-      alt: 'The OfficeLand furniture showroom on Idowu Martins Street',
+      photo: '/images/locations/furniture-showroom.webp',
+      alt: 'The OfficeLand furniture showroom on Idowu Martins Street, its frontage listing desks, chairs, conference tables and filing cabinets',
       icon: 'store' as const,
       address: 'No 18, Idowu Martins Street, Victoria Island, Lagos State',
       directions:
@@ -147,8 +147,8 @@ export class LocationsStrip {
     {
       // No directions link, on purpose - see the class comment on Q14.
       name: 'Dubai Office',
-      photo: null as string | null,
-      alt: 'Platinum Tower, Jumeirah Lakes Towers, Dubai',
+      photo: '/images/locations/dubai-office.jpg',
+      alt: 'High-rise towers at Jumeirah Lakes Towers, Dubai',
       icon: 'building-2' as const,
       address:
         'Office Land Solutions DMCC, Unit 808-001 Platinum Tower, Plot JLT-PH1-12, Jumeirah Lakes Towers, Dubai, UAE',
