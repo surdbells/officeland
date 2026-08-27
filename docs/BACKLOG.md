@@ -10,13 +10,18 @@ better memory than a person; it is a memory that survives the conversation.
 **How to read it.** *Blocked* means it cannot be done here without something
 from outside — a file, a credential, a decision. Everything else is work.
 
-Last updated: 2026-08-23.
+Last updated: 2026-08-27.
 
 
 ---
 
 ## 0. Landed since the last snapshot
 
+- **Category imagery.** Nine department heroes, real licensed photography
+  (docs/images/SOURCES.md). `media:import` now generates derivatives, which
+  it did not — it imported and attached images that rendered as nothing.
+- **Crawl depth fixed.** 224 products were 4 clicks from home; department
+  pages now render two levels of child anchors and none are deeper than 3.
 - **Catalogue populated.** `DemoCatalogueSeeder` creates 1,190 products —
   10 per leaf category, 119 leaves, 23 brands — so every department, listing,
   facet and brand row has realistic volume. **Every product is invented and
@@ -196,3 +201,18 @@ contained:
 **Cost:** the build goes from ~3 minutes to roughly 15, because every active
 product is a prerendered page (`RouteManifest::productSlugs`). Worth knowing
 before a deploy; `demo:purge` reverses it.
+
+---
+
+## 7. Freepik attribution — before public launch
+
+The nine category photographs are Freepik free-licence, which **requires
+visible credit**. There is none on the site.
+
+It needs a decision about where it lives: a `/credits/` page linked from the
+footer, or a line in the footer itself. Either is a small change; leaving it
+undecided until launch day is the failure mode.
+
+The requirement disappears entirely if these are replaced with OfficeLand's
+own photography, which is the intended path anyway — see
+docs/images/SOURCES.md.
