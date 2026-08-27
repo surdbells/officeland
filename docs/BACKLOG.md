@@ -57,6 +57,25 @@ These are not estimates. Each one is stopped on something specific.
 
 In the order asked.
 
+- [ ] **Breadcrumbs as round category chips with image and name**, per the
+      pixfort reference. The chips are image wells, so they render as tinted
+      circles until §1 lands. Note the trade: a chip row is not a breadcrumb —
+      `BreadcrumbList` JSON-LD and the ancestor trail are what Google reads
+      for site structure, so the chips have to be an addition beside the
+      breadcrumb or carry the same markup, not replace it.
+- [ ] **PDP premium polish — "industry standard, all necessary features".**
+      Needs unpacking before it is buildable. Present: gallery, specs
+      accordion, breadcrumb, structured data, quote basket, related rails.
+      Candidates: sticky quote panel, spec comparison, stock/lead-time
+      clarity, delivery estimate, downloadable datasheet, recently viewed,
+      Q&A. Several imply data that does not exist yet.
+- [ ] **All products must have images.** 1,200 products, no files. Generating
+      product photographs is not an option — an invented photograph of a real
+      product is a lie a buyer acts on. Until files exist the cards show a
+      designed empty state rather than a broken frame.
+- [ ] **Homepage product sections per major department, in varied layouts.**
+      Buildable now that the catalogue is populated; carries far more once
+      products have photographs.
 - [ ] **Brand logos in the megamenu** — the row renders a logo the moment one
       exists; 23 brands, none with a file. Needs `--attach-brands` (§3) and
       the files.

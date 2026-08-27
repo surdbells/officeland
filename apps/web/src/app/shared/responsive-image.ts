@@ -50,12 +50,45 @@ import type { Image } from '../core/api/catalogue-api';
       </picture>
     } @else {
       <!--
-        A placeholder box, not an empty <img>. It holds the same aspect ratio
-        so a catalogue that is part-way through image ingestion does not
-        reflow as the images arrive, and it carries no alt text because there
-        is nothing to describe (an empty alt is correct for decoration).
+        A designed empty state, not an empty box.
+
+        ── Why there is no generated placeholder image ──────────────────────
+        The obvious move when 1,200 products have no photograph is to
+        generate one. It is the wrong move: a generated product image is a
+        picture of a product that does not look like that, and on a site
+        where a buyer is deciding whether a chair suits their boardroom, an
+        invented photograph is worse than an honest absence. It is also the
+        kind of thing that survives to production because it looks finished.
+        So this says "no photograph yet" in a way that is deliberate rather
+        than broken.
+
+        Aspect ratio is held, so a catalogue part-way through ingestion does
+        not reflow as real images land — the reason this is a sized box and
+        not a collapsed one.
+
+        aria-hidden with no alt: there is nothing to describe. An empty alt
+        is correct for decoration, and inventing one ("product image") tells
+        a screen-reader user something false.
       -->
-      <div [class]="placeholderClass()" aria-hidden="true"></div>
+      <div
+        [class]="placeholderClass()"
+        aria-hidden="true"
+      >
+        <svg
+          viewBox="0 0 48 48"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.25"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="h-1/4 w-1/4 max-h-12 max-w-12 text-ink-300"
+        >
+          <rect x="6" y="10" width="36" height="28" rx="3" />
+          <path d="M6 30l9-8a3 3 0 0 1 4 0l7 7" />
+          <path d="M28 26l4-3a3 3 0 0 1 4 0l6 5" />
+          <circle cx="18" cy="19" r="2.5" />
+        </svg>
+      </div>
     }
   `,
 })
@@ -72,7 +105,9 @@ export class ResponsiveImage {
   readonly sizes = input<string>('(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw');
 
   readonly imgClass = input<string>('h-full w-full object-contain');
-  readonly placeholderClass = input<string>('h-full w-full bg-ink-50');
+  readonly placeholderClass = input<string>(
+    'flex h-full w-full items-center justify-center bg-ink-50',
+  );
 
   /** Present so a caller can branch without reaching into the shape. */
   protected readonly hasImage = computed(() => this.image() !== null);

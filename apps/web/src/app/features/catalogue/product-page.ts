@@ -47,12 +47,27 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
         <!-- Exactly one h1 per page (section 14.8). -->
         <h1 class="mt-4 font-heading text-2xl font-bold sm:text-3xl">{{ p.name }}</h1>
 
-        <p class="mt-2 text-sm text-ink-600">
+        <!--
+          Brand and model, separated.
+
+          These were two adjacent @if blocks with only source whitespace
+          between them, and Angular collapses that — so the page read
+          "OfficeLandModel EX900". A flex row with a gap makes the separation
+          structural rather than dependent on a space surviving compilation.
+        -->
+        <p class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-600">
           @if (p.brand) {
-            <a [routerLink]="p.brand.url" class="text-brand-600 hover:underline">{{ p.brand.name }}</a>
+            <a [routerLink]="p.brand.url" class="font-medium text-brand-600 hover:underline">{{ p.brand.name }}</a>
+          }
+          @if (p.brand && p.mpn) {
+            <span aria-hidden="true" class="text-ink-300">&middot;</span>
           }
           @if (p.mpn) {
             <span>Model {{ p.mpn }}</span>
+          }
+          @if (p.sku) {
+            <span aria-hidden="true" class="text-ink-300">&middot;</span>
+            <span>SKU {{ p.sku }}</span>
           }
         </p>
 

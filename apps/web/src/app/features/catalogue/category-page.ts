@@ -109,17 +109,48 @@ import { ProductCard } from '../../shared/product-card';
 
         <!-- D-011. Real anchors, always in the HTML. -->
         @if (cat.children?.length) {
+          <!--
+            Child anchors, two levels deep (D-011).
+
+            Two, not one, and the reason is arithmetic. A department that
+            lists only its subcategories puts each leaf 2 clicks from home and
+            each product 4 — because a product is only shallower than its own
+            leaf if it happens to fit on page 1 of an ancestor's listing.
+            That held while the catalogue was ten products. At real volume,
+            224 products sat 4 clicks deep and the crawl-depth gate failed.
+
+            Rendering the grandchildren puts every leaf 2 clicks from home and
+            every product on a leaf's first page at 3, which is the guarantee
+            SEO_SPEC 10.4 actually asks for.
+
+            It is also the better page: a department that shows what is inside
+            it is more useful than one that makes you click a subcategory to
+            find out.
+          -->
           <nav aria-label="Subcategories" class="mt-8">
             <h2 class="font-heading text-sm font-semibold uppercase tracking-wide">Browse by category</h2>
-            <ul class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <ul class="mt-3 grid gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
               @for (child of cat.children; track child.slug) {
-                <li>
-                  <a [routerLink]="child.url" class="block rounded-lg border border-ink-100 px-4 py-3 hover:border-brand-600">
-                    <span class="font-medium">{{ child.name }}</span>
+                <li class="rounded-xl border border-ink-100 px-4 py-3">
+                  <a [routerLink]="child.url" class="block font-medium hover:text-brand-600">
+                    {{ child.name }}
                     @if (child.product_count) {
-                      <span class="ml-1 text-sm text-ink-400">({{ child.product_count }})</span>
+                      <span class="ml-1 text-sm font-normal text-ink-400">({{ child.product_count }})</span>
                     }
                   </a>
+
+                  @if (child.children?.length) {
+                    <ul class="mt-2 space-y-1">
+                      @for (leaf of child.children; track leaf.slug) {
+                        <li>
+                          <a
+                            [routerLink]="leaf.url"
+                            class="text-sm text-ink-600 hover:text-brand-600"
+                          >{{ leaf.name }}</a>
+                        </li>
+                      }
+                    </ul>
+                  }
                 </li>
               }
             </ul>

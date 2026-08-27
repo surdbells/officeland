@@ -34,7 +34,15 @@ final class CategoryController extends Controller
         $category = $this->resolve($path);
         // The hero and its derivatives in one go: ImageResource builds srcsets
         // from media_derivatives, and without them it would emit a bare src.
-        $category->load(['children', 'heroMedia.derivatives']);
+        // Two levels of children, not one.
+        //
+        // A department that lists only its subcategories puts every leaf 2
+        // clicks from home and every product 4 — which breaks the 3-click
+        // guarantee (D-011, SEO_SPEC 10.4) the moment a catalogue is big
+        // enough that products stop fitting on page 1 of an ancestor listing.
+        // With ten products in the database it passed; with a real catalogue
+        // 224 products were 4 clicks deep.
+        $category->load(['children.children', 'heroMedia.derivatives']);
 
         return response()->json(['data' => new CategoryResource($category)]);
     }
