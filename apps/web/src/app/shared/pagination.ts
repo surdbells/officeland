@@ -32,7 +32,7 @@ import { RouterLink } from '@angular/router';
             <li>
               <a
                 [routerLink]="pathForPage(page() - 1)"
-                [queryParams]="preserved()"
+                [queryParams]="paramsForPage(page() - 1)"
                 rel="prev"
                 class="rounded border border-ink-200 px-3 py-2 hover:border-brand-600"
               >Previous</a>
@@ -53,7 +53,7 @@ import { RouterLink } from '@angular/router';
               <li>
                 <a
                   [routerLink]="pathForPage(entry.page)"
-                  [queryParams]="preserved()"
+                  [queryParams]="paramsForPage(entry.page)"
                   [attr.aria-label]="'Page ' + entry.page"
                   class="rounded border border-ink-200 px-3 py-2 hover:border-brand-600"
                 >{{ entry.page }}</a>
@@ -65,7 +65,7 @@ import { RouterLink } from '@angular/router';
             <li>
               <a
                 [routerLink]="pathForPage(page() + 1)"
-                [queryParams]="preserved()"
+                [queryParams]="paramsForPage(page() + 1)"
                 rel="next"
                 class="rounded border border-ink-200 px-3 py-2 hover:border-brand-600"
               >Next</a>
@@ -85,6 +85,24 @@ export class Pagination {
 
   /** Filters and sort, preserved as query params so paging does not drop them. */
   readonly preserved = input<Readonly<Record<string, string>>>({});
+
+  /**
+   * How a page is addressed: a path segment, or a query parameter.
+   *
+   * 'path' is the default and the right answer for anything prerendered —
+   * every page of a category listing is a real file, crawlable and
+   * indexable, which is the whole reason it is not a query string.
+   *
+   * 'query' exists for /shop/, which is prerendered as a single shell and
+   * driven entirely by query parameters. Pointing path-based pagination at
+   * it produced links to /shop/page/2/ — files that do not exist and never
+   * will — while the page itself was reading `?page=`. Two bugs pointing at
+   * each other, and the link gate found them.
+   *
+   * A query-paginated listing must be noindex, or those URLs become
+   * duplicate content the static host would answer with page 1.
+   */
+  readonly mode = input<'path' | 'query'>('path');
 
   /** Pages either side of the current one. */
   private static readonly RADIUS = 2;
@@ -133,8 +151,27 @@ export class Pagination {
    * two URLs for one page, which the canonical would have to clean up after.
    */
   protected pathForPage(target: number): string {
+    if (this.mode() === 'query') {
+      return this.basePath();
+    }
+
     const base = this.basePath();
 
     return target > 1 ? `${base}page/${target}/` : base;
+  }
+
+  /** Query params for a page, merged with whatever the caller preserves. */
+  protected paramsForPage(target: number): Record<string, string> {
+    if (this.mode() === 'path') {
+      return { ...this.preserved() };
+    }
+
+    const params: Record<string, string> = { ...this.preserved() };
+
+    if (target > 1) {
+      params['page'] = String(target);
+    }
+
+    return params;
   }
 }

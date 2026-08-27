@@ -101,6 +101,7 @@ import { ProductCard } from '../../shared/product-card';
               [lastPage]="listing().meta.last_page"
               basePath="/shop/"
               [preserved]="paginationParams()"
+              mode="query"
             />
           } @else {
             <p class="mt-6 text-ink-600">
