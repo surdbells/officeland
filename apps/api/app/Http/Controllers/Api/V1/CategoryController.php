@@ -54,7 +54,7 @@ final class CategoryController extends Controller
             'heroMedia.derivatives',
         ]);
 
-        return response()->json(['data' => new CategoryResource($category)]);
+        return response()->json(['data' => (new CategoryResource($category))->asSubject()]);
     }
 
     /**

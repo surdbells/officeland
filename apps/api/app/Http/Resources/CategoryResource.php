@@ -13,6 +13,36 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 final class CategoryResource extends JsonResource
 {
+    /**
+     * Whether this resource is the category that was ASKED for, rather than
+     * one of its children, siblings or ancestors nested inside the response.
+     *
+     * ── Why this replaced a routeIs() check ──────────────────────────────
+     * `hero_inherited`, `siblings` and `breadcrumb` are all per-category
+     * queries. Gated on the route, every nested resource satisfied the gate
+     * too — so asking for one department ran an ancestors query for the
+     * department, then again for each of six children, then again for each
+     * of their leaves, each one also loading media.
+     *
+     * That is a textbook N+1, and it did not merely slow the response: the
+     * prerender of /c/smart-tech timed out, the worker was aborted, and the
+     * build produced no HTML at all. The gate reported "No prerendered HTML
+     * found" rather than a violation, which is a confusing symptom for a
+     * cause this ordinary.
+     *
+     * The route cannot distinguish the subject from its children because it
+     * is the same request. Only the caller knows, so the caller says so.
+     */
+    private bool $isSubject = false;
+
+    /** Marks this as the category the request asked for. */
+    public function asSubject(): static
+    {
+        $this->isSubject = true;
+
+        return $this;
+    }
+
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
@@ -72,7 +102,7 @@ final class CategoryResource extends JsonResource
              * megamenu asking for 170 nodes must not pay it.
              */
             'hero_inherited' => $this->when(
-                $request->routeIs('api.categories.show') && $this->hero_media_id === null,
+                $this->isSubject && $this->hero_media_id === null,
                 fn (): ?ImageResource => $this->inheritedHero(),
             ),
 
@@ -90,11 +120,11 @@ final class CategoryResource extends JsonResource
              * shows children and siblings would compete with them.
              */
             'siblings' => $this->when(
-                $request->routeIs('api.categories.show'),
+                $this->isSubject,
                 fn (): array => $this->siblingPayload($request),
             ),
             'breadcrumb' => $this->when(
-                $request->routeIs('api.categories.show'),
+                $this->isSubject,
                 fn (): array => $this->ancestors()
                     ->map(fn (Category $a): array => ['name' => $a->name, 'url' => $a->url()])
                     ->values()
