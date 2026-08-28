@@ -552,7 +552,7 @@ export class HomePage {
         return forkJoin(
           departments.map((department, index) =>
             this.api
-              .categoryProducts(department.url.replace(/^\/c/, ''), { perPage: 8 })
+              .categoryProducts(department.url.replace(/^\/c/, ''), { perPage: 10 })
               .pipe(
                 // One department failing must not empty the homepage. It
                 // yields no section; the other eight still render.

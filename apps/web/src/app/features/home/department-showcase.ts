@@ -109,7 +109,7 @@ export type ShowcaseStyle = 'grid' | 'feature' | 'rail';
             }
 
             @default {
-              <ul class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <ul class="ol-showcase-grid mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
                 @for (product of products(); track product.uuid) {
                   <li class="h-full">
                     <ol-product-card [product]="product" [headingLevel]="3" />
@@ -123,6 +123,22 @@ export type ShowcaseStyle = 'grid' | 'feature' | 'rail';
     }
   `,
   styles: `
+    /*
+     * Ten products fill two rows of five, and two rows of four with the last
+     * two hidden. A ragged final row - five then three - reads as a listing
+     * that was truncated rather than a section that was composed, and the
+     * homepage is the one page where that matters most.
+     *
+     * Hidden with CSS rather than sliced in the template, so the two extra
+     * anchors stay in the prerendered HTML at every breakpoint. Same rule as
+     * the overflow departments in the header.
+     */
+    @media (min-width: 1024px) and (max-width: 1279px) {
+      .ol-showcase-grid > li:nth-child(n + 9) {
+        display: none;
+      }
+    }
+
     /* Same treatment as every other rail here: the scroll stays, the bar goes. */
     .ol-showcase-rail {
       scrollbar-width: none;
