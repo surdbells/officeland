@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, signal } from '@an
 import { RouterLink } from '@angular/router';
 import { Icon, type IconName } from '../../shared/icon';
 import { ResponsiveImage } from '../../shared/responsive-image';
+import { SiteSearch } from '../../shared/site-search';
 import { iconForCategory, iconForDepartment } from './category-icons';
 import type { Navigation, NavigationNode } from '../api/catalogue-api';
 
@@ -28,7 +29,7 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
   selector: 'ol-site-header',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, ResponsiveImage],
+  imports: [RouterLink, Icon, ResponsiveImage, SiteSearch],
   template: `
     <!-- The skip link moved to the shell when the masthead took over as the
          first thing in the document; it has to stay the first focusable
@@ -75,27 +76,12 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
         <!-- No wordmark here. The masthead above carries the brand and the
              link home; a second mark in the sticky bar duplicated it. -->
 
-        <!-- Search is a real form so it works before JS loads.
-
-             It fills the row rather than being capped. With a max-width and
-             the actions pinned beside it, the header emptied out to the right
-             on anything wider than about 1200px: 700px of controls in a
-             1564px bar, and a page that reads as though it failed to load.
-             The search is the widest-value control in the header, so it takes
-             the space. -->
-        <!-- Named because several pages carry a second search landmark; without
-             distinct names a screen reader offers two identical "search"
-             regions and neither says which is which (Phase 13c). -->
-        <form action="/search" method="get" role="search" aria-label="Search the catalogue" class="hidden flex-1 md:block">
-          <label for="site-search" class="sr-only">Search products</label>
-          <input
-            id="site-search"
-            name="q"
-            type="search"
-            placeholder="Search by product, brand or model code"
-            class="w-full rounded-lg border border-ink-200 px-4 py-2 focus:border-brand-600"
-          />
-        </form>
+        <!--
+          Live search. Still a real GET form underneath, so Enter and the
+          button both work before hydration; the suggestion list is layered
+          on top of something that already functioned.
+        -->
+        <ol-site-search class="hidden flex-1 md:block" inputId="site-search" />
 
         <div class="ml-auto flex shrink-0 items-center gap-3">
           <!-- Section 23.1: WhatsApp converts better than a phone number in

@@ -70,6 +70,26 @@ export interface Navigation {
   readonly departments: readonly NavigationNode[];
 }
 
+/** One typeahead row. `meta` carries the model code, or null. */
+export interface Suggestion {
+  readonly label: string;
+  readonly url: string;
+  readonly meta?: string | null;
+}
+
+/**
+ * Typeahead results, grouped as the endpoint returns them.
+ *
+ * Deliberately a separate shape from Listing: a suggestion is a label and a
+ * destination, not a product card, and giving it the card's payload would
+ * make every keystroke fetch images and specifications nobody renders.
+ */
+export interface Suggestions {
+  readonly products: readonly Suggestion[];
+  readonly categories: readonly Suggestion[];
+  readonly brands: readonly Suggestion[];
+}
+
 export interface FacetValue {
   readonly value: string;
   readonly label?: string;
@@ -177,6 +197,16 @@ export class CatalogueApi {
     });
   }
 
+  /**
+   * Typeahead for the header search.
+   *
+   * Rate-limited server-side on its own throttle group, and debounced by the
+   * caller, so a fast typist makes one request rather than one per keystroke.
+   */
+  suggest(term: string): Observable<Suggestions> {
+    return this.unwrap<Suggestions>(`${this.base}/search/suggest`, new HttpParams().set('q', term));
+  }
+
   product(slug: string): Observable<Product> {
     return this.unwrap<Product>(`${this.base}/products/${encodeURIComponent(slug)}`);
   }
@@ -209,8 +239,10 @@ export class CatalogueApi {
     return http;
   }
 
-  private unwrap<T>(url: string): Observable<T> {
-    return this.http.get<Envelope<T>>(url).pipe(map((response) => response.data));
+  private unwrap<T>(url: string, params?: HttpParams): Observable<T> {
+    return this.http
+      .get<Envelope<T>>(url, params ? { params } : {})
+      .pipe(map((response) => response.data));
   }
 
   private collection<T>(url: string): Observable<readonly T[]> {
