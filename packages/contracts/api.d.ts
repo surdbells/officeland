@@ -197,6 +197,8 @@ export interface components {
             mpn?: string | null;
             model_code?: string | null;
             brand?: components["schemas"]["Brand"] | null;
+            /** @description A sentence or two for the card, clamped by the storefront. The full description_html stays on the PDP payload. */
+            short_description?: string | null;
             /** @enum {string} */
             availability: "in_stock" | "limited" | "made_to_order" | "lead_time" | "discontinued";
             lead_time_days?: number | null;
@@ -241,7 +243,6 @@ export interface components {
             ean?: string | null;
             primary_category?: components["schemas"]["Category"] | null;
             breadcrumb?: components["schemas"]["BreadcrumbItem"][];
-            short_description?: string | null;
             description_html?: string | null;
             warranty_text?: string | null;
             /** @description The full gallery, primary first. The storefront gives the first image fetchpriority=high as the LCP element. */

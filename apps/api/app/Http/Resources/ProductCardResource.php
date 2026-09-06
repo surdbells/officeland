@@ -44,6 +44,17 @@ final class ProductCardResource extends JsonResource
             ],
             'availability' => $this->availability,
             'lead_time_days' => $this->lead_time_days,
+
+            /*
+             * One or two sentences for the card, clamped client-side.
+             *
+             * This was PDP-only, which left the card with nothing between
+             * its chips and its button - fine on a compact grid card, a
+             * visible void on the feature card, whose image height stretches
+             * the column. The full description_html stays off the card:
+             * 24 cards of rich text is payload nobody renders.
+             */
+            'short_description' => $this->short_description,
             // D-002: no prices. pricing_mode ships anyway so the storefront
             // renders "Request quote" from data rather than a hardcoded rule,
             // and posture C can be switched on without a client change.

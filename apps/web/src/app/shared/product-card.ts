@@ -119,6 +119,19 @@ import { ResponsiveImage } from './responsive-image';
       }
 
       <!--
+        One or two sentences under the chips.
+
+        On a compact grid card this is a small gain; on the feature card,
+        whose image column is tall, it is what fills the band between the
+        chips and the button that would otherwise be an empty stretch. It is
+        clamped to two lines so a long description cannot push the button off
+        the aligned baseline a row of cards shares.
+      -->
+      @if (product().short_description; as summary) {
+        <p class="mt-3 line-clamp-2 text-xs leading-relaxed text-ink-600">{{ summary }}</p>
+      }
+
+      <!--
         No price block, and no space held for one.
 
         D-002 means nothing here has a price, so the card ends on the action

@@ -10,12 +10,31 @@ better memory than a person; it is a memory that survives the conversation.
 **How to read it.** *Blocked* means it cannot be done here without something
 from outside — a file, a credential, a decision. Everything else is work.
 
-Last updated: 2026-08-27.
+Last updated: 2026-09-05.
 
 
 ---
 
 ## 0. Landed since the last snapshot
+
+- **Product card, three-chip layout.** Brand, product code and availability
+  as three chips on one line; no price block (D-002); full-width "Add to
+  quote". A clamped `short_description` now fills the band between the chips
+  and the button, which was a visible void on the tall feature card.
+- **Homepage department showcases.** Every major department renders a product
+  section on the homepage, in three alternating styles (grid, feature, rail).
+  The grid runs five across at xl, four at lg with the last two hidden so the
+  final row is never ragged; every anchor stays in the prerendered HTML.
+- **Header search fixed.** A submit button (there was none, so the field
+  offered nothing to click) plus a debounced live typeahead over products,
+  categories and brands, layered on a real GET form that still works with no
+  JavaScript.
+- **Location cards carry the three showroom photographs**, 4:3 so the signage
+  is not cropped; heading reworded from "Come and see it first".
+- **Product detail page polish.** Sticky buy box, stepped quantity input,
+  procurement assurances, an at-a-glance spec summary.
+- **Toolchain.** Node bumped to 24.19.0 LTS; the Angular CLI now requires
+  >= 24.15.0 and silently no-ops (exit 0, empty dist) on anything older.
 
 - **Category imagery.** Nine department heroes, real licensed photography
   (docs/images/SOURCES.md). `media:import` now generates derivatives, which

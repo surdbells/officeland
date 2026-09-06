@@ -336,6 +336,11 @@ components:
               $ref: '#/components/schemas/Brand'
             -
               type: 'null'
+        short_description:
+          description: 'A sentence or two for the card, clamped by the storefront. The full description_html stays on the PDP payload.'
+          type:
+            - string
+            - 'null'
         availability:
           type: string
           enum:
@@ -435,10 +440,6 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/BreadcrumbItem'
-            short_description:
-              type:
-                - string
-                - 'null'
             description_html:
               type:
                 - string
