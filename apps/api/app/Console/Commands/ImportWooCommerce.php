@@ -93,11 +93,18 @@ final class ImportWooCommerce extends Command
         ['hard drive', '/it-products/storage-memory/external-hard-drives/'],
         ['flash drive', '/it-products/storage-memory/flash-drives/'],
         ['memory card', '/it-products/storage-memory/memory-cards/'],
+        ['sd card', '/it-products/storage-memory/memory-cards/'],
+        ['microsd', '/it-products/storage-memory/memory-cards/'],
         ['usb drive', '/it-products/storage-memory/flash-drives/'],
         // IT - accessories
         ['keyboard', '/it-products/computer-accessories/keyboards-mice/'],
         ['mouse', '/it-products/computer-accessories/keyboards-mice/'],
         ['headset', '/it-products/computer-accessories/headsets-audio/'],
+        ['headphone', '/it-products/computer-accessories/headsets-audio/'],
+        ['earphone', '/it-products/computer-accessories/headsets-audio/'],
+        ['earbud', '/it-products/computer-accessories/headsets-audio/'],
+        ['speaker', '/it-products/computer-accessories/headsets-audio/'],
+        ['microphone', '/it-products/computer-accessories/headsets-audio/'],
         ['laptop bag', '/it-products/computer-accessories/laptop-bags-cases/'],
         ['laptop sleeve', '/it-products/computer-accessories/laptop-bags-cases/'],
         ['backpack', '/it-products/computer-accessories/laptop-bags-cases/'],
@@ -207,6 +214,64 @@ final class ImportWooCommerce extends Command
         ['stabiliser', '/smart-tech/power-backup/voltage-stabilisers/'],
         ['stabilizer', '/smart-tech/power-backup/voltage-stabilisers/'],
         ['solar', '/smart-tech/power-backup/solar-panels/'],
+        // Long-tail coverage, lowest priority: the leftovers that fell to the
+        // catch-all on the first full run - stationery, filing, storage boxes,
+        // external drives, machine consumables, cases, labelling. Generic and
+        // last, so they only catch what no specific rule above claimed.
+        ['file cabinet', '/office-furniture/storage-furniture/cupboards-lockers/'],
+        ['transfer file', '/filing-storage/files-folders/document-files-boxes/'],
+        ['portfolio file', '/filing-storage/files-folders/manila-folders/'],
+        ['box file', '/filing-storage/files-folders/document-files-boxes/'],
+        ['reinforced pocket', '/filing-storage/files-folders/display-books-clear-files/'],
+        ['sheet protector', '/filing-storage/files-folders/display-books-clear-files/'],
+        ['pocket', '/filing-storage/files-folders/display-books-clear-files/'],
+        ['storage box', '/filing-storage/archive-boxes/'],
+        ['bankers box', '/filing-storage/archive-boxes/'],
+        ['archive box', '/filing-storage/archive-boxes/'],
+        ['file', '/filing-storage/files-folders/manila-folders/'],
+        ['hdd', '/it-products/storage-memory/external-hard-drives/'],
+        ['backup plus', '/it-products/storage-memory/external-hard-drives/'],
+        ['seagate', '/it-products/storage-memory/external-hard-drives/'],
+        ['external drive', '/it-products/storage-memory/external-hard-drives/'],
+        ['compactflash', '/it-products/storage-memory/memory-cards/'],
+        ['dual drive', '/it-products/storage-memory/flash-drives/'],
+        ['pen drive', '/it-products/storage-memory/flash-drives/'],
+        ['laminating', '/office-supplies/office-machines/laminators/'],
+        ['laminate', '/office-supplies/office-machines/laminators/'],
+        ['binding ring', '/office-supplies/office-machines/binding-machines/'],
+        ['binding cover', '/office-supplies/office-machines/binding-machines/'],
+        ['binding comb', '/office-supplies/office-machines/binding-machines/'],
+        ['guillotine', '/office-supplies/office-machines/paper-trimmers/'],
+        ['ruler', '/school-supplies/maths-geometry/rulers-stencils/'],
+        ['eraser', '/office-supplies/writing/correction-erasers/'],
+        ['correction', '/office-supplies/writing/correction-erasers/'],
+        ['fineliner', '/office-supplies/writing/pens/'],
+        ['legal pad', '/paper-notebooks/notebooks-pads/'],
+        ['writing pad', '/paper-notebooks/notebooks-pads/'],
+        ['notepad', '/paper-notebooks/notebooks-pads/'],
+        ['index card', '/paper-notebooks/notebooks-pads/'],
+        ['stock register', '/paper-notebooks/notebooks-pads/'],
+        ['bristol board', '/paper-notebooks/specialty-paper/colour-paper/'],
+        ['cardboard', '/paper-notebooks/specialty-paper/colour-paper/'],
+        ['cutting mat', '/office-supplies/desk-accessories/cutting-tools/'],
+        ['id card', '/office-supplies/labelling-identification/badges-lanyards/'],
+        ['lanyard', '/office-supplies/labelling-identification/badges-lanyards/'],
+        ['badge', '/office-supplies/labelling-identification/badges-lanyards/'],
+        ['labeller', '/office-supplies/labelling-identification/labels/'],
+        ['privacy filter', '/it-products/computer-accessories/stands-mounts/'],
+        ['privacy screen', '/it-products/computer-accessories/stands-mounts/'],
+        ['screen cleaner', '/it-products/computer-accessories/cables-adapters/'],
+        ['sleeve', '/it-products/computer-accessories/laptop-bags-cases/'],
+        ['pouch', '/it-products/computer-accessories/laptop-bags-cases/'],
+        ['carrying case', '/it-products/computer-accessories/laptop-bags-cases/'],
+        ['case', '/it-products/computer-accessories/laptop-bags-cases/'],
+        ['literature organizer', '/office-supplies/desk-accessories/organisers-holders/'],
+        ['literature sorter', '/office-supplies/desk-accessories/organisers-holders/'],
+        ['organizer', '/office-supplies/desk-accessories/organisers-holders/'],
+        ['organiser', '/office-supplies/desk-accessories/organisers-holders/'],
+        ['book end', '/office-supplies/desk-accessories/organisers-holders/'],
+        ['dvd', '/it-products/storage-memory/flash-drives/'],
+        ['cd-r', '/it-products/storage-memory/flash-drives/'],
     ];
 
     /**
@@ -472,17 +537,30 @@ final class ImportWooCommerce extends Command
      */
     private function resolveCategory(array $item, string $name): Category
     {
-        $haystack = Str::lower($name.' '.$this->categoryNames($item));
+        // Two passes, categories before name. The merchant's own category is
+        // the trustworthy signal; a product NAME can lie - an earbuds set named
+        // "Laptop Yoga 500" would land in Laptops if the name were weighed
+        // first. So MAP (then FALLBACK) is tried against the WooCommerce
+        // category names, and only if nothing there matches is the name tried.
+        $categories = Str::lower($this->categoryNames($item));
+        $named = Str::lower($name);
 
-        foreach (self::MAP as [$needle, $path]) {
-            if ($this->matches($haystack, $needle)) {
-                return $this->category($path);
+        foreach ([$categories, $named] as $haystack) {
+            if ($haystack === '') {
+                continue;
+            }
+            foreach (self::MAP as [$needle, $path]) {
+                if ($this->matches($haystack, $needle)) {
+                    return $this->category($path);
+                }
             }
         }
 
-        foreach (self::FALLBACK as $needle => $path) {
-            if ($this->matches($haystack, $needle)) {
-                return $this->category($path);
+        foreach ([$categories, $named] as $haystack) {
+            foreach (self::FALLBACK as $needle => $path) {
+                if ($haystack !== '' && $this->matches($haystack, $needle)) {
+                    return $this->category($path);
+                }
             }
         }
 
