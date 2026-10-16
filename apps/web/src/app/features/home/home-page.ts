@@ -409,19 +409,19 @@ const SHOWCASE_STYLES: readonly ShowcaseStyle[] = ['grid', 'feature', 'rail'];
               <li class="w-48 shrink-0 snap-start sm:w-52" olReveal [olRevealDelay]="(i % 6) * 50">
                 <a
                   [routerLink]="department.url"
-                  class="ol-lift group block h-full overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-xs"
+                  class="ol-lift group block h-full overflow-hidden rounded-2xl border border-ink-100 bg-[#f6f3ee] p-2.5"
                 >
-                  <div class="ol-zoom-frame aspect-[4/3] w-full bg-ink-50">
+                  <div class="ol-zoom-frame aspect-square w-full overflow-hidden rounded-xl bg-[#f1ece3]">
                     @if (department.hero; as hero) {
                       <ol-image [image]="hero" sizes="13rem" imgClass="h-full w-full object-cover" />
                     } @else {
-                      <span class="flex h-full items-center justify-center bg-brand-50 p-4 text-center font-heading text-sm font-semibold text-brand-700" aria-hidden="true">
+                      <span class="flex h-full items-center justify-center p-4 text-center font-heading text-sm font-semibold text-brand-700" aria-hidden="true">
                         {{ department.name }}
                       </span>
                     }
                   </div>
-                  <div class="p-4">
-                    <strong class="block font-heading text-base font-semibold text-ink-900 group-hover:text-brand-600">
+                  <div class="px-1.5 pb-1.5 pt-3">
+                    <strong class="block font-heading text-base font-bold text-ink-900 group-hover:text-brand-600">
                       {{ department.name }}
                     </strong>
                     @if (department.product_count) {

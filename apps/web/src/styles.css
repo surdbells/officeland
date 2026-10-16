@@ -493,6 +493,26 @@
     linear-gradient(to right, rgb(11 11 13 / 0.5) 0%, transparent 62%);
 }
 
+/* The related-products rail on the product page: hide the scrollbar, keep the
+   scroll. Same reasoning as the homepage rails. */
+.ol-related-rail {
+  scrollbar-width: none;
+}
+
+.ol-related-rail::-webkit-scrollbar {
+  display: none;
+}
+
+/* The related band's glow, a brand light behind the dark product rail. */
+.ol-related-glow {
+  top: -30%;
+  right: -8%;
+  height: 150%;
+  width: 55%;
+  background: radial-gradient(circle at 60% 50%, rgb(5 91 240 / 0.18) 0%, transparent 66%);
+  pointer-events: none;
+}
+
 /* The small uppercase kicker that sits above a section headline - the
    editorial "eyebrow" that names the section before it states it. */
 .ol-eyebrow {

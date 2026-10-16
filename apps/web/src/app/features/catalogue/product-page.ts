@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, switchMap } from 'rxjs';
 import {
   CatalogueApi,
@@ -75,7 +75,7 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
         </p>
 
         <div class="mt-6 grid gap-8 lg:grid-cols-2">
-          <div>
+          <div class="rounded-2xl bg-[#f6f3ee] p-4 sm:p-6">
             <ol-product-gallery [images]="p.images ?? []" />
           </div>
 
@@ -249,24 +249,35 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
           </section>
         }
 
-        <!--
-          Related products, from typed supplier relations rather than
-          hand-curation (ICECAT_MAPPING.md F-3). This is the rail that answers
-          "which toner fits this printer", which is the single most common
-          consumables question in this catalogue.
-        -->
-        @if (related().length) {
-          <section class="mt-12">
-            <h2 class="font-heading text-xl font-semibold">Related products</h2>
-            <ul class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      </article>
+
+      <!--
+        Related products, on a dark band so the product photographs carry it -
+        the reference PDP's "you may also like". Typed supplier relations where
+        they exist (the toner that fits this printer), else the same-category
+        fallback, so the band is filled on every product. Full-bleed, so it
+        sits outside the article's reading column.
+      -->
+      @if (related().length) {
+        <section aria-labelledby="related-heading" class="relative isolate mt-14 overflow-hidden bg-ink-900 text-white">
+          <span aria-hidden="true" class="ol-related-glow absolute"></span>
+          <div class="relative mx-auto max-w-(--container-page) px-(--spacing-gutter) py-14">
+            <div class="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p class="font-heading text-xs font-semibold uppercase tracking-[0.16em] text-accent-400">You may also like</p>
+                <h2 id="related-heading" class="mt-2 text-2xl font-bold text-white sm:text-3xl">Related products</h2>
+              </div>
+            </div>
+            <ul class="ol-related-rail mt-8 flex snap-x gap-4 overflow-x-auto pb-2">
               @for (item of related(); track item.uuid) {
-                <li class="h-full"><ol-product-card [product]="item" [headingLevel]="3" /></li>
+                <li class="w-56 shrink-0 snap-start sm:w-60">
+                  <ol-product-card [product]="item" [headingLevel]="3" imageSizes="15rem" />
+                </li>
               }
             </ul>
-          </section>
-        }
-
-      </article>
+          </div>
+        </section>
+      }
     } @else if (failed()) {
       <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-20">
         <h1 class="font-heading text-2xl font-bold">Product not found</h1>
@@ -299,22 +310,50 @@ export class ProductPage {
   protected readonly failed = computed(() => this.result().failed);
 
   /**
-   * The related rail, flattened and bounded.
+   * Same-category products, as the fallback related rail.
    *
-   * The API groups relations by type (accessory, compatible-with,
-   * replacement). A single rail is the right surface for now: four typed
-   * rails on a page with one accessory each is worse than one rail of four.
-   * Bounded at 8 because every card carries an image, and the PDP has an
-   * 800 KB page-weight budget (section 14.9).
+   * Typed supplier relations (accessory, compatible-with) only exist for the
+   * Icecat-matched catalogue. The imported WooCommerce products have none, so
+   * "You may also like" would be empty on every one of them. This fills it
+   * from the product's own leaf category - real products, no curation - which
+   * is exactly the "more like this" a related rail is for. Fetched only when
+   * there are no typed relations to show.
    */
-  protected readonly related = computed(() => {
+  private readonly fallbackRelated = toSignal(
+    toObservable(this.product).pipe(
+      switchMap((p) => {
+        if (!p) return of([] as ProductCardData[]);
+
+        const typed = p.related
+          ? Object.values(p.related as Record<string, ProductCardData[]>).flat()
+          : [];
+        if (typed.length > 0) return of([] as ProductCardData[]);
+
+        const crumb = p.breadcrumb?.[p.breadcrumb.length - 1];
+        const path = (crumb?.url ?? '').replace(/^\/c\//, '').replace(/^\/+|\/+$/g, '');
+        if (path === '') return of([] as ProductCardData[]);
+
+        return this.api.categoryProducts(path, { perPage: 14 }).pipe(
+          map((listing) => listing.data.filter((x) => x.slug !== p.slug).slice(0, 10)),
+          catchError(() => of([] as ProductCardData[])),
+        );
+      }),
+    ),
+    { initialValue: [] as ProductCardData[] },
+  );
+
+  /**
+   * The related rail: typed supplier relations where they exist, else the
+   * same-category fallback. Bounded because every card carries an image and
+   * the PDP has an 800 KB page-weight budget (section 14.9).
+   */
+  protected readonly related = computed<readonly ProductCardData[]>(() => {
     const groups = this.product()?.related;
+    const typed = groups
+      ? Object.values(groups as Record<string, ProductCardData[]>).flat().slice(0, 8)
+      : [];
 
-    if (!groups) return [];
-
-    return Object.values(groups as Record<string, ProductCardData[]>)
-      .flat()
-      .slice(0, 8);
+    return typed.length > 0 ? typed : this.fallbackRelated();
   });
 
   protected readonly showQuantityRules = computed(() => {
