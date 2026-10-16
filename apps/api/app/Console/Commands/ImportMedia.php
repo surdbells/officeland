@@ -35,7 +35,7 @@ use RuntimeException;
  *   php artisan media:import --path=/docs/images --attach-categories
  *
  * With --attach-categories, a file named after a category path with slashes
- * replaced by dashes - `wpc-doors-interiors-wpc-doors.jpg` - becomes that
+ * replaced by dashes - `pvc-doors-interiors-pvc-doors.jpg` - becomes that
  * category's hero image. Naming rather than a mapping file, because a mapping
  * file is one more thing to keep in step with the taxonomy.
  */

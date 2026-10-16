@@ -36,7 +36,7 @@ use Illuminate\Database\Seeder;
  * ── Titles ───────────────────────────────────────────────────────────────
  * Only where the template is weak. "Voltage Stabilisers in Nigeria - Prices &
  * Bulk Supply" is fine and needs no help; "Wall & Ceiling Panels" says
- * nothing about WPC, which is the word people search. An empty title here
+ * nothing about PVC, which is the word people search. An empty title here
  * means the template wins, which is the intended default.
  *
  * Idempotent and keyed on `path`, like the intro seeder.
@@ -167,73 +167,73 @@ final class CategorySeoSeeder extends Seeder
             'A 20,000 mAh bank delivers about 12,000-14,000 mAh at the phone. Tell us what it must charge and we will specify from that, not the headline.',
         ],
 
-        // ── WPC Doors & Interiors ───────────────────────────────────────
-        '/wpc-doors-interiors/' => [
-            'WPC Doors, Wardrobes & Kitchens in Lagos, Nigeria',
-            'Waterproof, termite-proof wood-plastic composite for doors, wardrobes, kitchens and panelling. Made to a site measure and installed in Lagos.',
+        // ── PVC Doors & Interiors ───────────────────────────────────────
+        '/pvc-doors-interiors/' => [
+            'PVC Doors, Wardrobes & Kitchens in Lagos, Nigeria',
+            'Waterproof, termite-proof PVC for doors, wardrobes, kitchens and panelling. Made to a site measure and installed in Lagos.',
         ],
-        '/wpc-doors-interiors/wpc-doors/' => [
-            'WPC Internal Doors & Frames in Lagos, Nigeria',
+        '/pvc-doors-interiors/pvc-doors/' => [
+            'PVC Internal Doors & Frames in Lagos, Nigeria',
             'Doors that do not swell in the rains, with matching frames and architraves. Give us the opening size, the handing and whether it is a wet area.',
         ],
-        '/wpc-doors-interiors/wpc-doors/internal-doors/' => [
-            'WPC Internal Doors for Bedrooms, Offices & Bathrooms',
+        '/pvc-doors-interiors/pvc-doors/internal-doors/' => [
+            'PVC Internal Doors for Bedrooms, Offices & Bathrooms',
             'The gap it was hung with is the gap it keeps. Specify opening size, handing, and whether the room is dry, wet-area or external-facing.',
         ],
-        '/wpc-doors-interiors/wpc-doors/flush-doors/' => [
-            'WPC Flush Doors for Offices, Schools & Hotels',
+        '/pvc-doors-interiors/pvc-doors/flush-doors/' => [
+            'PVC Flush Doors for Offices, Schools & Hotels',
             'Flat-faced doors with a solid edge, for floors and corridors that need forty identical openings closed to the same standard. Quoted per schedule.',
         ],
-        '/wpc-doors-interiors/wpc-doors/door-frames/' => [
-            'WPC Door Frames & Architraves in Lagos',
+        '/pvc-doors-interiors/pvc-doors/door-frames/' => [
+            'PVC Door Frames & Architraves in Lagos',
             'A stable door in a swelling timber frame moves the problem. Measure the opening at three heights and give us the finished wall thickness.',
         ],
-        '/wpc-doors-interiors/wpc-wardrobes/' => [
-            'Fitted & Sliding WPC Wardrobes in Lagos, Nigeria',
+        '/pvc-doors-interiors/pvc-wardrobes/' => [
+            'Fitted & Sliding PVC Wardrobes in Lagos, Nigeria',
             'Wardrobe carcasses that do not soften against a damp external wall. Fitted and sliding-door, drawn to your room and installed in Lagos.',
         ],
-        '/wpc-doors-interiors/wpc-wardrobes/fitted-wardrobes/' => [
+        '/pvc-doors-interiors/pvc-wardrobes/fitted-wardrobes/' => [
             'Fitted Wardrobes Built to Your Room in Lagos',
             'Floor to ceiling, wall to wall, with the internal layout drawn against what you actually store. Allow 600 mm clear in front of hinged doors.',
         ],
-        '/wpc-doors-interiors/wpc-wardrobes/sliding-wardrobes/' => [
+        '/pvc-doors-interiors/pvc-wardrobes/sliding-wardrobes/' => [
             'Sliding-Door Wardrobes for Small Bedrooms in Lagos',
             'Doors that run within the wardrobe instead of into the room. The track is what makes or breaks them, and a level base is why we fit them.',
         ],
-        '/wpc-doors-interiors/wpc-kitchens/' => [
-            'WPC Kitchen Cabinets & Islands in Lagos, Nigeria',
+        '/pvc-doors-interiors/pvc-kitchens/' => [
+            'PVC Kitchen Cabinets & Islands in Lagos, Nigeria',
             'Carcasses that survive a leaking sink, steam and daily cleaning. Quoted from a drawing or a site measure, cabinetry and installation together.',
         ],
-        '/wpc-doors-interiors/wpc-kitchens/kitchen-cabinets/' => [
-            'WPC Kitchen Cabinets, Base & Wall Units in Lagos',
+        '/pvc-doors-interiors/pvc-kitchens/kitchen-cabinets/' => [
+            'PVC Kitchen Cabinets, Base & Wall Units in Lagos',
             'The base unit under the sink decides how long a kitchen lasts. High-density core holds hinges and soft-close hardware where chipboard will not.',
         ],
-        '/wpc-doors-interiors/wpc-kitchens/kitchen-islands/' => [
+        '/pvc-doors-interiors/pvc-kitchens/kitchen-islands/' => [
             'Kitchen Islands & Worktop Units in Lagos',
             'Finished on every face, and services decided before the floor slab is laid. Allow about a metre of clearance or ask us about a peninsula.',
         ],
-        '/wpc-doors-interiors/wpc-interiors/' => [
-            'WPC Wall & Ceiling Panelling in Lagos, Nigeria',
+        '/pvc-doors-interiors/pvc-interiors/' => [
+            'PVC Wall & Ceiling Panelling in Lagos, Nigeria',
             'Panelling for receptions, boardrooms, corridors and hotel rooms. Quoted by area with setting out priced separately, because returns take longer.',
         ],
-        '/wpc-doors-interiors/wpc-interiors/wall-panels/' => [
-            'WPC Wall Panelling for Offices & Hotels in Lagos',
+        '/pvc-doors-interiors/pvc-interiors/wall-panels/' => [
+            'PVC Wall Panelling for Offices & Hotels in Lagos',
             'Over the life of a building, usually the cheaper wall: a painted corridor is repainted on a cycle, a panelled one is wiped. Concealed joints.',
         ],
-        '/wpc-doors-interiors/wpc-interiors/ceiling-panels/' => [
-            'WPC Ceiling Panels & Renovation Cladding in Lagos',
+        '/pvc-doors-interiors/pvc-interiors/ceiling-panels/' => [
+            'PVC Ceiling Panels & Renovation Cladding in Lagos',
             'Panel over a sound but tired ceiling: faster and far less disruptive than stripping out. Send a reflected ceiling plan or a photo straight up.',
         ],
-        '/wpc-doors-interiors/wpc-boards/' => [
-            'WPC Boards, Sheets & Edging for Fabricators',
+        '/pvc-doors-interiors/pvc-boards/' => [
+            'PVC Boards, Sheets & Edging for Fabricators',
             'The same material we build with, sold by the sheet. Cuts and routs with ordinary woodworking tooling. Send a cutting list and we will price it.',
         ],
-        '/wpc-doors-interiors/wpc-boards/wpc-sheets/' => [
-            'WPC Boards & Sheets by Thickness, Trade Quantities',
+        '/pvc-doors-interiors/pvc-boards/pvc-sheets/' => [
+            'PVC Boards & Sheets by Thickness, Trade Quantities',
             'Thickness is structural, not cosmetic. Tell us the application and we will tell you the board. Ask about adhesives before a large batch.',
         ],
-        '/wpc-doors-interiors/wpc-boards/wpc-edging/' => [
-            'WPC Edging Strip & Trims to Match Board Finishes',
+        '/pvc-doors-interiors/pvc-boards/pvc-edging/' => [
+            'PVC Edging Strip & Trims to Match Board Finishes',
             'The least interesting line in the catalogue and the one that decides whether a job looks finished. Order it with the sheets, not months later.',
         ],
     ];

@@ -76,12 +76,12 @@ const CATEGORY_ICONS = {
   'maths-geometry': 'ruler',
   'classroom-essentials': 'backpack',
 
-  // WPC Doors & Interiors
-  'wpc-doors': 'door-open',
-  'wpc-wardrobes': 'shirt',
-  'wpc-kitchens': 'cooking-pot',
-  'wpc-interiors': 'panels-top-left',
-  'wpc-boards': 'layers',
+  // PVC Doors & Interiors
+  'pvc-doors': 'door-open',
+  'pvc-wardrobes': 'shirt',
+  'pvc-kitchens': 'cooking-pot',
+  'pvc-interiors': 'panels-top-left',
+  'pvc-boards': 'layers',
 } as const satisfies Record<string, IconName>;
 
 /** The glyph for a subcategory, or a neutral one if it has no entry. */
@@ -111,7 +111,7 @@ const DEPARTMENT_ICONS = {
   'paper-notebooks': 'notebook-text',
   'filing-storage': 'archive',
   'school-supplies': 'graduation-cap',
-  'wpc-doors-interiors': 'door-closed',
+  'pvc-doors-interiors': 'door-closed',
 } as const satisfies Record<string, IconName>;
 
 /** The glyph for a department, or a neutral one if it has no entry. */

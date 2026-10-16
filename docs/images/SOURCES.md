@@ -27,7 +27,7 @@ Source: Freepik, free licence, attribution required. None are AI-generated.
 | `paper-notebooks.jpg` | `/paper-notebooks/` | 11021057 | Top view workspace with notebooks |
 | `filing-storage.jpg` | `/filing-storage/` | 29965427 | Top view over ring binder |
 | `school-supplies.jpg` | `/school-supplies/` | 9416287 | School supplies top view against a chalkboard |
-| `wpc-doors-interiors.jpg` | `/wpc-doors-interiors/` | 427194638 | Kitchen cabinet with wooden fronts and built-in oven |
+| `pvc-doors-interiors.jpg` | `/pvc-doors-interiors/` | 427194638 | Kitchen cabinet with wooden fronts and built-in oven |
 
 ## Attribution
 

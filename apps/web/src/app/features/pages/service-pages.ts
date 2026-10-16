@@ -35,7 +35,7 @@ import { SeoService } from '../../core/seo/seo.service';
       <p>
         Broadly: stationery and consumables we hold move fastest, IT and furniture
         depend on what is in stock against what is on order, and anything made to a
-        measure - WPC doors, wardrobes, kitchens, panelling - is
+        measure - PVC doors, wardrobes, kitchens, panelling - is
         fabrication time plus installation and is quoted per project.
       </p>
 
@@ -130,7 +130,7 @@ export class DeliveryPage {
 
       <h2>What cannot be returned</h2>
       <ul>
-        <li>Anything manufactured, cut or finished to your measure - WPC doors,
+        <li>Anything manufactured, cut or finished to your measure - PVC doors,
           wardrobes, kitchens and panelling are made for one site.</li>
         <li>Opened consumables: toner, ink, paper and cleaning products.</li>
         <li>Software and IT where a licence has been activated or a seal broken.</li>

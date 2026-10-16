@@ -77,7 +77,7 @@ final class DemoCatalogueSeeder extends Seeder
         '/paper-notebooks/' => ['Double A', 'Hammermill', 'OfficeLand'],
         '/filing-storage/' => ['Bantex', 'Leitz', 'OfficeLand'],
         '/school-supplies/' => ['Faber-Castell', 'Bic', 'OfficeLand'],
-        '/wpc-doors-interiors/' => ['OfficeLand'],
+        '/pvc-doors-interiors/' => ['OfficeLand'],
     ];
 
     /**

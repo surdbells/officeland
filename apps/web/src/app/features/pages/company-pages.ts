@@ -47,7 +47,7 @@ import { localBusinessSchema } from '../../core/seo/structured-data';
       <p>
         Nine departments: office furniture, IT products, smart tech and power backup,
         printers and consumables, office supplies, paper and notebooks, filing and
-        storage, school supplies, and WPC doors and interiors. The last of those is a
+        storage, school supplies, and PVC doors and interiors. The last of those is a
         fit-out business rather than a catalogue - doors, wardrobes, kitchens
         and panelling made to a site measure.
       </p>
@@ -230,7 +230,7 @@ export class ContactPage {
       </p>
       <p>
         If you are coming to specify a fit-out, bring dimensions or a floor plan.
-        <a routerLink="/c/wpc-doors-interiors/">WPC doors and interiors</a> are quoted
+        <a routerLink="/c/pvc-doors-interiors/">PVC doors and interiors</a> are quoted
         from a measure, and a plan turns a conversation into a quotation.
       </p>
     </ol-content-page>

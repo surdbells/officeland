@@ -15,7 +15,7 @@ use Illuminate\Support\Str;
  * 9 departments / 42 subcategories / 119 leaves = 170 categories, replacing the
  * legacy 161-term tree in which 35 terms (22%) were brand branches.
  *
- * Was 124 until 2026-08-23, when WPC Doors & Interiors was added (a fit-out
+ * Was 124 until 2026-08-23, when PVC Doors & Interiors was added (a fit-out
  * business the Phase 0 legacy crawl never surfaced, docs/BUSINESS_FACTS.md),
  * then 170 the same day when Smart Tech was added.
  *
@@ -263,10 +263,10 @@ final class TaxonomySeeder extends Seeder
         ],
 
         /*
-         * WPC Doors & Interiors - added 2026-08-23.
+         * PVC Doors & Interiors - added 2026-08-23.
          *
          * ── Why this is a department and not a category ──────────────────
-         * WPC is a fit-out business that happens to sit inside a supplier:
+         * PVC is a fit-out business that happens to sit inside a supplier:
          * kitchens, wardrobes, doors and wall panelling, sold on material
          * properties and specified per project rather than picked off a
          * shelf. Filing it under Office Furniture would put a kitchen next
@@ -277,7 +277,7 @@ final class TaxonomySeeder extends Seeder
          * business's own marketing (see docs/BUSINESS_FACTS.md).
          *
          * ── The leaves are applications, not SKUs ────────────────────────
-         * A buyer looking for WPC is deciding "can this do my kitchen",
+         * A buyer looking for PVC is deciding "can this do my kitchen",
          * not comparing board thicknesses. The subcategories are therefore
          * rooms and uses, with material formats underneath where they are
          * genuinely how somebody shops.
@@ -288,29 +288,29 @@ final class TaxonomySeeder extends Seeder
          * will render and be linked but stay out of the sitemap until
          * somebody writes them. They appear in the content-readiness queue.
          */
-        'wpc-doors-interiors' => [
-            'name' => 'WPC Doors & Interiors',
+        'pvc-doors-interiors' => [
+            'name' => 'PVC Doors & Interiors',
             'children' => [
-                'wpc-doors' => ['name' => 'WPC Doors', 'children' => [
+                'pvc-doors' => ['name' => 'PVC Doors', 'children' => [
                     'internal-doors' => 'Internal Doors',
                     'door-frames' => 'Door Frames & Architraves',
                     'flush-doors' => 'Flush Doors',
                 ]],
-                'wpc-wardrobes' => ['name' => 'Wardrobes & Storage', 'children' => [
+                'pvc-wardrobes' => ['name' => 'Wardrobes & Storage', 'children' => [
                     'fitted-wardrobes' => 'Fitted Wardrobes',
                     'sliding-wardrobes' => 'Sliding-Door Wardrobes',
                 ]],
-                'wpc-kitchens' => ['name' => 'Kitchen Cabinetry', 'children' => [
+                'pvc-kitchens' => ['name' => 'Kitchen Cabinetry', 'children' => [
                     'kitchen-cabinets' => 'Kitchen Cabinets',
                     'kitchen-islands' => 'Islands & Worktop Units',
                 ]],
-                'wpc-interiors' => ['name' => 'Wall & Ceiling Panels', 'children' => [
+                'pvc-interiors' => ['name' => 'Wall & Ceiling Panels', 'children' => [
                     'wall-panels' => 'Wall Panels',
                     'ceiling-panels' => 'Ceiling Panels',
                 ]],
-                'wpc-boards' => ['name' => 'WPC Boards & Sheets', 'children' => [
-                    'wpc-sheets' => 'Boards & Sheets',
-                    'wpc-edging' => 'Edging & Trims',
+                'pvc-boards' => ['name' => 'PVC Boards & Sheets', 'children' => [
+                    'pvc-sheets' => 'Boards & Sheets',
+                    'pvc-edging' => 'Edging & Trims',
                 ]],
             ],
         ],

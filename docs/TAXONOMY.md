@@ -95,19 +95,19 @@ Nine departments. `~` marks a leaf that exists mainly to absorb legacy terms and
     cameras-imaging/            digital-cameras · camcorders · camera-accessories
     wearables/                  smart-watches · fitness-trackers · power-banks
 
-/c/wpc-doors-interiors/
-    wpc-doors/                  internal-doors · door-frames · flush-doors
-    wpc-wardrobes/              fitted-wardrobes · sliding-wardrobes
-    wpc-kitchens/               kitchen-cabinets · kitchen-islands
-    wpc-interiors/              wall-panels · ceiling-panels
-    wpc-boards/                 wpc-sheets · wpc-edging
+/c/pvc-doors-interiors/
+    pvc-doors/                  internal-doors · door-frames · flush-doors
+    pvc-wardrobes/              fitted-wardrobes · sliding-wardrobes
+    pvc-kitchens/               kitchen-cabinets · kitchen-islands
+    pvc-interiors/              wall-panels · ceiling-panels
+    pvc-boards/                 pvc-sheets · pvc-edging
 ```
 
 **Totals:** 9 departments · 42 subcategories · 119 leaves = **170 categories**.
 
 The tree was signed off at 124. Two departments were added on 2026-08-23, both
 for lines of business the Phase 0 legacy crawl never surfaced because the
-legacy site did not sell them online: **WPC Doors & Interiors** (a fit-out
+legacy site did not sell them online: **PVC Doors & Interiors** (a fit-out
 business — see docs/BUSINESS_FACTS.md) and **Smart Tech**. Smart Tech is not
 the reference site’s consumer version; its `power-backup/` branch is the local
 addition that justifies the department, because nothing in a Nigerian office

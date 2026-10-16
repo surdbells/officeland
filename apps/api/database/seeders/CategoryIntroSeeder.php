@@ -38,49 +38,49 @@ final class CategoryIntroSeeder extends Seeder
      * @var array<string, string>
      */
     private const INTROS = [
-        '/wpc-doors-interiors/' => <<<'HTML'
-            <p>WPC - wood-plastic composite - is what we specify when a fit-out has to survive a Nigerian building rather than a showroom photograph. The board is a dense mix of wood fibre and polymer, so it takes a screw and holds an edge like timber, and then does not do the three things timber does here: it does not swell, it does not feed termites, and it does not need sealing every dry season.</p>
-            <p>That matters most in the rooms where MDF and plywood fail first. A kitchen carcass under a leaking sink, a wardrobe against an external wall in the rains, a bathroom door: these are the jobs that come back. WPC is dimensionally stable when wet, which is why we build kitchens, wardrobes, doors and wall panelling from it rather than treating it as a budget substitute for wood.</p>
+        '/pvc-doors-interiors/' => <<<'HTML'
+            <p>PVC - PVC - is what we specify when a fit-out has to survive a Nigerian building rather than a showroom photograph. The board is a dense mix of wood fibre and polymer, so it takes a screw and holds an edge like timber, and then does not do the three things timber does here: it does not swell, it does not feed termites, and it does not need sealing every dry season.</p>
+            <p>That matters most in the rooms where MDF and plywood fail first. A kitchen carcass under a leaking sink, a wardrobe against an external wall in the rains, a bathroom door: these are the jobs that come back. PVC is dimensionally stable when wet, which is why we build kitchens, wardrobes, doors and wall panelling from it rather than treating it as a budget substitute for wood.</p>
             <p>It is specified per project, not bought off a shelf. Sizes, finishes, edge profiles and hardware are chosen against your drawings or a site measure, and we quote the board, the fabrication and the installation as one number. Lead times depend on the finish and the volume, and we state them per line rather than averaging them.</p>
-            <p>If you are comparing WPC against laminated MDF on price alone, ask for both quotes - the difference is usually smaller than expected once the failures are priced in.</p>
+            <p>If you are comparing PVC against laminated MDF on price alone, ask for both quotes - the difference is usually smaller than expected once the failures are priced in.</p>
             HTML,
 
-        '/wpc-doors-interiors/wpc-doors/' => <<<'HTML'
-            <p>Internal doors are where the case for WPC is easiest to make. A timber or hollow-core door in a Lagos bathroom absorbs moisture at the bottom rail, swells against the frame, and within two seasons either sticks or has to be planed - at which point it no longer seals. A WPC door does not take up water, so the gap it was hung with is the gap it keeps.</p>
+        '/pvc-doors-interiors/pvc-doors/' => <<<'HTML'
+            <p>Internal doors are where the case for PVC is easiest to make. A timber or hollow-core door in a Lagos bathroom absorbs moisture at the bottom rail, swells against the frame, and within two seasons either sticks or has to be planed - at which point it no longer seals. A PVC door does not take up water, so the gap it was hung with is the gap it keeps.</p>
             <p>We supply flush doors, panelled doors and matching frames and architraves. The frame matters as much as the leaf: hanging a stable door in a swelling timber frame moves the problem rather than solving it, so we quote them together unless you are matching existing openings.</p>
             <p>Specify by opening size, handing, and whether the door is internal, wet-area or external-facing. Finishes range from plain colours to wood-effect laminates, and the edge is solid rather than a wrapped veneer, so knocks show less and do not open a path for moisture.</p>
             <p>Hardware is not included by default - locksets, hinges and closers vary too much by building to assume. Tell us what the door has to do and we will price the ironmongery with it.</p>
             HTML,
 
-        '/wpc-doors-interiors/wpc-wardrobes/' => <<<'HTML'
-            <p>Fitted wardrobes fail at the back panel. They are built against an external wall, the wall carries moisture through the rains, and the board behind the hanging rail is the first thing to soften - usually unnoticed until clothes start smelling of it. WPC does not absorb that moisture, which is the whole reason we build wardrobe carcasses from it.</p>
+        '/pvc-doors-interiors/pvc-wardrobes/' => <<<'HTML'
+            <p>Fitted wardrobes fail at the back panel. They are built against an external wall, the wall carries moisture through the rains, and the board behind the hanging rail is the first thing to soften - usually unnoticed until clothes start smelling of it. PVC does not absorb that moisture, which is the whole reason we build wardrobe carcasses from it.</p>
             <p>We make fitted and sliding-door wardrobes to site measure. Sliding doors suit rooms where a swing door would foul the bed; hinged doors give full access to the opening and cost less. Internal layouts - hanging heights, shelf runs, drawer banks, shoe racks - are drawn against what you actually store rather than a standard module.</p>
-            <p>The carcass, doors and internal fittings can all be WPC, or the carcass in WPC with a different door finish where the look matters more than the exposure. That mix is often the sensible answer for a bedroom that is not damp.</p>
+            <p>The carcass, doors and internal fittings can all be PVC, or the carcass in PVC with a different door finish where the look matters more than the exposure. That mix is often the sensible answer for a bedroom that is not damp.</p>
             <p>Send a rough floor plan with ceiling height and any obstructions - sockets, switches, a window reveal - and we will come back with a layout and a quote. Installation is included in Lagos; elsewhere it is quoted per site.</p>
             HTML,
 
-        '/wpc-doors-interiors/wpc-kitchens/' => <<<'HTML'
+        '/pvc-doors-interiors/pvc-kitchens/' => <<<'HTML'
             <p>A kitchen is the hardest test a board gets. Standing water under a sink, steam, heat above the hob, and cleaning products several times a day - a laminated MDF carcass in that environment is on a clock, and the failure is invisible until a door stops closing squarely or the base of a unit crumbles.</p>
-            <p>We build kitchen carcasses, cabinet doors, islands and worktop units in WPC for that reason. It is dimensionally stable when wet, so hinges stay aligned and drawers keep running true. The high-density core holds fixings properly, which matters for wall units carrying weight and for soft-close hardware that puts repeated load on the same screws.</p>
+            <p>We build kitchen carcasses, cabinet doors, islands and worktop units in PVC for that reason. It is dimensionally stable when wet, so hinges stay aligned and drawers keep running true. The high-density core holds fixings properly, which matters for wall units carrying weight and for soft-close hardware that puts repeated load on the same screws.</p>
             <p>Kitchens are quoted from a drawing or a site measure, never from a catalogue page. We price the cabinetry, the fabrication and the installation together, and we will tell you plainly where a cheaper board is a reasonable choice - a tall larder run on an internal wall is not a wet area and does not need to be priced as one.</p>
             <p>Worktops, appliances and sinks are specified separately; tell us what you have chosen and we will build to it.</p>
             HTML,
 
-        '/wpc-doors-interiors/wpc-interiors/' => <<<'HTML'
-            <p>Wall and ceiling panelling is usually chosen for how it looks, and then judged on how it lasts. WPC panels are used in receptions, boardrooms, corridors and hotel rooms where a painted wall would be marked within a year and a timber-clad one would need refinishing.</p>
+        '/pvc-doors-interiors/pvc-interiors/' => <<<'HTML'
+            <p>Wall and ceiling panelling is usually chosen for how it looks, and then judged on how it lasts. PVC panels are used in receptions, boardrooms, corridors and hotel rooms where a painted wall would be marked within a year and a timber-clad one would need refinishing.</p>
             <p>The panels are fitted to a batten or directly to a sound wall, with a concealed joint so a run reads as one surface rather than a series of boards. Because the material does not absorb moisture, it can be used in circulation spaces that are not fully air-conditioned - corridors, stairwells, lift lobbies - where humidity swings between the seasons.</p>
             <p>Ceiling panels are the same material in lighter sections, and are worth considering where an existing ceiling is sound but tired: panelling over is faster and less disruptive than stripping out, and it takes lighting and vents without special detailing.</p>
             <p>Panelling is quoted by area with a separate line for setting out, because a room with many returns, reveals and service penetrations takes considerably longer to fit than an open wall of the same square metreage. Send dimensions and a photograph and we will be specific.</p>
             HTML,
 
-        '/wpc-doors-interiors/wpc-boards/' => <<<'HTML'
-            <p>For fabricators and contractors doing their own work, we supply WPC as raw boards, sheets, edging and trims rather than as a finished install. This is the same material we build with, sold by the sheet.</p>
+        '/pvc-doors-interiors/pvc-boards/' => <<<'HTML'
+            <p>For fabricators and contractors doing their own work, we supply PVC as raw boards, sheets, edging and trims rather than as a finished install. This is the same material we build with, sold by the sheet.</p>
             <p>Boards come in a range of thicknesses; the choice is mostly structural. Thinner sheets suit panelling, cabinet backs and drawer bottoms, while thicker stock is needed anywhere a fixing carries load - carcass sides, shelving that will be loaded, anything taking a hinge. If you tell us the application we will tell you the thickness rather than the other way round.</p>
-            <p>WPC cuts, routs and drills with ordinary woodworking tooling, which is one of its practical advantages over alternatives: no specialist blades and no change to your workshop. It does not, however, behave like timber when heated or bonded, so ask about adhesives and edge treatment before committing a large batch.</p>
+            <p>PVC cuts, routs and drills with ordinary woodworking tooling, which is one of its practical advantages over alternatives: no specialist blades and no change to your workshop. It does not, however, behave like timber when heated or bonded, so ask about adhesives and edge treatment before committing a large batch.</p>
             <p>Edging and trims are stocked to match the board finishes, so a cut edge can be closed properly rather than left exposed. Trade quantities are quoted per order - send a cutting list or a sheet count and we will price it, including delivery.</p>
             HTML,
 
-        '/wpc-doors-interiors/wpc-doors/internal-doors/' => <<<'HTML'
+        '/pvc-doors-interiors/pvc-doors/internal-doors/' => <<<'HTML'
             <p>These are the doors inside the building - bedrooms, offices, stores, bathrooms - as opposed to the entrance, which has a different job and is not made from this material.</p>
             <p>Specify four things and we can quote without a site visit: the structural opening size, the handing (which side the hinges go and which way the leaf swings), whether the opening is dry or wet, and whether you need the frame with it. Handing is the one people leave out and the one that cannot be corrected on site without spoiling the leaf.</p>
             <p>Standard leaf sizes cover most Nigerian residential and office openings, and a non-standard opening is usually cheaper to adjust in blockwork than to have a leaf made for. We will tell you which way round it falls for your job.</p>
@@ -88,7 +88,7 @@ final class CategoryIntroSeeder extends Seeder
             <p>Locksets, hinges and closers are quoted separately. Tell us the traffic the door will take - a store cupboard and a clinic corridor need different ironmongery, and the door will outlast the wrong hinges by years.</p>
             HTML,
 
-        '/wpc-doors-interiors/wpc-doors/flush-doors/' => <<<'HTML'
+        '/pvc-doors-interiors/pvc-doors/flush-doors/' => <<<'HTML'
             <p>A flush door is flat on both faces, with no raised panels or mouldings. It is the plainest construction and, for most commercial work, the right one: nothing to catch dust, nothing to chip, and the lowest cost per opening at any given quality.</p>
             <p>They overlap with our internal doors listing on purpose - a flush door is one construction of internal door, and if you already know you want the flat-faced version this is the shorter path to it.</p>
             <p>Where flush doors earn their keep is repetition. An office floor, a hostel block, a school corridor or a hotel wing needs forty identical openings closed to the same standard, and a flush leaf in a consistent finish is what makes that look deliberate rather than assembled from whatever was available.</p>
@@ -96,7 +96,7 @@ final class CategoryIntroSeeder extends Seeder
             <p>Quoted by opening size and quantity. Send us a door schedule if you have one, and a floor plan if you do not.</p>
             HTML,
 
-        '/wpc-doors-interiors/wpc-doors/door-frames/' => <<<'HTML'
+        '/pvc-doors-interiors/pvc-doors/door-frames/' => <<<'HTML'
             <p>The frame decides whether the door works. A stable leaf hung in a timber frame that swells through the rains sticks in exactly the same way a timber door would, so the problem moves rather than goes away - which is why we quote frames with leaves unless you are matching openings that already exist.</p>
             <p>What is here is the frame itself and the architraves that close the joint between frame and wall. Both are the same material as the doors, so they hold their line, take a screw properly and do not need repainting where they meet the plaster.</p>
             <p>Frames are made to the structural opening and the wall thickness, and wall thickness is the measurement most often guessed. A 150&nbsp;mm block wall with render on both faces is not a 150&nbsp;mm opening, and a frame ordered to the wrong depth either stands proud of the wall or leaves a gap the architrave cannot cover.</p>
@@ -104,14 +104,14 @@ final class CategoryIntroSeeder extends Seeder
             <p>Architraves are available square-edged or moulded, and are supplied in matching finishes so a run of doors reads as one.</p>
             HTML,
 
-        '/wpc-doors-interiors/wpc-wardrobes/fitted-wardrobes/' => <<<'HTML'
+        '/pvc-doors-interiors/pvc-wardrobes/fitted-wardrobes/' => <<<'HTML'
             <p>A fitted wardrobe is built to the room rather than placed in it: floor to ceiling, wall to wall, with no gap above to collect dust and no dead space at the sides.</p>
             <p>Hinged doors are what most fitted wardrobes use, and they have one real advantage over sliding - the whole opening is available at once, so a full-width hanging rail can be reached end to end and a drawer bank can open fully. They also cost less. The trade is swing space: allow around 600&nbsp;mm clear in front of each door, which a bedroom with the bed against the wardrobe wall does not have.</p>
             <p>Internal layouts are drawn against what you actually store. Long hanging for dresses and agbada, double hanging for shirts and trousers, shelf runs, drawer banks, shoe racks and a lockable section where one is wanted. Tell us roughly what goes in and we will lay it out rather than fitting you into a standard module.</p>
             <p>Send a floor plan with ceiling height and anything on the wall - sockets, switches, an AC line, a window reveal. Ceiling height matters more than people expect: above about 2.7&nbsp;m the top section becomes storage nobody reaches, and it is worth deciding on purpose whether to build to it.</p>
             HTML,
 
-        '/wpc-doors-interiors/wpc-wardrobes/sliding-wardrobes/' => <<<'HTML'
+        '/pvc-doors-interiors/pvc-wardrobes/sliding-wardrobes/' => <<<'HTML'
             <p>Sliding doors run within the width of the wardrobe instead of swinging into the room, which is the whole reason to choose them. In a bedroom where the bed sits close to the wardrobe wall, a hinged door either cannot open or opens onto the bed.</p>
             <p>The cost of that is access. Two sliding doors mean half the opening is closed at any moment, so a full-width rail cannot be reached end to end and the layout inside has to be planned around which half is open. Three doors on two tracks improve it; they also add cost and reduce each door's width.</p>
             <p>The track carries the wardrobe's reputation. Bottom-rolling gear on a properly levelled floor runs quietly for years; the same gear on an out-of-level floor binds within months, and the fault reads as a door problem when it is a floor problem. We level the base before hanging, and we will say if a floor needs attention first.</p>
@@ -119,15 +119,15 @@ final class CategoryIntroSeeder extends Seeder
             <p>Quoted from a site measure. Send the wall width, the ceiling height and a photograph of the room.</p>
             HTML,
 
-        '/wpc-doors-interiors/wpc-kitchens/kitchen-cabinets/' => <<<'HTML'
+        '/pvc-doors-interiors/pvc-kitchens/kitchen-cabinets/' => <<<'HTML'
             <p>Base units, wall units and tall units - the carcasses that carry everything else in the kitchen, and the part nobody sees until it fails.</p>
-            <p>Base units under a sink are the ones that decide how long a kitchen lasts. That cabinet lives with a slow leak nobody notices for weeks, and a laminated MDF base in that position softens from the bottom edge upward while looking perfectly sound from the front. This is the single strongest case for building a carcass in WPC rather than board.</p>
+            <p>Base units under a sink are the ones that decide how long a kitchen lasts. That cabinet lives with a slow leak nobody notices for weeks, and a laminated MDF base in that position softens from the bottom edge upward while looking perfectly sound from the front. This is the single strongest case for building a carcass in PVC rather than board.</p>
             <p>Wall units are a fixings question. A cabinet full of crockery is a heavy object hanging on whatever the wall gives you, and the high-density core here holds a screw where a chipboard-cored carcass would not. Tell us the wall construction - block, hollow block, dry lining - because that changes the fixing more than the cabinet does.</p>
             <p>Tall and larder units on an internal wall are not a wet area, and we will say so: a cheaper board is a reasonable choice there and we would rather quote it honestly than price a whole kitchen at wet-area specification.</p>
             <p>Doors, handles, hinges and drawer runners are specified with the carcasses. Soft-close hardware puts repeated load on the same screws, which is another reason the core matters.</p>
             HTML,
 
-        '/wpc-doors-interiors/wpc-kitchens/kitchen-islands/' => <<<'HTML'
+        '/pvc-doors-interiors/pvc-kitchens/kitchen-islands/' => <<<'HTML'
             <p>An island is a free-standing run of cabinetry with a worktop over it, finished on every face because every face is visible. That is the first thing that separates it from a wall run, and the reason it costs more per metre.</p>
             <p>What goes into it decides everything else. An island that is only storage and a work surface can be built and set down. An island carrying a sink or a hob needs plumbing and power brought up through the floor slab, and that is a decision made before the floor is laid - retrofitting services into a slab is disruptive, expensive, and occasionally impossible.</p>
             <p>Clearance is the other constraint. Allow around 1&nbsp;m between the island and the runs around it: less and two people cannot pass, and an oven door or a dishwasher cannot open fully. A kitchen that looks generous on a drawing often does not have it, and the honest answer in a smaller room is a peninsula rather than an island.</p>
@@ -135,7 +135,7 @@ final class CategoryIntroSeeder extends Seeder
             <p>Quoted from a kitchen drawing or a site measure.</p>
             HTML,
 
-        '/wpc-doors-interiors/wpc-interiors/wall-panels/' => <<<'HTML'
+        '/pvc-doors-interiors/pvc-interiors/wall-panels/' => <<<'HTML'
             <p>Wall panelling in a reception, boardroom, corridor or hotel room, fitted to battens or directly to a sound wall with concealed joints so the run reads as one surface.</p>
             <p>It is chosen over paint in places that are touched. A painted corridor wall in a busy building is marked within a year and repainted on a cycle nobody budgets for; a panelled one is wiped. Over the life of a building that is usually the cheaper wall, and it is the argument worth making to whoever signs off the fit-out.</p>
             <p>Fixing method depends on what is behind. A flat, dry, sound wall takes panels directly. Anything uneven, damp-prone or hiding services wants battens, which adds around 25&nbsp;mm to the wall thickness - worth knowing before it eats into a corridor width or fouls a door frame.</p>
@@ -143,7 +143,7 @@ final class CategoryIntroSeeder extends Seeder
             <p>Send dimensions, a photograph and a note of anything on the wall that has to stay accessible.</p>
             HTML,
 
-        '/wpc-doors-interiors/wpc-interiors/ceiling-panels/' => <<<'HTML'
+        '/pvc-doors-interiors/pvc-interiors/ceiling-panels/' => <<<'HTML'
             <p>The same material in lighter sections, fixed to a ceiling grid or to battens beneath an existing ceiling.</p>
             <p>The case for it is usually renovation rather than new build. Where a ceiling is structurally sound but stained, patched or simply dated, panelling over is faster and far less disruptive than stripping out - no demolition, no debris, and a floor that can often stay in use while the work happens. For an occupied office or a hotel doing rooms in rotation, that difference matters more than the material does.</p>
             <p>Lighting, air-conditioning grilles, smoke detectors and sprinkler heads all come through the ceiling, and their positions have to be set before panels are cut. Send us a reflected ceiling plan if one exists; if it does not, a photograph taken straight up from the middle of the room tells us most of what we need.</p>
@@ -151,18 +151,18 @@ final class CategoryIntroSeeder extends Seeder
             <p>Quoted by area, with setting out priced separately for the same reason as wall panelling.</p>
             HTML,
 
-        '/wpc-doors-interiors/wpc-boards/wpc-sheets/' => <<<'HTML'
-            <p>WPC sold by the sheet, for fabricators and contractors doing their own work. Same material we build with, no fabrication and no installation.</p>
+        '/pvc-doors-interiors/pvc-boards/pvc-sheets/' => <<<'HTML'
+            <p>PVC sold by the sheet, for fabricators and contractors doing their own work. Same material we build with, no fabrication and no installation.</p>
             <p>Thickness is the decision, and it is structural rather than aesthetic. Thinner sheets suit panelling, cabinet backs and drawer bottoms. Thicker stock is needed anywhere a fixing carries load - carcass sides, shelving that will actually be loaded, anything taking a hinge. Tell us the application and we will tell you the thickness; asked the other way round the answer is a guess.</p>
             <p>It cuts, routs and drills with ordinary woodworking tooling, which is the practical advantage over most alternatives: no specialist blades, no change to your workshop, no learning curve for the person on the saw.</p>
             <p>Where it does not behave like timber is heat and adhesive. It moves more with temperature than wood does, so a long run fixed rigidly at both ends will show it, and not every wood glue bonds to it. Ask us about adhesive and expansion allowance before committing a large batch rather than after cutting one.</p>
             <p>Trade quantities are quoted per order. Send a cutting list or a sheet count and we will price it, delivery included.</p>
             HTML,
 
-        '/wpc-doors-interiors/wpc-boards/wpc-edging/' => <<<'HTML'
+        '/pvc-doors-interiors/pvc-boards/pvc-edging/' => <<<'HTML'
             <p>Edging strip and trims to match the board finishes, so a cut edge is closed properly instead of left exposed.</p>
             <p>This is the least interesting line in the catalogue and the one that most often decides whether a job looks finished. A cut edge is where the board's construction is visible, where a knock does the most damage, and where a shelf front stops looking like furniture and starts looking like a shelf. On a wardrobe or a kitchen it is the detail a client's eye lands on without knowing why.</p>
-            <p>WPC does not swell at an open edge the way MDF does, so edging here is about appearance and impact resistance rather than sealing out moisture. That is a genuine difference from edging a board that must be closed to survive, and it means a missed edge on a WPC carcass is a cosmetic problem rather than a countdown.</p>
+            <p>PVC does not swell at an open edge the way MDF does, so edging here is about appearance and impact resistance rather than sealing out moisture. That is a genuine difference from edging a board that must be closed to survive, and it means a missed edge on a PVC carcass is a cosmetic problem rather than a countdown.</p>
             <p>Order edging with the sheets rather than after them. Finishes are batched, and a strip bought three months later can be a shade off in a way that is only obvious once it is on the job.</p>
             <p>Trims for corners, joints and end profiles are stocked in the same finishes. Send your sheet order and we will work out the running metres.</p>
             HTML,

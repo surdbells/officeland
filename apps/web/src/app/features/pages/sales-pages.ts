@@ -130,7 +130,7 @@ export class BulkSupplyPage {
           on, and what a stabiliser is actually protecting.
         </li>
         <li>
-          <a routerLink="/c/wpc-doors-interiors/">WPC doors &amp; interiors</a> -
+          <a routerLink="/c/pvc-doors-interiors/">PVC doors &amp; interiors</a> -
           where moisture and termites actually attack a fit-out, and when a cheaper
           board is the honest answer.
         </li>

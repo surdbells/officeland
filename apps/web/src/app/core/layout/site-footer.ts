@@ -75,7 +75,7 @@ import { RouterLink } from '@angular/router';
               <li><a routerLink="/c/paper-notebooks/" class="text-white/70 hover:text-white">Paper &amp; notebooks</a></li>
               <li><a routerLink="/c/filing-storage/" class="text-white/70 hover:text-white">Filing &amp; storage</a></li>
               <li><a routerLink="/c/school-supplies/" class="text-white/70 hover:text-white">School supplies</a></li>
-              <li><a routerLink="/c/wpc-doors-interiors/" class="text-white/70 hover:text-white">WPC doors &amp; interiors</a></li>
+              <li><a routerLink="/c/pvc-doors-interiors/" class="text-white/70 hover:text-white">PVC doors &amp; interiors</a></li>
             </ul>
           </nav>
 
