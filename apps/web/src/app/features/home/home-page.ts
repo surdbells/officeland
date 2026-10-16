@@ -370,104 +370,61 @@ const SHOWCASE_STYLES: readonly ShowcaseStyle[] = ['grid', 'feature', 'rail'];
           </div>
 
           <!--
-            A carousel, not a scrollbar.
+            A bento, not a rail.
 
-            The rail was a plain overflow-x container, which put a browser
-            scrollbar across the bottom of the section. That reads as a bug
-            rather than a control - nobody expects a horizontal scrollbar in
-            the middle of a page - so the bar is hidden and replaced with
-            buttons.
+            A horizontal scroll of identical square tiles is the most generic
+            shape a storefront has. A bento - the first department at double
+            size, the rest around it - gives the section a silhouette and lets
+            the real department photographs carry it. Every tile is a real
+            anchor in the rendered HTML, so nothing is lost for a crawler.
 
-            ── Still a scroll container underneath ──────────────────────────
-            The buttons drive "scrollBy"; they do not reimplement scrolling.
-            That keeps every native behaviour intact: trackpad swipe, shift +
-            wheel, touch drag, and - the one that matters for accessibility -
-            tabbing to a link off-screen scrolls it into view on its own.
-            Hiding a scrollbar is only safe because none of that depends on it
-            being visible.
-
-            ── Why the buttons are progressive enhancement ──────────────────
-            Under D-009 this markup is prerendered, so the buttons exist in
-            the static HTML but do nothing until hydration. Every department
-            is still a real anchor in that HTML and the rail still scrolls by
-            touch and keyboard, so the pre-hydration page is usable rather
-            than merely present.
-
-            aria-hidden on the buttons: they duplicate scrolling a screen
-            reader user gets for free by moving through the links, and
-            announcing "previous/next" for a list that reading order already
-            covers is noise. They are pointer affordances.
+            The name sits over the photo on a scrim rather than beneath it,
+            which is what turns a thumbnail into a cover.
           -->
-          <div class="relative mt-6">
-            <ul
-              #rail
-              class="ol-rail flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2"
-              (scroll)="onRailScroll()"
-            >
-              @for (department of departments(); track department.slug) {
-                <li class="w-40 shrink-0 snap-start sm:w-48">
-                  <a [routerLink]="department.url" class="group block">
-                    <!--
-                      The department's hero photograph where one exists, the
-                      lettered tile where it does not. Every department now
-                      carries a hero, so the rail reads as photographs; the
-                      placeholder stays as the honest fallback for a department
-                      still awaiting its shot rather than a broken frame.
-                    -->
-                    @if (department.hero; as hero) {
-                      <span class="ol-lift ol-zoom-frame block aspect-square rounded-2xl bg-ink-50">
-                        <ol-image [image]="hero" sizes="12rem" imgClass="h-full w-full rounded-2xl object-cover" />
-                      </span>
-                    } @else {
-                      <span
-                        class="ol-lift flex aspect-square items-center justify-center rounded-2xl bg-brand-50 p-4 text-center font-heading text-sm font-semibold text-brand-700 group-hover:bg-brand-100"
-                        aria-hidden="true"
-                      >{{ department.name }}</span>
-                    }
-                    <span class="mt-2 block text-sm font-medium text-ink-900 group-hover:text-brand-600">
+          <ul class="ol-bento mt-6 grid auto-rows-[9.5rem] grid-cols-2 gap-3 sm:auto-rows-[11rem] sm:gap-4 lg:grid-cols-4">
+            @for (department of departments(); track department.slug; let i = $index) {
+              <li
+                olReveal
+                [olRevealDelay]="i * 55"
+                [class]="i === 0 ? 'col-span-2 row-span-2' : ''"
+              >
+                <a
+                  [routerLink]="department.url"
+                  class="ol-lift ol-zoom-frame group relative block h-full overflow-hidden rounded-2xl bg-ink-900"
+                  [class.min-h-44]="i !== 0"
+                >
+                  @if (department.hero; as hero) {
+                    <div class="absolute inset-0">
+                      <ol-image
+                        [image]="hero"
+                        [sizes]="i === 0 ? '(min-width: 1024px) 50vw, 100vw' : '(min-width: 1024px) 25vw, 50vw'"
+                        imgClass="h-full w-full object-cover"
+                      />
+                    </div>
+                    <span aria-hidden="true" class="ol-photo-scrim absolute inset-0"></span>
+                  } @else {
+                    <span aria-hidden="true" class="absolute inset-0 bg-brand-600"></span>
+                  }
+
+                  <div class="relative flex h-full flex-col justify-end p-4 sm:p-5" [class.min-h-44]="i === 0">
+                    <h3 [class]="i === 0
+                      ? 'font-heading text-2xl font-bold text-white drop-shadow-sm sm:text-3xl'
+                      : 'font-heading text-base font-semibold text-white drop-shadow-sm'">
                       {{ department.name }}
-                    </span>
-                    <!--
-                      The count only when there is one. Every department read
-                      "0 products" while the catalogue is being populated,
-                      which is both discouraging and misleading - we supply
-                      far more than we list, and the tile was saying the
-                      opposite.
-                    -->
-                    @if (department.product_count) {
-                      <span class="block text-xs text-ink-400">
+                    </h3>
+                    <span class="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-white/80">
+                      @if (department.product_count) {
                         {{ department.product_count }} products
-                      </span>
-                    }
-                  </a>
-                </li>
-              }
-            </ul>
-
-            @if (canScrollBack()) {
-              <button
-                type="button"
-                aria-hidden="true"
-                tabindex="-1"
-                class="ol-rail-button left-0 -translate-x-1/2"
-                (click)="scrollRail(-1)"
-              >
-                <ol-icon name="chevron-right" [size]="20" class="rotate-180" />
-              </button>
+                      } @else {
+                        Shop now
+                      }
+                      <ol-icon name="arrow-right" [size]="15" class="transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </div>
+                </a>
+              </li>
             }
-
-            @if (canScrollOn()) {
-              <button
-                type="button"
-                aria-hidden="true"
-                tabindex="-1"
-                class="ol-rail-button right-0 translate-x-1/2"
-                (click)="scrollRail(1)"
-              >
-                <ol-icon name="chevron-right" [size]="20" />
-              </button>
-            }
-          </div>
+          </ul>
         </div>
       </section>
     }
