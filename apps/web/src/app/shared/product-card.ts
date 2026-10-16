@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { ProductCard as ProductCardData } from '../core/api/catalogue-api';
 import { ResponsiveImage } from './responsive-image';
+import { Icon } from './icon';
+import { QuickViewService } from './quick-view.service';
 
 /**
  * The product card - one component, one prop set, one test suite (8b).
@@ -32,14 +34,37 @@ import { ResponsiveImage } from './responsive-image';
   selector: 'ol-product-card',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ResponsiveImage],
+  imports: [RouterLink, ResponsiveImage, Icon],
   template: `
     <article
-      class="group relative flex h-full flex-col rounded-lg border border-ink-100 bg-white p-4 transition hover:border-brand-600"
+      class="ol-lift group relative flex h-full flex-col rounded-lg border border-ink-100 bg-white p-4 hover:border-brand-600"
     >
-      <a [routerLink]="product().url" class="mb-3 block aspect-square" tabindex="-1" aria-hidden="true">
+      <a
+        [routerLink]="product().url"
+        class="ol-zoom-frame mb-3 block aspect-square rounded-md"
+        tabindex="-1"
+        aria-hidden="true"
+      >
         <ol-image [image]="product().image ?? null" [sizes]="imageSizes()" />
       </a>
+
+      <!--
+        Quick view. Sits above the stretched ::after (z-10, like the brand
+        link) so it is clickable inside a card that is otherwise one big
+        target, and opens the overlay from the data already on the card.
+
+        Revealed on hover on a pointer device and always shown on a touch
+        screen, where there is no hover to reveal it. It is keyboard-focusable
+        and appears on focus, so it is never a mouse-only affordance.
+      -->
+      <button
+        type="button"
+        class="absolute right-6 top-6 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-ink-700 opacity-0 shadow-sm backdrop-blur transition-opacity duration-200 hover:text-brand-600 focus-visible:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100"
+        [attr.aria-label]="'Quick view of ' + product().name"
+        (click)="quickView.open(product())"
+      >
+        <ol-icon name="search" [size]="16" />
+      </button>
 
       @switch (headingLevel()) {
         @case (2) {
@@ -157,6 +182,8 @@ import { ResponsiveImage } from './responsive-image';
   `,
 })
 export class ProductCard {
+  protected readonly quickView = inject(QuickViewService);
+
   readonly product = input.required<ProductCardData>();
 
   /** 3 by default: a PLP card sits under the page h1 and a section h2. */

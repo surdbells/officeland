@@ -40,55 +40,63 @@ import { ProductCard } from '../../shared/product-card';
   template: `
     @if (category(); as cat) {
       <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8">
-        <!-- Breadcrumbs on every non-home page (section 23.5), matching the
-             BreadcrumbList markup emitted below. -->
-        <nav aria-label="Breadcrumb">
-          <ol class="flex flex-wrap items-center gap-2 text-sm text-ink-600">
-            <li><a routerLink="/" class="hover:text-brand-600">Home</a></li>
-            @for (crumb of cat.breadcrumb ?? []; track crumb.url) {
-              <li aria-hidden="true">/</li>
-              <li><a [routerLink]="crumb.url" class="hover:text-brand-600">{{ crumb.name }}</a></li>
-            }
-            <li aria-hidden="true">/</li>
-            <li aria-current="page" class="text-ink-900">{{ cat.name }}</li>
-          </ol>
-        </nav>
-
         <!--
-          The hero.
+          The category header.
 
-          Only rendered when the category has one. Every category has null
-          today - hero_media_id has been on the table since Phase 2 and
-          nothing ever wrote to it - so this has to be an addition rather
-          than a requirement: a category without a picture must still look
-          deliberate, not broken.
+          Every category now carries a photograph - its own, or the nearest
+          ancestor's (heroFor) - so the header is a cinematic banner with the
+          name over the image rather than a heading beside a thumbnail. The
+          scrim carries white type to AA over any of the nine, and the image is
+          the LCP element, so it is eager and high-priority. A category with no
+          photograph at all (none today) falls back to the plain heading, which
+          is simply the banner without its backdrop.
 
-          Which is why the title sits BESIDE the image rather than over it.
-          Text over a photograph needs a scrim, a scrim needs a photograph
-          to darken, and a category without one would get an empty grey box
-          with a heading in it. Side by side, the no-image case is simply the
-          heading at full width, which is what the page already looked like.
-
-          eager + fetchpriority high: this is the LCP element on a category
-          page that has one, and the whole point of setting width and height
-          on it is that arriving late must not move the grid below.
+          The breadcrumb lives inside the banner and mirrors the BreadcrumbList
+          markup emitted below (section 23.5).
         -->
-        <div [class]="heroFor(cat) ? 'mt-4 gap-8 lg:grid lg:grid-cols-[1fr_22rem] lg:items-start' : 'mt-4'">
-          <div>
-            <h1 class="font-heading text-3xl font-bold sm:text-4xl">{{ cat.name }}</h1>
-          </div>
-
-          @if (heroFor(cat); as hero) {
-            <div class="mt-4 overflow-hidden rounded-2xl bg-ink-50 lg:mt-0">
+        @if (heroFor(cat); as hero) {
+          <section aria-labelledby="category-title" class="relative isolate overflow-hidden rounded-3xl shadow-lg">
+            <div class="absolute inset-0">
               <ol-image
                 [image]="hero"
                 [priority]="true"
-                sizes="(min-width: 1024px) 22rem, 100vw"
+                sizes="(min-width: 1600px) 1536px, 100vw"
                 imgClass="h-full w-full object-cover"
               />
             </div>
-          }
-        </div>
+            <span aria-hidden="true" class="ol-photo-scrim absolute inset-0"></span>
+
+            <div class="relative flex min-h-[15rem] flex-col justify-end gap-3 p-7 sm:min-h-[20rem] sm:p-12">
+              <nav aria-label="Breadcrumb">
+                <ol class="flex flex-wrap items-center gap-2 text-sm text-white/75">
+                  <li><a routerLink="/" class="hover:text-white">Home</a></li>
+                  @for (crumb of cat.breadcrumb ?? []; track crumb.url) {
+                    <li aria-hidden="true">/</li>
+                    <li><a [routerLink]="crumb.url" class="hover:text-white">{{ crumb.name }}</a></li>
+                  }
+                  <li aria-hidden="true">/</li>
+                  <li aria-current="page" class="text-white">{{ cat.name }}</li>
+                </ol>
+              </nav>
+              <h1 id="category-title" class="max-w-3xl text-4xl font-extrabold leading-tight text-white drop-shadow-sm sm:text-5xl">
+                {{ cat.name }}
+              </h1>
+            </div>
+          </section>
+        } @else {
+          <nav aria-label="Breadcrumb">
+            <ol class="flex flex-wrap items-center gap-2 text-sm text-ink-600">
+              <li><a routerLink="/" class="hover:text-brand-600">Home</a></li>
+              @for (crumb of cat.breadcrumb ?? []; track crumb.url) {
+                <li aria-hidden="true">/</li>
+                <li><a [routerLink]="crumb.url" class="hover:text-brand-600">{{ crumb.name }}</a></li>
+              }
+              <li aria-hidden="true">/</li>
+              <li aria-current="page" class="text-ink-900">{{ cat.name }}</li>
+            </ol>
+          </nav>
+          <h1 id="category-title" class="mt-4 text-3xl font-bold sm:text-4xl">{{ cat.name }}</h1>
+        }
 
         <!--
           Intro copy is HTML from the CMS, so it is bound rather than

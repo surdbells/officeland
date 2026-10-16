@@ -141,7 +141,7 @@ Things that work but are incomplete, found while building other things.
       coming.
 - [ ] Phase 8 gate: Core Web Vitals measured, crawl-depth report, build-time
       budget. The only original phase gate still open.
-- [ ] Intro copy for the 124 categories outside Smart Tech and WPC. They stay
+- [ ] Intro copy for the 124 categories outside Smart Tech and PVC. They stay
       `noindex` until written, which is the content floor working as designed
       (D-048).
 
@@ -166,8 +166,8 @@ sh scripts/serve.sh --rebuild
 A file without a sidecar is skipped and reported. §12.6 makes alt text
 mandatory, and an invented one is a lie to a screen reader.
 
-Filenames name the category: `wpc-doors-interiors-wpc-doors.jpg` becomes the
-hero of `/wpc-doors-interiors/wpc-doors/`.
+Filenames name the category: `pvc-doors-interiors-pvc-doors.jpg` becomes the
+hero of `/pvc-doors-interiors/pvc-doors/`.
 
 ---
 

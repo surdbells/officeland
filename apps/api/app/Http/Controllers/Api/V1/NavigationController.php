@@ -48,10 +48,15 @@ final class NavigationController extends Controller
             $categories = Category::query()
                 ->orderBy('depth')
                 ->orderBy('sort_order')
-                ->get(['id', 'uuid', 'parent_id', 'name', 'slug', 'path', 'depth', 'product_count_cached']);
+                ->get(['id', 'uuid', 'parent_id', 'name', 'slug', 'path', 'depth', 'product_count_cached', 'hero_media_id']);
 
             return [
-                'departments' => $this->tree($categories, null, $this->brandsByDepartment()),
+                'departments' => $this->tree(
+                    $categories,
+                    null,
+                    $this->brandsByDepartment(),
+                    $this->departmentHeroes($categories),
+                ),
             ];
         });
 
@@ -64,9 +69,10 @@ final class NavigationController extends Controller
      *
      * @param  Collection<int, Category>  $all
      * @param  array<string, list<array<string, mixed>>>  $brands
+     * @param  array<int, array<string, mixed>>  $heroes
      * @return list<array<string, mixed>>
      */
-    private function tree(Collection $all, ?int $parentId, array $brands = []): array
+    private function tree(Collection $all, ?int $parentId, array $brands = [], array $heroes = []): array
     {
         $nodes = [];
 
@@ -77,19 +83,44 @@ final class NavigationController extends Controller
                 'url' => $category->url(),
                 'depth' => $category->depth,
                 'product_count' => $category->product_count_cached,
-                'children' => $this->tree($all, $category->id, $brands),
+                'children' => $this->tree($all, $category->id, $brands, $heroes),
             ];
 
-            // Only departments carry a brands row; it is a panel footer, and
-            // only departments have panels.
+            // Only departments carry a brands row and a hero image: the panel
+            // is a department affordance, and the hero is what turns the
+            // homepage department rail from lettered tiles into photographs.
+            // Subtree nodes stay lean - putting 170 heroes here would bloat the
+            // navigation payload that every prerendered page carries.
             if ($category->depth === 1) {
                 $node['brands'] = $brands[$category->path] ?? [];
+                $node['hero'] = $heroes[$category->hero_media_id] ?? null;
             }
 
             $nodes[] = $node;
         }
 
         return $nodes;
+    }
+
+    /**
+     * Department hero images, keyed by media id.
+     *
+     * Only depth-1 categories, so this is nine images at most - the ones the
+     * homepage rail renders. Shares the Media->ImageResource shaping every
+     * other image on the site goes through.
+     *
+     * @param  Collection<int, Category>  $all
+     * @return array<int, array<string, mixed>>
+     */
+    private function departmentHeroes(Collection $all): array
+    {
+        /** @var list<int> $ids */
+        $ids = array_values(array_unique(array_map(
+            static fn ($value): int => (int) $value,
+            array_filter($all->where('depth', 1)->pluck('hero_media_id')->all()),
+        )));
+
+        return $this->logos($ids);
     }
 
     /**

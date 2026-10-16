@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, NavigationSkipped, Router, RouterLink } from '@angular/router';
+import { filter } from 'rxjs';
 import { Icon, type IconName } from '../../shared/icon';
 import { ResponsiveImage } from '../../shared/responsive-image';
 import { SiteSearch } from '../../shared/site-search';
@@ -214,7 +216,7 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
         @if (activeDepartment(); as active) {
           <div
             [id]="'panel-' + active.slug"
-            class="absolute inset-x-0 top-full z-50 border-t border-ink-100 bg-white shadow-xl"
+            class="ol-mega-panel absolute inset-x-0 top-full z-50 border-t border-ink-100 bg-white shadow-xl"
             (mouseenter)="cancelClose()"
             (mouseleave)="closeWithIntent()"
           >
@@ -424,6 +426,30 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
     .ol-dept-row::-webkit-scrollbar {
       display: none;
     }
+
+    /*
+     * The panel eases down as it mounts rather than snapping in. It is added
+     * to the DOM by @if on open, so an animation (not a transition) plays once
+     * each time it appears; there is nothing to animate on close because the
+     * element is gone. Short and shallow - a menu that takes its time to open
+     * is a menu that feels slow. The global reduced-motion block collapses the
+     * duration, so it simply appears.
+     */
+    .ol-mega-panel {
+      animation: ol-mega-in 0.22s var(--ease-out-soft);
+      transform-origin: top center;
+    }
+
+    @keyframes ol-mega-in {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
   `,
   host: {
     '(document:keydown.escape)': 'close()',
@@ -451,6 +477,31 @@ export class SiteHeader {
   protected readonly visibleDepartments = 6;
 
   protected readonly moreOpen = signal(false);
+
+  constructor() {
+    /*
+     * Close the menu the instant a navigation lands.
+     *
+     * The panel opens on hover and used to close only on mouse-leave or
+     * Escape, so clicking a department or a subcategory navigated but left the
+     * panel sitting over the page it had just loaded - you had to move the
+     * pointer away to see where you had gone. Closing on NavigationEnd makes a
+     * click reveal the page at once. NavigationSkipped covers clicking the link
+     * for the route you are already on, which fires no NavigationEnd but should
+     * still shut the menu.
+     */
+    const router = inject(Router);
+    router.events
+      .pipe(
+        filter((event) => event instanceof NavigationEnd || event instanceof NavigationSkipped),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => {
+        this.clearTimers();
+        this.open.set(null);
+        this.moreOpen.set(false);
+      });
+  }
 
   /** The glyph for a department, in the bar and in the panel rail. */
   protected iconForDept(slug: string): IconName {

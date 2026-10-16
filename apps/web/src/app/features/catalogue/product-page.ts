@@ -45,8 +45,10 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
           </ol>
         </nav>
 
-        <!-- Exactly one h1 per page (section 14.8). -->
-        <h1 class="mt-4 font-heading text-2xl font-bold sm:text-3xl">{{ p.name }}</h1>
+        <!-- Exactly one h1 per page (section 14.8). The display face (inherited
+             from the base layer, no font-heading override) matches every other
+             page title. -->
+        <h1 class="mt-4 text-2xl font-bold leading-tight sm:text-4xl">{{ p.name }}</h1>
 
         <!--
           Brand and model, separated.
@@ -133,7 +135,7 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
 
                 <button
                   type="button"
-                  class="flex-1 rounded-lg bg-brand-600 px-6 py-3 font-semibold text-white hover:bg-brand-700"
+                  class="flex-1 rounded-full bg-brand-600 px-6 py-3 font-semibold text-white shadow-brand transition-colors hover:bg-brand-700"
                 >
                   Add to quote
                 </button>
@@ -148,7 +150,7 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
               <a
                 href="https://wa.me/2347074723165"
                 rel="noopener"
-                class="mt-3 flex items-center justify-center gap-2 rounded-lg border border-ink-200 px-6 py-3 font-semibold hover:border-brand-600"
+                class="mt-3 flex items-center justify-center gap-2 rounded-full border border-ink-200 px-6 py-3 font-semibold transition-colors hover:border-brand-600 hover:text-brand-600"
               >
                 <ol-icon name="message-circle" [size]="18" class="text-brand-600" />
                 Ask on WhatsApp

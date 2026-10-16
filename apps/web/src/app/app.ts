@@ -8,6 +8,7 @@ import { BrandMasthead } from './core/layout/brand-masthead';
 import { LocationsStrip } from './core/layout/locations-strip';
 import { SiteFooter } from './core/layout/site-footer';
 import { SiteHeader } from './core/layout/site-header';
+import { QuickView } from './shared/quick-view';
 import { SeoService } from './core/seo/seo.service';
 import { organizationSchema, webSiteSchema } from './core/seo/structured-data';
 
@@ -22,7 +23,7 @@ import { organizationSchema, webSiteSchema } from './core/seo/structured-data';
   selector: 'app-root',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, BrandMasthead, SiteHeader, LocationsStrip, SiteFooter],
+  imports: [RouterOutlet, BrandMasthead, SiteHeader, LocationsStrip, SiteFooter, QuickView],
   template: `
     <!--
       Section 23.5: the first focusable element on every page.
@@ -41,6 +42,13 @@ import { organizationSchema, webSiteSchema } from './core/seo/structured-data';
     </main>
     <ol-locations-strip />
     <ol-site-footer />
+
+    <!--
+      The quick-view overlay lives at the shell so it covers the page from the
+      top of the document. It renders nothing until a card opens it, so it adds
+      no markup to the prerendered HTML.
+    -->
+    <ol-quick-view />
   `,
 })
 export class App {

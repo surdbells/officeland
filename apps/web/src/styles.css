@@ -1,6 +1,33 @@
 @import "tailwindcss";
 
 /*
+ * Display face: Bricolage Grotesque, self-hosted.
+ *
+ * A distinctive editorial display type is most of what gives the headline
+ * bands their character - a plain UI sans at 4rem reads as a big label, not a
+ * statement. One variable Latin-subset file covers the 500-800 weights the
+ * headings use (~75 KB). Self-hosted because the storefront CSP is
+ * `font-src 'self'` (D-053): a Google Fonts link would be blocked, and
+ * hotlinking is exactly what that directive forbids.
+ *
+ * Licence: SIL Open Font License 1.1 (docs/FONTS.md). `font-display: swap`
+ * so the headline paints in the fallback immediately and never blocks LCP.
+ * The unicode-range is Google's own Latin subset, so the browser only pulls
+ * the file for glyphs it actually needs.
+ */
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-weight: 500 800;
+  font-display: swap;
+  src: url("/fonts/bricolage-grotesque-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/*
  * OfficeLand design tokens (MASTER BUILD PROMPT section 15.3).
  *
  * ─────────────────────────────────────────────────────────────────────────
@@ -71,6 +98,11 @@
   --font-heading: "Montserrat", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
 
+  /* The editorial display face, for page and section headlines (h1/h2). Card
+     and component titles (h3/h4) stay on the heading sans, so the display face
+     is reserved for the type that is meant to carry a band. */
+  --font-display: "Bricolage Grotesque", "Montserrat", ui-sans-serif, system-ui, sans-serif;
+
   /* --- Display type ------------------------------------------------------
      A modular scale for headline sizes, so display type is chosen from a
      ramp rather than reached for ad hoc. The "premium" quality in a
@@ -137,24 +169,34 @@
   /* --- Layout ----------------------------------------------------------- */
 
   /*
-   * Page width: 1564px, and the gutter scales with the viewport.
+   * Full-bleed content with a ~5% margin each side, no fixed cap.
    *
-   * `min()` rather than a media query. Every container is
-   * `max-width: var(--container-page)` with `margin-inline: auto`, so the
-   * moment the viewport is narrower than the cap the container is already
-   * viewport-width - the cap simply stops applying. Nothing to break at a
-   * breakpoint, because there is no breakpoint.
+   * The page previously capped at 1564px and centred. The brief is now for the
+   * content to span the viewport with roughly 5% of clear space on either
+   * side, at every width - so the ceiling is gone and the margin is the
+   * gutter itself.
    *
-   * The `100vw - 2 * gutter` term is what keeps a 1366 or 1440 laptop from
-   * losing its margins: at those widths the content is viewport-minus-gutter
-   * rather than clipped or scrolled. Note vw includes the scrollbar, so the
-   * subtraction is deliberately generous.
+   * ── How the two tokens combine ───────────────────────────────────────────
+   * Every container is `max-width: var(--container-page)` AND
+   * `padding-inline: var(--spacing-gutter)` (Tailwind `max-w-(--container-page)
+   * px-(--spacing-gutter)`), verified across all 29 uses. With the container at
+   * 100% it fills its section, and the padding is what insets the content - so
+   * `2 * 5vw` of gutter leaves a 90vw column. There is no centring margin to
+   * compute and nothing to break at a breakpoint.
    *
-   * The gutter grows with the page rather than staying at 16px, because a
-   * 1564px column with a 16px margin reads as content jammed against glass.
+   * ── Why 100% and not 100vw ───────────────────────────────────────────────
+   * `100vw` counts the scrollbar and would push the box a scrollbar-width past
+   * the viewport - a horizontal-overflow gate failure at 375px. `100%` is the
+   * scrollbar-excluded content width (scrollbar-gutter: stable reserves it), so
+   * the box never exceeds what is actually visible.
+   *
+   * ── Responsiveness on small screens ──────────────────────────────────────
+   * `5vw` is 16px at 320px, which is the standard mobile gutter, and the
+   * `max(1rem, ...)` floor holds it there below 320px so the content never
+   * touches the glass. Above that it scales cleanly with the viewport.
    */
-  --spacing-gutter: clamp(1rem, 2.5vw, 2.5rem);
-  --container-page: min(97.75rem, calc(100vw - 2 * var(--spacing-gutter)));
+  --spacing-gutter: max(1rem, 5vw);
+  --container-page: 100%;
 
   /* Vertical rhythm between page sections. Named rather than picked per
      section, because inconsistent section padding is the thing that most
@@ -194,6 +236,14 @@
     text-wrap: balance;
     /* Headings are set tight; the display ramp tightens further as it grows. */
     letter-spacing: -0.011em;
+  }
+
+  /* Page and section headlines take the editorial display face and a tighter
+     track. h3/h4 - card titles, spec headings - stay on the heading sans above,
+     so the display face is what marks a headline as a headline. */
+  h1, h2 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
   }
 
   /* Body copy set slightly looser than the browser default. Long
@@ -248,11 +298,234 @@
   }
 }
 
+/*
+ * ─────────────────────────────────────────────────────────────────────────
+ * Immersion layer
+ *
+ * Motion and depth primitives shared across the storefront. Global, and for
+ * the same reason .ol-prose is: several apply to elements the Reveal
+ * directive or a component decorates, and a component-scoped rule would miss
+ * them once emulated encapsulation is in play. Every rule here is inert until
+ * a class is added at runtime, so none of it touches the prerendered HTML,
+ * and all of it is disarmed by the reduced-motion block at the foot.
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+
+/* Reveal-on-scroll. The `ol-reveal` class is added by the Reveal directive
+   from the browser only; the static document never carries it, so content is
+   visible by default. `ol-reveal-in` lands when the element enters view. */
+.ol-reveal {
+  opacity: 0;
+  transform: translateY(1.5rem);
+  transition:
+    opacity 0.7s var(--ease-out-soft),
+    transform 0.7s var(--ease-out-soft);
+  transition-delay: var(--ol-reveal-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+.ol-reveal-fade {
+  transform: none;
+}
+
+.ol-reveal-scale {
+  transform: scale(0.96);
+}
+
+.ol-reveal-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* A card that lifts toward the pointer. Transform and shadow only, so it
+   never reflows its neighbours; the lift is what makes a grid of cards feel
+   like objects on a surface rather than cells in a table. */
+.ol-lift {
+  transition:
+    transform 0.28s var(--ease-out-soft),
+    box-shadow 0.28s var(--ease-out-soft),
+    border-color 0.28s var(--ease-out-soft);
+  will-change: transform;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ol-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+  }
+}
+
+/* A slow zoom on an image inside an .ol-zoom-frame, revealed on hover of the
+   nearest .group ancestor. The frame clips; the image is the thing that
+   scales, so the card edge stays put. */
+.ol-zoom-frame {
+  overflow: hidden;
+}
+
+/* Descendant, not direct child: the image is wrapped by <ol-image> and a
+   <picture>, so the transform has to reach past them to the element that
+   actually paints. Placeholders carry no <img>, so they simply do not zoom. */
+.ol-zoom-frame img {
+  display: block;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  transition: transform 0.55s var(--ease-out-soft);
+  will-change: transform;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .group:hover .ol-zoom-frame img {
+    transform: scale(1.06);
+  }
+}
+
+/* Ken Burns: an unhurried, continuous drift-and-zoom over a photograph, for
+   the cinematic bands where a still image would otherwise sit dead. Slow
+   enough (28s) to read as life rather than movement. */
+.ol-kenburns {
+  animation: ol-kenburns 28s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes ol-kenburns {
+  from {
+    transform: scale(1.05) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.14) translate3d(-1.5%, -2%, 0);
+  }
+}
+
+/* A barely-there vertical float, for a single decorative accent in the hero.
+   Deliberately small: ambient motion earns its keep by being noticed only
+   subliminally. */
+.ol-float {
+  animation: ol-float 7s ease-in-out infinite alternate;
+}
+
+@keyframes ol-float {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-12px);
+  }
+}
+
+/* A slow sheen that travels across a surface once it is in view, giving the
+   dark bands a sense of light moving over them. */
+.ol-sheen {
+  position: relative;
+  overflow: hidden;
+}
+
+.ol-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgb(255 255 255 / 0.06) 48%,
+    transparent 66%
+  );
+  transform: translateX(-100%);
+  animation: ol-sheen 9s ease-in-out 1.5s infinite;
+  pointer-events: none;
+}
+
+@keyframes ol-sheen {
+  0%,
+  55% {
+    transform: translateX(-100%);
+  }
+  80%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/*
+ * Marquee ticker: an endless horizontal band of short claims.
+ *
+ * Two identical groups sit side by side and the track translates by exactly
+ * half its width, so the second group is where the first was when the loop
+ * repeats and the seam is invisible. The duplicate group is aria-hidden in
+ * the markup, so a screen reader hears the claims once. Pauses on hover so a
+ * reader can settle on one, and the reduced-motion block stops it dead.
+ */
+.ol-ticker {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+
+.ol-ticker__track {
+  display: inline-flex;
+  width: max-content;
+  animation: ol-ticker 38s linear infinite;
+}
+
+.ol-ticker:hover .ol-ticker__track {
+  animation-play-state: paused;
+}
+
+@keyframes ol-ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/*
+ * A reusable photographic page header. The image fills the box, this scrim
+ * darkens the bottom-left so white type clears AA over any photograph, and the
+ * content layer sits above both. Used by the category and product page headers
+ * so a listing or a detail page opens with the same cinematic framing as the
+ * homepage, rather than a heading on bare white.
+ */
+.ol-photo-scrim {
+  background:
+    linear-gradient(to top, rgb(11 11 13 / 0.82) 0%, rgb(11 11 13 / 0.42) 40%, rgb(11 11 13 / 0.12) 72%, transparent 100%),
+    linear-gradient(to right, rgb(11 11 13 / 0.5) 0%, transparent 62%);
+}
+
+/* The small uppercase kicker that sits above a section headline - the
+   editorial "eyebrow" that names the section before it states it. */
+.ol-eyebrow {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-brand-600);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* The reveal directive already refuses to hide content under reduced
+     motion, but if any reveal class is present it must resolve to visible
+     rather than to a frozen opacity: 0. Same for the ambient loops: they hold
+     at their resting frame instead of animating. */
+  .ol-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .ol-kenburns,
+  .ol-float,
+  .ol-sheen::after,
+  .ol-ticker__track {
+    animation: none !important;
   }
 }
 

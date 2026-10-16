@@ -64,6 +64,14 @@ export interface NavigationNode {
    * than assume a row to render.
    */
   readonly brands?: readonly NavigationBrand[];
+
+  /**
+   * The department's hero photograph, for the homepage rail tiles. Departments
+   * only and null until one is uploaded, so a tile falls back to its lettered
+   * placeholder rather than a broken frame. Subtree nodes never carry it - the
+   * navigation payload rides on every page and 170 heroes would bloat it.
+   */
+  readonly hero?: Image | null;
 }
 
 export interface Navigation {

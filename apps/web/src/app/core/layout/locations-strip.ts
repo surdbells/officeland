@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Icon } from '../../shared/icon';
+import { Reveal } from '../../shared/reveal';
 
 /**
  * The three real locations (docs/BUSINESS_FACTS.md).
@@ -33,7 +34,7 @@ import { Icon } from '../../shared/icon';
   selector: 'ol-locations-strip',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon],
+  imports: [RouterLink, Icon, Reveal],
   template: `
     <section aria-labelledby="locations-heading" class="border-t border-ink-100 bg-white">
       <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-14">
@@ -51,8 +52,12 @@ import { Icon } from '../../shared/icon';
         </div>
 
         <ul class="mt-8 grid gap-6 md:grid-cols-3">
-          @for (location of locations; track location.name) {
-            <li class="overflow-hidden rounded-2xl border border-ink-100 shadow-xs transition-shadow hover:shadow-md">
+          @for (location of locations; track location.name; let i = $index) {
+            <li
+              olReveal="scale"
+              [olRevealDelay]="i * 90"
+              class="ol-lift group overflow-hidden rounded-2xl border border-ink-100 shadow-xs"
+            >
               <!--
                 A photograph where there is one, the icon where there is not.
 
@@ -66,17 +71,23 @@ import { Icon } from '../../shared/icon';
                 pipeline: these are three fixed brand assets that never
                 change per environment, not catalogue content somebody
                 uploads, so a content-addressed store buys nothing.
+
+                The photo sits in an .ol-zoom-frame so it drifts in a touch on
+                card hover - the one cinematic beat this component earns, given
+                these are the only real photographs on the page.
               -->
               @if (location.photo) {
-                <img
-                  [src]="location.photo"
-                  [alt]="location.alt"
-                  width="600"
-                  height="450"
-                  loading="lazy"
-                  decoding="async"
-                  class="aspect-[4/3] w-full object-cover"
-                />
+                <div class="ol-zoom-frame aspect-[4/3] w-full">
+                  <img
+                    [src]="location.photo"
+                    [alt]="location.alt"
+                    width="600"
+                    height="450"
+                    loading="lazy"
+                    decoding="async"
+                    class="h-full w-full object-cover"
+                  />
+                </div>
               }
 
               <div class="p-6">

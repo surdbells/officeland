@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import type { ProductCard as ProductCardData } from '../../core/api/catalogue-api';
 import { Icon } from '../../shared/icon';
 import { ProductCard } from '../../shared/product-card';
+import { Reveal } from '../../shared/reveal';
 
 /**
  * One department's products on the homepage.
@@ -40,7 +41,7 @@ export type ShowcaseStyle = 'grid' | 'feature' | 'rail';
   selector: 'ol-department-showcase',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, ProductCard],
+  imports: [RouterLink, Icon, ProductCard, Reveal],
   template: `
     @if (products().length) {
       <section [attr.aria-labelledby]="headingId()" class="border-b border-ink-100">
@@ -68,16 +69,18 @@ export type ShowcaseStyle = 'grid' | 'feature' | 'rail';
               -->
               <div class="mt-6 grid gap-4 lg:grid-cols-2">
                 @if (lead(); as first) {
-                  <ol-product-card
-                    [product]="first"
-                    [headingLevel]="3"
-                    imageSizes="(min-width: 1024px) 50vw, 100vw"
-                  />
+                  <div olReveal="scale" class="h-full">
+                    <ol-product-card
+                      [product]="first"
+                      [headingLevel]="3"
+                      imageSizes="(min-width: 1024px) 50vw, 100vw"
+                    />
+                  </div>
                 }
 
                 <ul class="grid gap-4 sm:grid-cols-2">
-                  @for (product of rest(); track product.uuid) {
-                    <li class="h-full">
+                  @for (product of rest(); track product.uuid; let i = $index) {
+                    <li class="h-full" olReveal [olRevealDelay]="i * 70">
                       <ol-product-card [product]="product" [headingLevel]="3" />
                     </li>
                   }
@@ -96,8 +99,8 @@ export type ShowcaseStyle = 'grid' | 'feature' | 'rail';
                 card brings it into view.
               -->
               <ul class="ol-showcase-rail mt-6 flex snap-x gap-4 overflow-x-auto pb-2">
-                @for (product of products(); track product.uuid) {
-                  <li class="w-56 shrink-0 snap-start sm:w-64">
+                @for (product of products(); track product.uuid; let i = $index) {
+                  <li class="w-56 shrink-0 snap-start sm:w-64" olReveal [olRevealDelay]="i * 55">
                     <ol-product-card
                       [product]="product"
                       [headingLevel]="3"
@@ -110,8 +113,8 @@ export type ShowcaseStyle = 'grid' | 'feature' | 'rail';
 
             @default {
               <ul class="ol-showcase-grid mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-                @for (product of products(); track product.uuid) {
-                  <li class="h-full">
+                @for (product of products(); track product.uuid; let i = $index) {
+                  <li class="h-full" olReveal [olRevealDelay]="(i % 5) * 70">
                     <ol-product-card [product]="product" [headingLevel]="3" />
                   </li>
                 }
