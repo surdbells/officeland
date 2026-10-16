@@ -111,9 +111,31 @@ Disallow: /
 	import /etc/caddy/redirects.caddy
 
 	# ---------------------------------------------------------------------
-	# Prerendered storefront. No PHP, no Node — disk reads only.
-	# Content-hashed assets get a far-future cache; HTML must revalidate so
-	# an incremental rebuild is visible immediately (docs/ARCHITECTURE.md 4).
+	# Dynamic Rendering (docs/DECISIONS.md D-009, revised).
+	#
+	# The storefront is a client-rendered SPA. Crawlers and social scrapers do
+	# not run JavaScript, so an empty shell would be all they ever saw. They
+	# are matched by user-agent and routed to the Angular server engine
+	# (render:4000), which renders the SAME route to complete HTML on demand -
+	# title, meta, canonical and JSON-LD already written into the head by
+	# SeoService. Humans never reach this; they fall through to the SPA below.
+	#
+	# The path exclusions keep a bot's request for an asset, the API, /media,
+	# /admin or a health probe on its own fast path rather than booting a
+	# render for a file that has nothing to render.
+	# ---------------------------------------------------------------------
+	@crawler {
+		header_regexp User-Agent "(?i)(googlebot|google-inspectiontool|storebot-google|bingbot|slurp|duckduckbot|baiduspider|yandexbot|sogou|exabot|facebookexternalhit|facebot|twitterbot|linkedinbot|embedly|quora-link-preview|pinterestbot|slackbot|slack-imgproxy|vkshare|w3c_validator|whatsapp|telegrambot|discordbot|applebot|petalbot|bytespider|redditbot|rogerbot|screaming-?frog|semrushbot|ahrefsbot|mj12bot|dotbot|skypeuripreview|nuzzel|flipboard|bitlybot)"
+		not path *.js *.mjs *.css *.map *.json *.xml *.txt *.ico *.png *.jpg *.jpeg *.webp *.avif *.gif *.svg *.woff *.woff2 *.ttf
+	}
+	handle @crawler {
+		reverse_proxy render:4000
+	}
+
+	# ---------------------------------------------------------------------
+	# The client-rendered storefront (SPA). Humans get the shell and the
+	# browser renders. Content-hashed assets get a far-future cache; the shell
+	# must revalidate so a new build is picked up at once.
 	# ---------------------------------------------------------------------
 	handle {
 		root * /app/static
@@ -121,38 +143,18 @@ Disallow: /
 		# Angular emits `name-U44D4EQK.js` (dash, uppercase base32), while the
 		# media pipeline emits lowercase hex. Match both, or content-hashed
 		# assets silently fall back to the must-revalidate HTML policy below.
-		@hashed path_regexp [.-]([A-Z0-9]{8,}|[a-f0-9]{8,})\.(js|css|woff2|png|jpg|jpeg|webp|avif|svg|ico)$
+		@hashed path_regexp [.-]([A-Z0-9]{8,}|[a-f0-9]{8,})\.(js|mjs|css|woff2|png|jpg|jpeg|webp|avif|svg|ico)$
 		header @hashed Cache-Control "public, max-age=31536000, immutable"
 
 		@html path *.html /
 		header @html Cache-Control "public, max-age=0, must-revalidate"
 
-		# No `/index.html` fallback. That is an SPA pattern and it is wrong
-		# here: under D-009 every real route has its own prerendered file, so
-		# falling back to the homepage can only ever be incorrect — and it was.
-		# Caddy found a file, answered 200, and `handle_errors` below never
-		# fired, so EVERY unknown URL returned the homepage body under a 200.
-		# That is a soft 404, which SEO_SPEC §8 forbids outright, and it also
-		# made the prerendered /404/ page from Phase 8 unreachable.
-		#
-		# Without the fallback, a miss reaches file_server, 404s honestly, and
-		# handle_errors takes over.
-		try_files {path} {path}/index.html {path}.html
-		file_server
-	}
-
-	# The prerendered 404 template, NOT the homepage.
-	#
-	# This served /index.html, so every unknown URL returned the homepage body
-	# under a 404 status: no search box, no department links, and a <title>
-	# and canonical claiming to be the home page. Section 14.8 requires a real
-	# 404 with a search box and top categories.
-	#
-	# The status code is preserved, so this stays a hard 404 rather than
-	# becoming a soft one.
-	handle_errors {
-		root * /app/static
-		rewrite * /404/index.html
+		# SPA fallback: a real file wins; any unknown route serves the CSR
+		# shell and the client router takes over. This is the SPA pattern the
+		# prerendered build could not use - under Dynamic Rendering it is
+		# exactly right, because a human never needs a per-route file and a bot
+		# never reaches here (it was routed to the renderer above).
+		try_files {path} {path}/index.html /index.csr.html
 		file_server
 	}
 }

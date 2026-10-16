@@ -23,7 +23,7 @@ import { readFile, readdir, stat } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import process from 'node:process';
 
-const ROOT = process.argv[2] ?? 'dist/web/browser';
+const ROOT = process.argv[2] ?? 'dist/web/snapshots';
 const ORIGIN = 'https://officelandng.com';
 const MIN_SAMPLE = 20;
 

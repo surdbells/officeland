@@ -5,11 +5,6 @@ import {
 } from '@angular/core';
 import { UrlSerializer, provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient, withFetch } from '@angular/common/http';
-import {
-  provideClientHydration,
-  withHttpTransferCacheOptions,
-  withEventReplay,
-} from '@angular/platform-browser';
 import { routes } from './app.routes';
 import { TrailingSlashUrlSerializer } from './core/routing/trailing-slash-url-serializer';
 
@@ -34,25 +29,14 @@ export const appConfig: ApplicationConfig = {
     // Without this the router strips it and each link costs a redirect.
     { provide: UrlSerializer, useClass: TrailingSlashUrlSerializer },
 
-    provideHttpClient(withFetch()),
-
     /*
-     * Section 14.1: hydration must not re-fetch what the render already
-     * fetched, and duplicate hydration requests are a gate failure. The
-     * transfer cache serialises GET responses into the HTML.
-     *
-     * includePostRequests stays false - the quote submission (Phase 9) is a
-     * POST, and replaying it from a cache would be a duplicate lead.
+     * Client-side rendering (CSR): the app boots and renders in the browser,
+     * so there is no server-rendered HTML to hydrate and no TransferState to
+     * seed. Crawlers and social scrapers are served fully-rendered snapshots
+     * by the Dynamic Rendering service (infra/renderer), which runs this same
+     * app in headless Chrome and captures the DOM once SeoService has written
+     * the head and the route's data has loaded.
      */
-    provideClientHydration(
-      // Clicks landing before hydration are replayed, not lost. On a
-      // prerendered site the gap between paint and hydration is where the
-      // "Add to quote" button lives.
-      withEventReplay(),
-      withHttpTransferCacheOptions({
-        includePostRequests: false,
-        filter: (req) => req.url.startsWith('/api/'),
-      }),
-    ),
+    provideHttpClient(withFetch()),
   ],
 };

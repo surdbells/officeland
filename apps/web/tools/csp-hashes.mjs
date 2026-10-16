@@ -107,10 +107,12 @@ async function* htmlFiles(directory) {
     const path = join(directory, entry.name);
 
     if (entry.isDirectory()) yield* htmlFiles(path);
-    // *.csr.html is the client-render fallback shell. Caddy never serves it —
-    // index.html is the prerendered document — so hashing it would put a hash
-    // in the policy for a script that is never sent.
-    else if (entry.name.endsWith('.html') && !entry.name.endsWith('.csr.html')) yield path;
+    // Under Dynamic Rendering the CSR shell (index.csr.html) is exactly what
+    // Caddy serves to humans, and the on-demand SSR output for bots carries the
+    // same script pattern - an external module bundle plus ld+json data, no
+    // executable inline script - so scanning the shell covers both. It is the
+    // only build-time HTML now that nothing is prerendered.
+    else if (entry.name.endsWith('.html')) yield path;
   }
 }
 
@@ -121,7 +123,7 @@ for await (const file of htmlFiles(DIST)) {
 }
 
 if (perFile.size === 0) {
-  console.error('No prerendered HTML found. Run `ng build` first.');
+  console.error('No built HTML found (expected dist/web/browser/index.csr.html). Run `ng build` first.');
   process.exit(1);
 }
 

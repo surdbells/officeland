@@ -51,14 +51,41 @@ app.use(
 
 /**
  * Handle all other requests by rendering the Angular application.
+ *
+ * ── The 404 status is recovered from the rendered head ───────────────────
+ * A crawler reaches an unknown URL through here, and the Angular router
+ * resolves it to the not-found page. That page stamps `ol-render-status: 404`
+ * into its head; without acting on it the worker would return the not-found
+ * body under a 200, which is the soft-404 SEO_SPEC section 8 forbids. So the
+ * rendered HTML is read once, the marker is checked, and the status is
+ * corrected to 404 before the response is written. The body is passed through
+ * unchanged - the marker is an inert meta tag - so nothing else is affected.
  */
-app.use((req, res, next) => {
-  angularApp
-    .handle(req)
-    .then((response) =>
-      response ? writeResponseToNodeResponse(response, res) : next(),
-    )
-    .catch(next);
+app.use(async (req, res, next) => {
+  try {
+    const response = await angularApp.handle(req);
+
+    if (!response) {
+      next();
+      return;
+    }
+
+    const html = await response.text();
+    // The marker name appears on the not-found page and nowhere else, so its
+    // mere presence is the signal - no dependence on attribute order.
+    const status = html.includes('ol-render-status') ? 404 : response.status;
+
+    writeResponseToNodeResponse(
+      new Response(html, {
+        status,
+        statusText: response.statusText,
+        headers: response.headers,
+      }),
+      res,
+    );
+  } catch (error) {
+    next(error);
+  }
 });
 
 /**

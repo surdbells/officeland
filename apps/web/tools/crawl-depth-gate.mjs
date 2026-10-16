@@ -24,7 +24,7 @@ import { join, relative, sep } from 'node:path';
 import process from 'node:process';
 
 const args = process.argv.slice(2);
-const ROOT = args.find((a) => !a.startsWith('--')) ?? 'dist/web/browser';
+const ROOT = args.find((a) => !a.startsWith('--')) ?? 'dist/web/snapshots';
 const MAX_DEPTH = Number(
   (args.find((a) => a.startsWith('--max-depth=')) ?? '--max-depth=3').split('=')[1],
 );

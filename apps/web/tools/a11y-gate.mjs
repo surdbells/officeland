@@ -30,12 +30,18 @@
  */
 
 import { readdir, readFile } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
 import axeCore from 'axe-core';
 
-const DIST = fileURLToPath(new URL('../dist/web/browser/', import.meta.url));
+// Reads the SSR snapshots written by render-snapshots.mjs (Dynamic Rendering:
+// there is no prerendered tree). Overridable so the gate can run against any
+// directory of rendered HTML.
+const rootArg = process.argv.slice(2).find((a) => !a.startsWith('--'));
+const DIST = rootArg
+  ? resolve(process.cwd(), rootArg) + sep
+  : fileURLToPath(new URL('../dist/web/snapshots/', import.meta.url));
 const SAMPLE = process.argv.includes('--sample');
 
 /*

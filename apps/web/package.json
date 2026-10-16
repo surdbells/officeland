@@ -14,8 +14,9 @@
     "gate:icons": "node tools/icons.mjs --check",
     "gate:templates": "node tools/template-gate.mjs",
     "gate:links": "node tools/link-gate.mjs",
+    "gate:snapshots": "node tools/render-snapshots.mjs",
     "icons": "node tools/icons.mjs",
-    "gate": "npm run gate:raw-html && npm run gate:crawl-depth && npm run gate:templates && npm run gate:links && npm run gate:csp && npm run gate:icons && npm run gate:a11y",
+    "gate": "npm run gate:templates && npm run gate:icons && npm run gate:csp && npm run gate:snapshots && npm run gate:raw-html && npm run gate:crawl-depth && npm run gate:links && npm run gate:a11y",
     "serve:ssr:web": "node dist/web/server/server.mjs"
   },
   "private": true,

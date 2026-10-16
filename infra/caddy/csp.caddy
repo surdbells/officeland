@@ -6,4 +6,4 @@
 # `node tools/csp-hashes.mjs --check` and fails if this file has drifted.
 #
 # Regenerate with:  node tools/csp-hashes.mjs --write
-header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-hashes' 'sha256-+bUvBVleaQKzRzYqMAofYtQbQ7wTfDkyRSzQGxlskoI=' 'sha256-MhtPZXr7+LpJUY5qtMutB+qWfQtMaPccfe7QXtCcEYc=' 'sha256-VM2mZqyEQZoLzoTrp5EigFvzQ0+f1wSeBuoOn95WHCg='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-hashes' 'sha256-MhtPZXr7+LpJUY5qtMutB+qWfQtMaPccfe7QXtCcEYc='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"

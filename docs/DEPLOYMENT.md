@@ -125,8 +125,9 @@ Set `APP_URL` to the exact public URL including `https://`, and leave
 sh scripts/serve.sh --rebuild --detach
 ```
 
-About three minutes, most of it the Angular build. Then seed the taxonomy and
-the copy:
+Well under a minute now: the storefront is a client-rendered SPA, so the
+Angular build is seconds rather than the ~15-minute prerender it replaced (see
+"Rendering" below). Then seed the taxonomy and the copy:
 
 ```bash
 docker compose exec api php artisan db:seed --class=TaxonomySeeder
@@ -146,6 +147,50 @@ Check it locally before exposing it:
 curl -I http://127.0.0.1:8095/
 curl -s http://127.0.0.1:8095/robots.txt      # must say Disallow: / on staging
 ```
+
+Confirm Dynamic Rendering is serving both audiences — same URL, two answers:
+
+```bash
+# A human gets the small client-render shell:
+curl -s -A "Mozilla/5.0" http://127.0.0.1:8095/c/office-furniture/ | wc -c   # ~11 KB
+
+# A crawler gets fully-rendered HTML with the title and JSON-LD in it:
+curl -s -A "Googlebot/2.1" http://127.0.0.1:8095/c/office-furniture/ \
+  | grep -o '<title>[^<]*</title>'
+```
+
+---
+
+## Rendering: CSR + Dynamic Rendering
+
+The storefront is a **client-rendered SPA** (D-009, revised). Nothing is
+prerendered, so a build is seconds and the static output is one shell
+(`index.csr.html`) plus hashed assets.
+
+Crawlers and social scrapers do not run JavaScript, so they are served
+server-rendered HTML instead. The **`render` container is a runtime
+dependency**, not just a build tool: it runs the Angular server engine on
+`:4000`, and the container's Caddy matches crawler user-agents and reverse-
+proxies them there, where the same route is rendered on demand with its title,
+meta, canonical and JSON-LD in the head. Everything else — humans — gets the
+shell and the browser renders. There is nothing to configure in Nginx or
+aaPanel for this: the user-agent routing lives entirely in the container's
+Caddy, behind the same proxy.
+
+Operational notes:
+
+- `render` must stay up (`restart: unless-stopped` already does this). If it is
+  down, crawlers get a `502` from Caddy while humans are unaffected — so a
+  renderer outage is an SEO incident, not a site outage, and is easy to miss.
+  Alert on `:4000` health.
+- A crawler hitting an unknown URL gets a real `404`: the not-found page stamps
+  a marker the render worker turns into a 404 status. Humans get the shell
+  (`200`) and the client shows the 404 view; only the crawler status matters
+  for indexing.
+- The full render path is exercised by `npm run gate` (it crawls the running
+  edge with a crawler UA into snapshots, then runs the raw-HTML, crawl-depth,
+  link and a11y gates over them), so the stack must be **up** when the gate
+  runs.
 
 ---
 

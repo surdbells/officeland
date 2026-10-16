@@ -36,11 +36,19 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const output = join(here, '..', 'dist', 'web', 'browser');
+// Under Dynamic Rendering the storefront is not prerendered; the gate runs
+// against the snapshot tree that render-snapshots.mjs writes from the SSR
+// output. The path is overridable so the gate stays usable against any
+// directory of rendered HTML.
+const rootArg = process.argv.slice(2).find((a) => !a.startsWith('--'));
+const output = rootArg ? join(process.cwd(), rootArg) : join(here, '..', 'dist', 'web', 'snapshots');
 const redirectMap = join(here, '..', '..', '..', 'docs', 'REDIRECT_MAP.csv');
 
 if (!existsSync(output)) {
-  console.error(`No prerendered output at ${output}. Run a build first.`);
+  console.error(
+    `No rendered output at ${output}. Run \`node tools/render-snapshots.mjs\` first ` +
+      `(the stack must be up so the renderer can serve the bot path).`,
+  );
   process.exit(1);
 }
 

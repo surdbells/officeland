@@ -1,105 +1,32 @@
 import { RenderMode, ServerRoute } from '@angular/ssr';
-import { fetchRouteManifest } from './core/rendering/route-manifest';
 
 /**
- * Prerender configuration (D-009).
+ * Dynamic Rendering configuration.
  *
- * Every storefront route is rendered to a static HTML file at build time and
- * served by Caddy. There is no Node process in production.
+ * ── The architecture this replaces ───────────────────────────────────────
+ * Every route used to be `RenderMode.Prerender`: 1,500+ HTML files written at
+ * build time (D-009), which made a full build a ~15-minute job dominated by
+ * the 1,190 noindex demo products. That is gone. Nothing is prerendered now,
+ * so a build is seconds.
  *
- * This is only viable because of D-002: with no prices and no stock levels
- * there is nothing on a catalogue page that goes stale between publishes. The
- * moment a price appears on a page, this decision has to be revisited.
+ * ── What serves whom ─────────────────────────────────────────────────────
+ * Humans get the client-rendered SPA: Caddy serves the static shell and the
+ * browser renders (no SSR, no hydration). Crawlers and social scrapers - the
+ * clients that do not run JavaScript - are routed by user-agent at the edge to
+ * this same app rendered on demand by the Angular server engine (server.ts,
+ * :4000), which produces fully-formed HTML with SeoService's title, meta,
+ * canonical and JSON-LD already written into the head. That is Dynamic
+ * Rendering: one app, rendered in the browser for people and on the server for
+ * bots, from the same components and the same data.
  *
- * The parameter lists come from the API, not from a checked-in file, because a
- * checked-in list of 15,000 slugs would be stale the day it was written. Phase
- * 8 adds the incremental half: a publish enqueues only the affected routes
- * instead of re-rendering all of them.
+ * `RenderMode.Server` is what makes the engine render a route on request
+ * rather than expecting a prerendered file. There are no `getPrerenderParams`
+ * because nothing is enumerated ahead of time - any path the router knows is
+ * renderable the instant it is asked for.
  */
 export const serverRoutes: ServerRoute[] = [
   {
-    path: '',
-    renderMode: RenderMode.Prerender,
-  },
-  {
-    path: 'c',
-    renderMode: RenderMode.Prerender,
-  },
-  {
-    // The wildcard carries the whole materialized path, so one entry covers
-    // all three levels of the taxonomy.
-    path: 'c/**',
-    renderMode: RenderMode.Prerender,
-    getPrerenderParams: async () => {
-      const manifest = await fetchRouteManifest();
-      return manifest.categories.map((path) => ({ '**': path }));
-    },
-  },
-  {
-    // Shell only: noindex and query-parameter driven, but the URL still has
-    // to resolve to a file on a static host.
-    path: 'shop',
-    renderMode: RenderMode.Prerender,
-  },
-  // Editorial pages (Phase 12c/12d/12e). Static text, so straight prerender.
-  { path: 'about', renderMode: RenderMode.Prerender },
-  { path: 'contact', renderMode: RenderMode.Prerender },
-  { path: 'locations', renderMode: RenderMode.Prerender },
-  { path: 'delivery', renderMode: RenderMode.Prerender },
-  { path: 'returns', renderMode: RenderMode.Prerender },
-  { path: 'warranty', renderMode: RenderMode.Prerender },
-  { path: 'bulk-supply', renderMode: RenderMode.Prerender },
-  { path: 'guides', renderMode: RenderMode.Prerender },
-  { path: 'privacy', renderMode: RenderMode.Prerender },
-  { path: 'terms', renderMode: RenderMode.Prerender },
-  { path: 'cookies', renderMode: RenderMode.Prerender },
-  { path: 'quote/track', renderMode: RenderMode.Prerender },
-  {
-    path: 'brands',
-    renderMode: RenderMode.Prerender,
-  },
-  {
-    path: 'brands/**',
-    renderMode: RenderMode.Prerender,
-    getPrerenderParams: async () => {
-      const manifest = await fetchRouteManifest();
-      return manifest.brands.map((path) => ({ '**': path }));
-    },
-  },
-  {
-    /*
-     * Prerendered as an empty shell. Results arrive client side (the page is
-     * noindex either way), but the URL still has to resolve to a FILE - a
-     * static host cannot route /search?q=toner to anything else.
-     */
-    path: 'search',
-    renderMode: RenderMode.Prerender,
-  },
-  {
-    // Shells only: the basket belongs to the browser and the page is noindex,
-    // but the URL still has to resolve to a file on a static host.
-    path: 'quote',
-    renderMode: RenderMode.Prerender,
-  },
-  {
-    path: 'quote/request',
-    renderMode: RenderMode.Prerender,
-  },
-  {
-    path: 'p/:slug',
-    renderMode: RenderMode.Prerender,
-    getPrerenderParams: async () => {
-      const manifest = await fetchRouteManifest();
-      return manifest.products.map((slug) => ({ slug }));
-    },
-  },
-  {
-    /*
-     * The 404 template is prerendered to a single file that Caddy serves with
-     * a 404 status. Rendering it per-URL would mean prerendering the infinite
-     * set of URLs that do not exist.
-     */
     path: '**',
-    renderMode: RenderMode.Prerender,
+    renderMode: RenderMode.Server,
   },
 ];

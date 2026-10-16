@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Meta } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { SeoService } from '../../core/seo/seo.service';
 
@@ -8,6 +9,14 @@ import { SeoService } from '../../core/seo/seo.service';
  * Never a soft-404: this page is noindex, and the server returns a real 404
  * status. Returning 200 with "not found" content is called out explicitly as
  * forbidden.
+ *
+ * ── How the 404 status survives Dynamic Rendering ────────────────────────
+ * A crawler gets this page from the SSR render worker, not from a prerendered
+ * file, so the status can no longer come from Caddy serving `404/index.html`.
+ * Instead this page stamps a marker meta - `ol-render-status: 404` - into the
+ * head, and the render worker (server.ts) reads it and sets the HTTP status to
+ * 404 before returning. `noindex` alone could not carry the signal: search,
+ * quote and demo pages are noindex too, and only this one is a not-found.
  */
 @Component({
   selector: 'ol-not-found-page',
@@ -48,6 +57,7 @@ import { SeoService } from '../../core/seo/seo.service';
 })
 export class NotFoundPage {
   private readonly seo = inject(SeoService);
+  private readonly meta = inject(Meta);
 
   constructor() {
     this.seo.apply({
@@ -55,5 +65,10 @@ export class NotFoundPage {
       path: '/404/',
       indexable: false,
     });
+
+    // The render worker reads this and returns a 404 status (see the class
+    // comment). Harmless in a browser - a meta a human never sees - and the
+    // signal a bot's response needs.
+    this.meta.updateTag({ name: 'ol-render-status', content: '404' });
   }
 }
