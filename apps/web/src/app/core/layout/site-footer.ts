@@ -40,30 +40,62 @@ import { RouterLink } from '@angular/router';
       <!--
         Band 1: the ask.
 
-        Centred and given its own rule. On a page somebody has scrolled to the
-        bottom of, this is the last chance to turn a browse into a quote, and
-        the reference site spends the same band on a loyalty signup.
+        Eyebrow, headline and the two actions on one line - the reference
+        footer's top band. On a page somebody has scrolled to the bottom of,
+        this is the last chance to turn a browse into a quote.
       -->
       <div class="border-b border-white/10">
-        <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-12 text-center">
-          <h2 class="font-heading text-2xl font-bold text-white">Send us your requisition list</h2>
-          <p class="mx-auto mt-2 max-w-xl text-white/70">
-            Ministries, schools and corporates. Quotes answered within one business day,
-            with lead times stated per line.
-          </p>
-          <a
-            routerLink="/quote/"
-            class="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 font-semibold text-ink-900 transition-colors hover:bg-brand-50"
-          >
-            <ol-icon name="file-text" [size]="18" />
-            Request a quote
-          </a>
+        <div class="mx-auto flex max-w-(--container-page) flex-col items-start justify-between gap-6 px-(--spacing-gutter) py-12 lg:flex-row lg:items-center">
+          <div>
+            <p class="font-heading text-xs font-semibold uppercase tracking-[0.16em] text-accent-400">Bulk &amp; tender supply</p>
+            <h2 class="mt-2 text-2xl font-bold text-white sm:text-3xl">Supplying a school, ministry or head office?</h2>
+          </div>
+          <div class="flex flex-wrap gap-3">
+            <a
+              routerLink="/quote/"
+              class="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 font-semibold text-ink-900 transition-colors hover:bg-brand-50"
+            >
+              <ol-icon name="file-text" [size]="18" />
+              Request a quote
+            </a>
+            <a
+              href="https://wa.me/2347074723165"
+              rel="noopener"
+              class="inline-flex items-center gap-2 rounded-full border border-white/40 px-7 py-3.5 font-semibold text-white transition-colors hover:bg-white/10"
+            >
+              <ol-icon name="message-circle" [size]="18" />
+              WhatsApp us
+            </a>
+          </div>
         </div>
       </div>
 
       <!-- Band 2: the link surface (legacy defect 4K). -->
       <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-12">
-        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
+        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-6">
+          <!--
+            Brand column, the reference footer's first column: identity, what
+            the business is, and the one certification that qualifies it for a
+            government tender. Social is still omitted until the real URLs
+            arrive (Q17) - a broken link is worse than none, and these feed
+            Organization.sameAs.
+          -->
+          <div class="md:col-span-2">
+            <p class="font-heading text-xl font-extrabold tracking-tight text-white">OFFICE LAND LTD</p>
+            <p class="mt-1 font-heading text-xs font-semibold uppercase tracking-[0.14em] text-white/50">
+              Office furniture &middot; IT products &middot; Stationery
+            </p>
+            <p class="mt-4 max-w-sm text-sm leading-relaxed text-white/70">
+              Nigeria's office supply partner. Furniture, IT and consumables for businesses,
+              schools and government, with two Victoria Island showrooms and nationwide
+              delivery and installation.
+            </p>
+            <p class="mt-5 flex max-w-sm items-start gap-2.5 rounded-xl bg-white/5 p-3 text-sm text-white/70">
+              <ol-icon name="badge-check" [size]="18" class="mt-0.5 text-white" />
+              <span>Certified by the <strong class="font-medium text-white">Standards Organisation of Nigeria</strong></span>
+            </p>
+          </div>
+
           <nav aria-labelledby="footer-shop">
             <h2 id="footer-shop" class="font-heading text-sm font-semibold uppercase tracking-wide text-white">Shop</h2>
             <ul class="mt-4 space-y-2.5 text-sm">
@@ -99,13 +131,7 @@ import { RouterLink } from '@angular/router';
               <li><a routerLink="/bulk-supply/" class="text-white/70 hover:text-white">Bulk &amp; tender supply</a></li>
               <li><a routerLink="/brands/" class="text-white/70 hover:text-white">Brands we supply</a></li>
               <li><a routerLink="/contact/" class="text-white/70 hover:text-white">Contact</a></li>
-            </ul>
-          </nav>
-
-          <nav aria-labelledby="footer-policies">
-            <h2 id="footer-policies" class="font-heading text-sm font-semibold uppercase tracking-wide text-white">Policies</h2>
-            <ul class="mt-4 space-y-2.5 text-sm">
-              <li><a routerLink="/privacy/" class="text-white/70 hover:text-white">Privacy &amp; NDPA</a></li>
+              <li class="pt-2"><a routerLink="/privacy/" class="text-white/70 hover:text-white">Privacy &amp; NDPA</a></li>
               <li><a routerLink="/terms/" class="text-white/70 hover:text-white">Terms</a></li>
               <li><a routerLink="/cookies/" class="text-white/70 hover:text-white">Cookies</a></li>
             </ul>
@@ -139,24 +165,10 @@ import { RouterLink } from '@angular/router';
             </address>
 
             <!--
-              SON certification. For government and institutional tenders this
-              is frequently a QUALIFICATION requirement rather than a trust
-              badge, which is why it is stated as text rather than shown as a
-              logo nobody can read at 40px.
-            -->
-            <p class="mt-5 flex items-start gap-2.5 rounded-xl bg-white/5 p-3 text-sm text-white/70">
-              <ol-icon name="badge-check" [size]="18" class="mt-0.5 text-white" />
-              <span>Certified by the <strong class="font-medium text-white">Standards Organisation of Nigeria</strong></span>
-            </p>
-            <!--
-              Social profile links are intentionally absent until the real URLs
-              arrive (Q17). The legacy footer linked five platforms to
-              http://officeland - not a URL - and those links also feed
-              Organization.sameAs, so asserting broken URLs as the company
-              identity is worse than asserting none.
-
-              The reference footer puts its social row in this band. When the
-              handles arrive, this is where they go.
+              SON certification now lives in the brand column with the rest of
+              the identity, where the reference footer carries its trust row.
+              Social profile links stay absent until the real URLs arrive (Q17):
+              a broken link is worse than none and they feed Organization.sameAs.
             -->
           </div>
         </div>

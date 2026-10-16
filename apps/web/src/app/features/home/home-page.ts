@@ -16,6 +16,7 @@ import { RouterLink } from '@angular/router';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { CatalogueApi, type ProductCard as ProductCardData } from '../../core/api/catalogue-api';
+import { ProductCard } from '../../shared/product-card';
 import { Icon, type IconName } from '../../shared/icon';
 import { SeoService } from '../../core/seo/seo.service';
 import { EMPTY_LISTING } from '../../shared/listing-state';
@@ -65,7 +66,7 @@ const SHOWCASE_STYLES: readonly ShowcaseStyle[] = ['grid', 'feature', 'rail'];
   selector: 'ol-home-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, DepartmentShowcase, Reveal, CountUp, ResponsiveImage],
+  imports: [RouterLink, Icon, DepartmentShowcase, Reveal, CountUp, ResponsiveImage, ProductCard],
   template: `
     <!--
       Hero: 65 / 35 on desktop, stacking below 1024px.
@@ -357,69 +358,77 @@ const SHOWCASE_STYLES: readonly ShowcaseStyle[] = ['grid', 'feature', 'rail'];
     @if (departments().length) {
       <section aria-labelledby="departments-heading" class="border-b border-ink-100">
         <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-10">
-          <div olReveal="fade" class="flex items-end justify-between gap-4">
+          <div olReveal="fade" class="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p class="ol-eyebrow">Find your department</p>
               <h2 id="departments-heading" class="mt-1 text-2xl font-bold sm:text-3xl">
-                Shop by department
+                Shop by category
               </h2>
             </div>
-            <a routerLink="/c/" class="shrink-0 text-sm font-medium text-brand-600 hover:underline">
-              All departments
-            </a>
+            <div class="flex items-center gap-3">
+              <a routerLink="/c/" class="text-sm font-medium text-brand-600 hover:underline">
+                All departments
+              </a>
+              <!-- Chevron nav for the rail. aria-hidden pointer affordances:
+                   the rail scrolls by touch, wheel and tab without them. -->
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  aria-hidden="true"
+                  tabindex="-1"
+                  class="ol-catnav"
+                  (click)="scrollRail(-1)"
+                >
+                  <ol-icon name="chevron-right" [size]="18" class="rotate-180" />
+                </button>
+                <button
+                  type="button"
+                  aria-hidden="true"
+                  tabindex="-1"
+                  class="ol-catnav"
+                  (click)="scrollRail(1)"
+                >
+                  <ol-icon name="chevron-right" [size]="18" />
+                </button>
+              </div>
+            </div>
           </div>
 
           <!--
-            A bento, not a rail.
-
-            A horizontal scroll of identical square tiles is the most generic
-            shape a storefront has. A bento - the first department at double
-            size, the rest around it - gives the section a silhouette and lets
-            the real department photographs carry it. Every tile is a real
-            anchor in the rendered HTML, so nothing is lost for a crawler.
-
-            The name sits over the photo on a scrim rather than beneath it,
-            which is what turns a thumbnail into a cover.
+            A rail of category cards: the photo in a light well on top, the name
+            and count below. Every card is a real anchor, and the rail scrolls
+            by touch, wheel and keyboard - the chevrons above are a pointer
+            convenience, not the only way through.
           -->
-          <ul class="ol-bento mt-6 grid auto-rows-[9.5rem] grid-cols-2 gap-3 sm:auto-rows-[11rem] sm:gap-4 lg:grid-cols-4">
+          <ul
+            #rail
+            class="ol-rail mt-6 flex snap-x gap-4 overflow-x-auto pb-2"
+            (scroll)="onRailScroll()"
+          >
             @for (department of departments(); track department.slug; let i = $index) {
-              <li
-                olReveal
-                [olRevealDelay]="i * 55"
-                [class]="i === 0 ? 'col-span-2 row-span-2' : ''"
-              >
+              <li class="w-48 shrink-0 snap-start sm:w-52" olReveal [olRevealDelay]="(i % 6) * 50">
                 <a
                   [routerLink]="department.url"
-                  class="ol-lift ol-zoom-frame group relative block h-full overflow-hidden rounded-2xl bg-ink-900"
-                  [class.min-h-44]="i !== 0"
+                  class="ol-lift group block h-full overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-xs"
                 >
-                  @if (department.hero; as hero) {
-                    <div class="absolute inset-0">
-                      <ol-image
-                        [image]="hero"
-                        [sizes]="i === 0 ? '(min-width: 1024px) 50vw, 100vw' : '(min-width: 1024px) 25vw, 50vw'"
-                        imgClass="h-full w-full object-cover"
-                      />
-                    </div>
-                    <span aria-hidden="true" class="ol-photo-scrim absolute inset-0"></span>
-                  } @else {
-                    <span aria-hidden="true" class="absolute inset-0 bg-brand-600"></span>
-                  }
-
-                  <div class="relative flex h-full flex-col justify-end p-4 sm:p-5" [class.min-h-44]="i === 0">
-                    <h3 [class]="i === 0
-                      ? 'font-heading text-2xl font-bold text-white drop-shadow-sm sm:text-3xl'
-                      : 'font-heading text-base font-semibold text-white drop-shadow-sm'">
+                  <div class="ol-zoom-frame aspect-[4/3] w-full bg-ink-50">
+                    @if (department.hero; as hero) {
+                      <ol-image [image]="hero" sizes="13rem" imgClass="h-full w-full object-cover" />
+                    } @else {
+                      <span class="flex h-full items-center justify-center bg-brand-50 p-4 text-center font-heading text-sm font-semibold text-brand-700" aria-hidden="true">
+                        {{ department.name }}
+                      </span>
+                    }
+                  </div>
+                  <div class="p-4">
+                    <strong class="block font-heading text-base font-semibold text-ink-900 group-hover:text-brand-600">
                       {{ department.name }}
-                    </h3>
-                    <span class="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-white/80">
-                      @if (department.product_count) {
-                        {{ department.product_count }} products
-                      } @else {
-                        Shop now
-                      }
-                      <ol-icon name="arrow-right" [size]="15" class="transition-transform group-hover:translate-x-0.5" />
-                    </span>
+                    </strong>
+                    @if (department.product_count) {
+                      <small class="mt-0.5 block text-sm text-ink-400">{{ department.product_count }} products</small>
+                    } @else {
+                      <small class="mt-0.5 block text-sm text-ink-400">Shop now</small>
+                    }
                   </div>
                 </a>
               </li>
@@ -461,6 +470,42 @@ const SHOWCASE_STYLES: readonly ShowcaseStyle[] = ['grid', 'feature', 'rail'];
         </ul>
       </div>
     </section>
+
+    <!--
+      Best sellers: a dark band so the product photographs carry it.
+
+      A cross-section of real, photographed stock in a horizontal rail, set on
+      an ink ground with a radial glow - the one dark merchandising moment in
+      the light-dominant page. The cards are the same shared component used
+      everywhere; only the ground changes.
+    -->
+    @if (bestSellers().length) {
+      <section aria-labelledby="best-sellers-heading" class="relative isolate overflow-hidden bg-ink-900 text-white">
+        <span aria-hidden="true" class="ol-bestsellers-glow absolute"></span>
+        <div class="relative mx-auto max-w-(--container-page) px-(--spacing-gutter) py-14">
+          <div olReveal="fade" class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p class="font-heading text-xs font-semibold uppercase tracking-[0.16em] text-accent-400">Our best sellers</p>
+              <h2 id="best-sellers-heading" class="mt-2 text-2xl font-bold text-white sm:text-3xl">
+                Popular across the catalogue
+              </h2>
+            </div>
+            <a routerLink="/shop/" class="inline-flex items-center gap-1.5 text-sm font-semibold text-white/90 hover:text-white">
+              Shop all products
+              <ol-icon name="arrow-right" [size]="16" />
+            </a>
+          </div>
+
+          <ul class="ol-rail mt-8 flex snap-x gap-4 overflow-x-auto pb-2">
+            @for (product of bestSellers(); track product.uuid; let i = $index) {
+              <li class="w-56 shrink-0 snap-start sm:w-60" olReveal [olRevealDelay]="(i % 6) * 50">
+                <ol-product-card [product]="product" [headingLevel]="3" imageSizes="15rem" />
+              </li>
+            }
+          </ul>
+        </div>
+      </section>
+    }
 
     <!--
       A product section per department, each in one of three shapes.
@@ -676,6 +721,17 @@ const SHOWCASE_STYLES: readonly ShowcaseStyle[] = ['grid', 'feature', 'rail'];
       pointer-events: none;
     }
 
+    /* The best-sellers band's glow: a brand light off the left, so the dark
+       ground has depth behind the product rail rather than a flat fill. */
+    .ol-bestsellers-glow {
+      top: -30%;
+      left: -10%;
+      height: 150%;
+      width: 55%;
+      background: radial-gradient(circle at 40% 50%, rgb(5 91 240 / 0.2) 0%, transparent 66%);
+      pointer-events: none;
+    }
+
     .ol-banner {
       min-height: 10.5rem;
     }
@@ -696,6 +752,29 @@ const SHOWCASE_STYLES: readonly ShowcaseStyle[] = ['grid', 'feature', 'rail'];
 
     .ol-rail::-webkit-scrollbar {
       display: none;
+    }
+
+    /* The category-rail chevrons that sit in the section heading. */
+    .ol-catnav {
+      display: inline-flex;
+      height: 2.25rem;
+      width: 2.25rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      border: 1px solid var(--color-ink-200);
+      background: #fff;
+      color: var(--color-ink-700);
+      transition:
+        background-color 0.15s var(--ease-out-soft),
+        border-color 0.15s var(--ease-out-soft),
+        color 0.15s var(--ease-out-soft);
+    }
+
+    .ol-catnav:hover {
+      border-color: var(--color-brand-600);
+      color: var(--color-brand-600);
+      background: var(--color-brand-50);
     }
 
     /*
@@ -907,6 +986,23 @@ export class HomePage {
 
   protected readonly sections = computed(() =>
     this.showcases().filter((section) => section.products.length > 0),
+  );
+
+  /**
+   * Products for the best-sellers band.
+   *
+   * A cross-section of the catalogue rather than a single department, pulled
+   * from the same listing endpoint every other surface uses. "Best sellers" is
+   * the merchandising label the client asked for; the real ranking is theirs to
+   * curate - this fills the band with real, photographed stock so the section
+   * is never empty, and swaps to a curated set the day one exists.
+   */
+  protected readonly bestSellers = toSignal(
+    this.api.catalogue({ perPage: 12 }).pipe(
+      catchError(() => of(EMPTY_LISTING)),
+      map((listing) => listing.data),
+    ),
+    { initialValue: [] as readonly ProductCardData[] },
   );
 
   /**
