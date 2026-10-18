@@ -84,7 +84,47 @@ Disallow: /
 	}
 
 	# Admin panel (Filament, Phase 5).
+	#
+	# Filament's Alpine + Livewire runtime needs a looser CSP than the
+	# storefront's hash-locked one: Alpine evaluates expressions (unsafe-eval)
+	# and Livewire injects inline script. This policy is scoped to /admin, so the
+	# storefront CSP the gates enforce is untouched. It is set INSIDE the handle
+	# so it replaces the global storefront policy for this surface only.
 	handle /admin* {
+		header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		root * /app/public
+		php_server
+	}
+
+	# Filament / Livewire assets and endpoints.
+	#
+	# These paths sit OUTSIDE /admin but are served by Laravel - its public dir
+	# for the published CSS/JS, its routes for Livewire's script and update
+	# endpoint and Filament's own routes. Without this they fall through to the
+	# catch-all below, which serves the Angular static root, so the admin loads
+	# unstyled (CSS 404s to the SPA shell) with a dead login form (Livewire's JS
+	# never loads). Declared before the crawler and storefront handlers.
+	handle /css/filament/* {
+		root * /app/public
+		file_server
+	}
+	handle /js/filament/* {
+		root * /app/public
+		file_server
+	}
+	handle /fonts/filament/* {
+		root * /app/public
+		file_server
+	}
+	# /livewire* not /livewire/*: Livewire randomises its route prefix
+	# (/livewire-<hash>/livewire.js, /livewire-<hash>/update), so a prefix match
+	# on "livewire" catches the script, the update endpoint and file uploads
+	# whatever the hash is.
+	handle /livewire* {
+		root * /app/public
+		php_server
+	}
+	handle /filament/* {
 		root * /app/public
 		php_server
 	}
