@@ -1,2 +1,14 @@
-# Auto detect text files and perform LF normalization
+# Auto detect text files and perform LF normalization in the repo.
 * text=auto
+
+# Deploy-critical files must stay LF on checkout too, whatever OS they are edited
+# on. A CRLF here is not cosmetic: it breaks `sh` value parsing in
+# scripts/deploy.sh (which reads .env with sed, so BUILD_TARGET becomes
+# "prod\r"), dotenv parsing (a trailing \r baked onto a secret), and PgBouncer
+# md5 auth (a \r on the userlist line). The scripts also strip \r defensively,
+# but forcing LF on the tracked files removes the problem at its source.
+*.sh            text eol=lf
+*.ini           text eol=lf
+*.caddy         text eol=lf
+.env*           text eol=lf
+userlist.txt    text eol=lf

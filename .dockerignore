@@ -1,0 +1,9 @@
+# Never bake an operator's .env into an image layer. apps/api is bind-mounted
+# over /app at runtime (compose), so the real .env is always read from the host
+# there - baking a copy only ships secrets inside the image and makes the build
+# fail on whatever a hand-edited .env happens to contain (an unquoted value, a
+# stray CRLF). The build itself needs no .env: `artisan package:discover` runs
+# against composer's manifest, not configuration.
+apps/api/.env
+apps/api/.env.*
+!apps/api/.env.example

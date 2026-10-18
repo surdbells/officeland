@@ -62,7 +62,7 @@ The vhost is the single way in.
 
 ---
 
-## 1. Get the code and configure `.env`
+## 1. Get the code and configure the two env files
 
 ```bash
 mkdir -p /www/officeland && cd /www/officeland
@@ -70,31 +70,63 @@ git clone <repo-url> .
 cp .env.production.example .env
 ```
 
-Fill in `.env`. The values that **must** be set (the rest have working
-defaults in the example file):
+This stack reads **two** env files, by design — don't put everything in one:
+
+**Root `.env`** — read by Docker Compose. Supplies the container's app/DB/Redis
+settings and the host port mappings. Fill in:
 
 | Key | Value |
 | --- | --- |
 | `APP_ENV` | `staging` for first bring-up, later `production` |
 | `APP_DEBUG` | `false` |
 | `APP_URL` | exact public URL incl. scheme, e.g. `https://officelandng.com` |
-| `APP_KEY` | generate — see below, never reuse the dev key |
-| `DB_PASSWORD` | generate — `openssl rand -base64 32` |
+| `DB_PASSWORD` | a password — `openssl rand -hex 24` (hex avoids quoting/CRLF traps) |
 | `BIND_ADDR` | `127.0.0.1` |
 | `HTTP_PORT` | `8095` (match the vhost upstream) |
 | `BUILD_TARGET` | **`prod`** — `deploy.sh` refuses anything else |
 | `OCTANE_WORKERS` | e.g. `4` (≈ CPU cores) |
 
-Generate the app key:
+> **`APP_KEY` does NOT go in the root `.env`** — compose does not forward it,
+> so a value here is silently ignored. It is generated for you (next file).
 
-```bash
-docker compose run --rm api php artisan key:generate --show   # paste into APP_KEY
+**`apps/api/.env`** — Laravel's own config, bind-mounted into the container at
+runtime and **never baked into the image**. You do not create it by hand: on
+first start the api entrypoint copies `apps/api/.env.example` to it and runs
+`key:generate`, so `APP_KEY` is set automatically. The only thing to add is
+third-party mail, so quote emails send — edit `apps/api/.env.example` *before*
+the first run, or `apps/api/.env` after it: `MAIL_MAILER`, `ZEPTOMAIL_ENDPOINT`,
+`ZEPTOMAIL_TOKEN`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`,
+`QUOTE_DEFAULT_RECIPIENTS` (`ICECAT_*` may stay blank). **Quote any value with a
+space**, or Laravel's dotenv parser rejects the whole file:
+
+```ini
+ZEPTOMAIL_TOKEN="Zoho-enczapikey <your-token>"
+MAIL_FROM_NAME="OfficeLand Limited"
 ```
 
-Quote email (so a submitted quote actually sends) is set by the client on their
-own box: `MAIL_MAILER`, `ZEPTOMAIL_ENDPOINT`, `ZEPTOMAIL_TOKEN`,
-`MAIL_FROM_ADDRESS`, `QUOTE_DEFAULT_RECIPIENTS`. `ICECAT_*` (catalogue
-enrichment) may be left blank. Keep secrets in `.env` only — never commit it.
+### Host port collisions (you WILL hit this on aaPanel)
+
+aaPanel already runs PostgreSQL on `5432` and Redis on `6379`, which collide
+with this stack's loopback-published ports. Remap them in the **root `.env`** —
+these only move the host-side admin ports; the app reaches Postgres/Redis over
+the compose network regardless:
+
+```ini
+DB_DIRECT_PORT=5433
+DB_POOLED_PORT=6432
+REDIS_PORT=6380
+```
+
+Check they're free first: `ss -ltnp | grep -E ':(5433|6432|6380)\b'` (no output
+= free; bump any that are taken). Don't open these in the firewall — they stay
+on `127.0.0.1`.
+
+> **PgBouncer password:** a custom `DB_PASSWORD` is now synced into the
+> PgBouncer userlist automatically — `serve.sh`/`deploy.sh` regenerate
+> `infra/pgbouncer/userlist.txt` from `.env` before the stack starts. (If you
+> change the password *after* the database volume already exists, also reset the
+> role: `docker compose exec postgres psql -U officeland -c "ALTER ROLE
+> officeland PASSWORD '…'"`.)
 
 ---
 

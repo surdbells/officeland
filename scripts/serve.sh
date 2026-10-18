@@ -100,6 +100,11 @@ HTTP_PORT="${HTTP_PORT:-8095}"
 # Containers
 # ---------------------------------------------------------------------------
 
+# Keep PgBouncer's userlist in step with DB_PASSWORD before anything starts, so
+# a custom password does not fail auth against the committed dev-default hash.
+log 'Syncing the PgBouncer userlist to DB_PASSWORD'
+sh scripts/gen-userlist.sh
+
 log 'Starting containers'
 
 # --wait blocks until every service with a healthcheck reports healthy, which

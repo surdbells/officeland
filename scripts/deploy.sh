@@ -33,8 +33,12 @@ die() { printf '\033[1;31mxx\033[0m %s\n' "$1" >&2; exit 1; }
 
 [ -f .env ] || die 'No .env. Copy .env.production.example and fill it in.'
 
-APP_ENV="$(sed -n 's/^APP_ENV=//p' .env | tail -1)"
-BUILD_TARGET="$(sed -n 's/^BUILD_TARGET=//p' .env | tail -1)"
+# tr -d '\r': a .env saved with Windows line endings leaves a trailing carriage
+# return on every value, so BUILD_TARGET reads as "prod\r" and the guard below
+# rejects a correct file. .gitattributes keeps the tracked examples LF; this
+# makes the read itself robust to a hand-edited .env.
+APP_ENV="$(sed -n 's/^APP_ENV=//p' .env | tail -1 | tr -d '\r')"
+BUILD_TARGET="$(sed -n 's/^BUILD_TARGET=//p' .env | tail -1 | tr -d '\r')"
 
 log "Deploying as APP_ENV=${APP_ENV:-unset}, BUILD_TARGET=${BUILD_TARGET:-unset}"
 
@@ -43,6 +47,9 @@ if [ "${BUILD_TARGET:-}" != "prod" ]; then
     # public host that ships stack traces to strangers.
     die "BUILD_TARGET must be 'prod' for a deploy. It is '${BUILD_TARGET:-unset}'."
 fi
+
+log 'Syncing the PgBouncer userlist to DB_PASSWORD'
+sh scripts/gen-userlist.sh
 
 log 'Building images'
 docker compose build
@@ -58,7 +65,12 @@ docker compose exec -T api sh -lc 'php artisan config:cache && php artisan route
 
 if [ "$BUILD" = "1" ]; then
     log 'Building the storefront (about three minutes)'
-    docker compose exec -T render sh -lc 'npm ci --omit=dev --no-audit --no-fund >/dev/null 2>&1 || npm ci >/dev/null'
+    # Full install, NOT --omit=dev: the Angular CLI (`ng`) that builds the
+    # storefront and the tooling the gates read (lucide-static for the icon
+    # gate, etc.) are devDependencies. Omitting them strips the very tools this
+    # step and the gate step then need, and the build fails with "ng: not
+    # found" while the icon gate reports every icon missing.
+    docker compose exec -T render sh -lc 'npm ci --no-audit --no-fund >/dev/null'
     docker compose exec -T render sh -lc 'npm run build' | grep -E 'Prerendered|ERROR' || true
 
     log 'Regenerating the Content-Security-Policy'
