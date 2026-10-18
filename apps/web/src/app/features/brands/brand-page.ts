@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
+import { catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
 import { CatalogueApi, type Brand } from '../../core/api/catalogue-api';
 import { SeoService } from '../../core/seo/seo.service';
 import { breadcrumbSchema, itemListSchema } from '../../core/seo/structured-data';
@@ -9,6 +9,8 @@ import { EMPTY_LISTING, readFilters, splitPagedPath } from '../../shared/listing
 import { FacetRail } from '../../shared/facet-rail';
 import { Pagination } from '../../shared/pagination';
 import { ProductCard } from '../../shared/product-card';
+import { Skeleton } from '../../shared/skeleton';
+import { ProductCardSkeleton } from '../../shared/product-card-skeleton';
 
 /**
  * A brand hub at /brands/{slug}/.
@@ -22,9 +24,27 @@ import { ProductCard } from '../../shared/product-card';
   selector: 'ol-brand-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ProductCard, FacetRail, Pagination],
+  imports: [RouterLink, ProductCard, FacetRail, Pagination, Skeleton, ProductCardSkeleton],
   template: `
-    @if (brand(); as b) {
+    @if (loading()) {
+      <!-- Loading. Holds the hub's shape until the brand and its products
+           resolve, instead of a blank screen. A crawler gets the resolved
+           page and never this branch. -->
+      <div
+        class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8"
+        aria-busy="true"
+        aria-label="Loading brand"
+      >
+        <ol-skeleton shape="h-3 w-64 max-w-full rounded bg-ink-100" />
+        <ol-skeleton shape="mt-5 h-9 w-72 max-w-full rounded bg-ink-100" />
+        <ol-skeleton shape="mt-3 h-4 w-full max-w-2xl rounded bg-ink-100" />
+        <ul class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          @for (card of skeletonCards; track card) {
+            <li class="h-full"><ol-product-card-skeleton /></li>
+          }
+        </ul>
+      </div>
+    } @else if (brand(); as b) {
       <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8">
         <nav aria-label="Breadcrumb">
           <ol class="flex flex-wrap items-center gap-2 text-sm text-ink-600">
@@ -133,15 +153,34 @@ export class BrandPage {
                 .pipe(catchError(() => of(EMPTY_LISTING))),
             ),
           ),
-        ]).pipe(map(([brand, listing]) => ({ ...brand, listing }))),
+        ]).pipe(
+          map(([brand, listing]) => ({ ...brand, listing, loading: false })),
+          // Re-enter loading on each navigation, so moving between brand hubs
+          // shows the skeleton rather than the previous brand's content.
+          startWith({
+            brand: null as Brand | null,
+            failed: false,
+            listing: EMPTY_LISTING,
+            loading: true,
+          }),
+        ),
       ),
     ),
-    { initialValue: { brand: null as Brand | null, failed: false, listing: EMPTY_LISTING } },
+    {
+      initialValue: {
+        brand: null as Brand | null,
+        failed: false,
+        listing: EMPTY_LISTING,
+        loading: true,
+      },
+    },
   );
 
   protected readonly brand = computed(() => this.result().brand);
   protected readonly failed = computed(() => this.result().failed);
   protected readonly listing = computed(() => this.result().listing);
+  protected readonly loading = computed(() => this.result().loading);
+  protected readonly skeletonCards = [0, 1, 2, 3, 4, 5, 6, 7] as const;
 
   protected readonly paginationParams = computed<Record<string, string>>(() => {
     const params: Record<string, string> = {};

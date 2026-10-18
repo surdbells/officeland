@@ -525,11 +525,60 @@
   color: var(--color-brand-600);
 }
 
+/*
+ * Skeleton shimmer.
+ *
+ * Under Dynamic Rendering a human gets the static CSR shell and the data a
+ * moment later, so a section boots empty and fills once its client fetch
+ * resolves. A shimmering placeholder in that window says "loading" rather than
+ * "empty", and holds the section's height so the real cards do not shove the
+ * page down when they land.
+ *
+ * A crawler never sees this: its HTML is serialized AFTER the data resolves
+ * (the fetch is a pending task the render waits on), so the loading branch is
+ * never a bot's rendered state - the skeleton is a browser-only affordance.
+ *
+ * `.ol-shimmer` carries only the sweep; the element sets its own base colour
+ * with a utility class (bg-ink-100 on light ground, bg-white/10 on a dark
+ * band), so one rule serves both the light grid and the dark best-sellers rail.
+ */
+.ol-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.ol-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.45) 50%,
+    transparent 100%
+  );
+  animation: ol-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes ol-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* No travelling sweep under reduced motion: the base block alone reads as a
+     placeholder, which is the accessible form of "loading" here. The sweep is
+     parked off-screen left, so disabling it leaves a clean static tile. */
+  .ol-shimmer::after {
+    animation: none !important;
   }
 
   /* The reveal directive already refuses to hide content under reduced

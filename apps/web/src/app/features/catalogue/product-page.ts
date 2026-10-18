@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { catchError, map, of, switchMap } from 'rxjs';
+import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import {
   CatalogueApi,
   type Product,
@@ -11,6 +11,7 @@ import { ProductGallery } from '../../shared/product-gallery';
 import { SpecAccordion } from '../../shared/spec-accordion';
 import { ProductCard } from '../../shared/product-card';
 import { Icon } from '../../shared/icon';
+import { Skeleton } from '../../shared/skeleton';
 import { SeoService } from '../../core/seo/seo.service';
 import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data';
 
@@ -31,9 +32,34 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
   selector: 'ol-product-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ProductGallery, SpecAccordion, ProductCard, Icon],
+  imports: [RouterLink, ProductGallery, SpecAccordion, ProductCard, Icon, Skeleton],
   template: `
-    @if (product(); as p) {
+    @if (loading()) {
+      <!-- Loading. Mirrors the PDP's breadcrumb, title and two-column gallery /
+           buy-box so the page holds its shape until the product resolves,
+           instead of the blank screen the bare @if produced. A crawler is
+           served the resolved product and never this branch. -->
+      <div
+        class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8"
+        aria-busy="true"
+        aria-label="Loading product"
+      >
+        <ol-skeleton shape="h-3 w-72 max-w-full rounded bg-ink-100" />
+        <ol-skeleton shape="mt-5 h-9 w-2/3 rounded bg-ink-100" />
+        <ol-skeleton shape="mt-3 h-4 w-48 rounded bg-ink-100" />
+        <div class="mt-6 grid gap-8 lg:grid-cols-2">
+          <ol-skeleton shape="aspect-square w-full rounded-2xl bg-ink-100" />
+          <div class="space-y-4">
+            <ol-skeleton shape="h-6 w-40 rounded bg-ink-100" />
+            <ol-skeleton shape="h-4 w-full rounded bg-ink-100" />
+            <ol-skeleton shape="h-4 w-5/6 rounded bg-ink-100" />
+            <ol-skeleton shape="h-4 w-3/4 rounded bg-ink-100" />
+            <ol-skeleton shape="h-12 w-full rounded-full bg-ink-100" />
+            <ol-skeleton shape="h-24 w-full rounded-xl bg-ink-100" />
+          </div>
+        </div>
+      </div>
+    } @else if (product(); as p) {
       <article class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8">
         <nav aria-label="Breadcrumb">
           <ol class="flex flex-wrap items-center gap-2 text-sm text-ink-600">
@@ -298,16 +324,20 @@ export class ProductPage {
       map((params) => params.get('slug') ?? ''),
       switchMap((slug) =>
         this.api.product(slug).pipe(
-          map((product) => ({ product, failed: false })),
-          catchError(() => of({ product: null as Product | null, failed: true })),
+          map((product) => ({ product, failed: false, loading: false })),
+          catchError(() => of({ product: null as Product | null, failed: true, loading: false })),
+          // Re-enter loading on each slug change, so moving between products
+          // shows the skeleton rather than the previous product until it lands.
+          startWith({ product: null as Product | null, failed: false, loading: true }),
         ),
       ),
     ),
-    { initialValue: { product: null as Product | null, failed: false } },
+    { initialValue: { product: null as Product | null, failed: false, loading: true } },
   );
 
   protected readonly product = computed(() => this.result().product);
   protected readonly failed = computed(() => this.result().failed);
+  protected readonly loading = computed(() => this.result().loading);
 
   /**
    * Same-category products, as the fallback related rail.

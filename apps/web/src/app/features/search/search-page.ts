@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, of, switchMap } from 'rxjs';
-import { CatalogueApi } from '../../core/api/catalogue-api';
+import { catchError, map, of, startWith, switchMap } from 'rxjs';
+import { CatalogueApi, type Listing } from '../../core/api/catalogue-api';
 import { SeoService } from '../../core/seo/seo.service';
 import { EMPTY_LISTING, filterParams, readFilters } from '../../shared/listing-state';
 import { FacetRail } from '../../shared/facet-rail';
 import { Pagination } from '../../shared/pagination';
 import { ProductCard } from '../../shared/product-card';
+import { ProductCardSkeleton } from '../../shared/product-card-skeleton';
 
 /**
  * Search results.
@@ -32,7 +33,7 @@ import { ProductCard } from '../../shared/product-card';
   selector: 'ol-search-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ProductCard, FacetRail, Pagination],
+  imports: [RouterLink, ProductCard, FacetRail, Pagination, ProductCardSkeleton],
   template: `
     <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8">
       <h1 class="font-heading text-2xl font-bold">
@@ -55,7 +56,7 @@ import { ProductCard } from '../../shared/product-card';
         />
       </form>
 
-      @if (term()) {
+      @if (term() && !searching()) {
         <p class="mt-3 text-sm text-ink-600">
           {{ listing().meta.total }} result{{ listing().meta.total === 1 ? '' : 's' }}
         </p>
@@ -69,7 +70,19 @@ import { ProductCard } from '../../shared/product-card';
         }
       }
 
-      @if (listing().data.length) {
+      @if (searching()) {
+        <!-- Search in flight. A grid of card skeletons so results do not pop in
+             over a blank gap. noindex page, so no crawler concern either way. -->
+        <ul
+          class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          aria-busy="true"
+          aria-label="Searching"
+        >
+          @for (card of skeletonCards; track card) {
+            <li class="h-full"><ol-product-card-skeleton /></li>
+          }
+        </ul>
+      } @else if (listing().data.length) {
         <!-- Facets above the results; see category-page. -->
         <div class="mt-8">
           <ol-facet-rail
@@ -152,20 +165,28 @@ export class SearchPage {
 
         // An empty search is not a search. The API does not log it either
         // (§14.10 counts zero-result TERMS, and '' is not a term).
-        if (term === '') return of(EMPTY_LISTING);
+        if (term === '') return of({ listing: EMPTY_LISTING, loading: false });
 
         return this.api
           .search(term, {
             page: Number(params.get('page') ?? 1) || 1,
             filters: readFilters(params),
           })
-          .pipe(catchError(() => of(EMPTY_LISTING)));
+          .pipe(
+            map((listing: Listing) => ({ listing, loading: false })),
+            catchError(() => of({ listing: EMPTY_LISTING, loading: false })),
+            // Skeleton the grid while the request is in flight, re-entering on
+            // each new term or page rather than leaving the previous results up.
+            startWith({ listing: EMPTY_LISTING, loading: true }),
+          );
       }),
     ),
-    { initialValue: EMPTY_LISTING },
+    { initialValue: { listing: EMPTY_LISTING, loading: false } },
   );
 
-  protected readonly listing = computed(() => this.listingResult());
+  protected readonly listing = computed(() => this.listingResult().listing);
+  protected readonly searching = computed(() => this.listingResult().loading);
+  protected readonly skeletonCards = [0, 1, 2, 3, 4, 5, 6, 7] as const;
 
   /** The term, carried across facet changes so refining does not clear it. */
   protected readonly searchParams = computed<Record<string, string>>(() => {

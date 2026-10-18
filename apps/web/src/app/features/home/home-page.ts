@@ -15,7 +15,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
-import { CatalogueApi, type ProductCard as ProductCardData } from '../../core/api/catalogue-api';
+import { CatalogueApi, type Image, type ProductCard as ProductCardData } from '../../core/api/catalogue-api';
 import { ProductCard } from '../../shared/product-card';
 import { Icon, type IconName } from '../../shared/icon';
 import { SeoService } from '../../core/seo/seo.service';
@@ -24,6 +24,8 @@ import { DepartmentShowcase, type ShowcaseStyle } from './department-showcase';
 import { Reveal } from '../../shared/reveal';
 import { CountUp } from '../../shared/count-up';
 import { ResponsiveImage } from '../../shared/responsive-image';
+import { Skeleton } from '../../shared/skeleton';
+import { ProductCardSkeleton } from '../../shared/product-card-skeleton';
 
 /** One homepage section: a department, its products, and the shape it takes. */
 interface ShowcaseSection {
@@ -41,6 +43,66 @@ interface ShowcaseSection {
  * catalogue of layouts.
  */
 const SHOWCASE_STYLES: readonly ShowcaseStyle[] = ['grid', 'feature', 'rail'];
+
+/** One tile in the "Shop by category" grid: a popular category with a real photo and a live count. */
+interface MajorCategory {
+  readonly name: string;
+  readonly url: string;
+  readonly image: Image | null;
+  readonly count: number;
+}
+
+/**
+ * The "major categories" the legacy WordPress storefront surfaced to shoppers
+ * (officelandng.com) - the granular, high-intent entry points a buyer actually
+ * types, rather than the nine abstract departments. Every one already exists in
+ * the taxonomy; it is nested a level or two down, so the department rail never
+ * shows it. This promotes them to a first-class grid the way the old site did.
+ *
+ * `path` is the subtree the listing endpoint resolves; `url` is the storefront
+ * route. A tile with no products is dropped at render (filtered on the live
+ * count), so an entry that a mid-import catalogue cannot yet fill simply does
+ * not appear rather than showing an empty card.
+ */
+const MAJOR_CATEGORY_SOURCES: readonly {
+  name: string;
+  path: string;
+  url: string;
+  /**
+   * Lowercase keywords that a representative product's name contains. The tile
+   * takes the image of the first product whose name matches, so a scooter that
+   * was mis-filed into Printers, or an outlier that happens to be the newest
+   * product in Laptops, does not become the face of the category. Falls back to
+   * the first product with any image when nothing matches.
+   */
+  match: readonly string[];
+
+  /**
+   * Tried before `match`, for the two categories whose first name-matching
+   * product carries a wrong photo in the legacy source data (a laptop tagged
+   * with an earbuds shot, a printer tagged with a scooter). These land the tile
+   * on a verified-clean product instead - "dell inspiron" skips the mis-shot
+   * "Laptop Yoga 500", and the British-spelled "colour laserjet" skips the
+   * American-spelled "Full Color Laserjet" scooter. Omitted where the first
+   * match is already clean.
+   */
+  prefer?: readonly string[];
+}[] = [
+  { name: 'Laptops', path: '/it-products/computers/laptops/', url: '/c/it-products/computers/laptops/', match: ['laptop', 'notebook'], prefer: ['dell inspiron', 'ideapad', 'thinkpad', 'elitebook'] },
+  { name: 'Monitors', path: '/it-products/monitors-displays/monitors/', url: '/c/it-products/monitors-displays/monitors/', match: ['monitor', 'display'] },
+  { name: 'Printers', path: '/printers-consumables/printers/', url: '/c/printers-consumables/printers/', match: ['printer', 'laserjet', 'deskjet'], prefer: ['colour laserjet', 'officejet'] },
+  { name: 'Ink & Toner', path: '/printers-consumables/ink-toner/', url: '/c/printers-consumables/ink-toner/', match: ['toner', 'ink', 'cartridge'] },
+  { name: 'Office Chairs', path: '/office-furniture/seating/', url: '/c/office-furniture/seating/', match: ['chair'] },
+  { name: 'Office Tables', path: '/office-furniture/desks-tables/', url: '/c/office-furniture/desks-tables/', match: ['desk', 'table', 'workstation'] },
+  { name: 'Shredders', path: '/office-supplies/office-machines/shredders/', url: '/c/office-supplies/office-machines/shredders/', match: ['shred'] },
+  { name: 'Computer Accessories', path: '/it-products/computer-accessories/', url: '/c/it-products/computer-accessories/', match: ['mouse', 'keyboard', 'bag', 'headset', 'webcam'] },
+  { name: 'Flash & Memory', path: '/it-products/storage-memory/', url: '/c/it-products/storage-memory/', match: ['flash', 'drive', 'card', 'ssd', 'memory', 'usb'] },
+  { name: 'Filing & Storage', path: '/filing-storage/', url: '/c/filing-storage/', match: ['file', 'folder', 'binder', 'box'] },
+  { name: 'Paper & Notebooks', path: '/paper-notebooks/', url: '/c/paper-notebooks/', match: ['paper', 'notebook', 'ream', 'pad'] },
+  { name: 'Writing', path: '/office-supplies/writing/', url: '/c/office-supplies/writing/', match: ['pen', 'pencil', 'marker', 'highlighter'] },
+  { name: 'School Supplies', path: '/school-supplies/', url: '/c/school-supplies/', match: ['crayon', 'colour', 'color', 'math', 'ruler', 'pencil'] },
+  { name: 'Networking', path: '/it-products/networking/', url: '/c/it-products/networking/', match: ['router', 'switch', 'network', 'access point', 'wifi'] },
+];
 
 /**
  * Homepage (§23.4, and docs/HOMEPAGE_BRIEF.md).
@@ -66,7 +128,17 @@ const SHOWCASE_STYLES: readonly ShowcaseStyle[] = ['grid', 'feature', 'rail'];
   selector: 'ol-home-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Icon, DepartmentShowcase, Reveal, CountUp, ResponsiveImage, ProductCard],
+  imports: [
+    RouterLink,
+    Icon,
+    DepartmentShowcase,
+    Reveal,
+    CountUp,
+    ResponsiveImage,
+    ProductCard,
+    Skeleton,
+    ProductCardSkeleton,
+  ],
   template: `
     <!--
       Hero: 65 / 35 on desktop, stacking below 1024px.
@@ -362,7 +434,7 @@ const SHOWCASE_STYLES: readonly ShowcaseStyle[] = ['grid', 'feature', 'rail'];
             <div>
               <p class="ol-eyebrow">Find your department</p>
               <h2 id="departments-heading" class="mt-1 text-2xl font-bold sm:text-3xl">
-                Shop by category
+                Browse by department
               </h2>
             </div>
             <div class="flex items-center gap-3">
@@ -436,6 +508,122 @@ const SHOWCASE_STYLES: readonly ShowcaseStyle[] = ['grid', 'feature', 'rail'];
           </ul>
         </div>
       </section>
+    } @else if (navLoading()) {
+      <!-- Department rail, loading. A header and a row of tile skeletons that
+           hold the rail's height until the navigation request resolves. -->
+      <section aria-busy="true" aria-label="Loading departments" class="border-b border-ink-100">
+        <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-10">
+          <ol-skeleton shape="h-3 w-40 rounded bg-ink-100" />
+          <ol-skeleton shape="mt-3 h-7 w-64 rounded bg-ink-100" />
+          <ul class="mt-6 flex gap-4 overflow-hidden pb-2">
+            @for (placeholder of [0, 1, 2, 3, 4, 5]; track placeholder) {
+              <li class="w-48 shrink-0 sm:w-52">
+                <div class="rounded-2xl border border-ink-100 bg-[#f6f3ee] p-2.5">
+                  <ol-skeleton shape="aspect-square w-full rounded-xl bg-ink-100" />
+                  <ol-skeleton shape="mx-1.5 mt-3 h-4 w-3/4 rounded bg-ink-100" />
+                  <ol-skeleton shape="mx-1.5 mb-1.5 mt-2 h-3 w-1/2 rounded bg-ink-100" />
+                </div>
+              </li>
+            }
+          </ul>
+        </div>
+      </section>
+    }
+
+    <!--
+      Shop by category: the legacy site's "major categories".
+
+      The old WordPress storefront put the granular, high-intent categories a
+      buyer actually types - Laptops, Printers, Ink & Toner, Office Chairs,
+      Shredders - front and centre, not the nine abstract departments. Those
+      categories all live in the taxonomy a level or two down, so the
+      department rail above never shows them; this promotes them.
+
+      Each tile's photo and count come from a single listing request per
+      category (perPage 6, first product carrying an image), run once at build
+      and carried into hydration by TransferState like every other request on
+      the page. A category with no products is dropped on its live count, so a
+      mid-import catalogue thins the grid rather than showing empty cards.
+    -->
+    @if (majorCategories(); as majorCats) {
+      @if (majorCats.length) {
+      <section aria-labelledby="major-categories-heading" class="border-b border-ink-100 bg-white">
+        <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-12">
+          <div olReveal="fade" class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p class="ol-eyebrow">Popular categories</p>
+              <h2 id="major-categories-heading" class="mt-1 text-2xl font-bold sm:text-3xl">
+                Shop by category
+              </h2>
+            </div>
+            <a
+              routerLink="/shop/"
+              class="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:underline"
+            >
+              Shop all products
+              <ol-icon name="arrow-right" [size]="16" />
+            </a>
+          </div>
+
+          <!--
+            A grid, not a rail: these are destinations to scan at a glance, and
+            on the first screen a grid reads as a map of the catalogue where a
+            rail reads as a filmstrip to page through. Every tile is a real
+            anchor, so the crawl surface is the same as the rail's.
+          -->
+          <ul class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+            @for (cat of majorCats; track cat.url; let i = $index) {
+              <li olReveal [olRevealDelay]="(i % 7) * 40">
+                <a
+                  [routerLink]="cat.url"
+                  class="ol-lift group block h-full overflow-hidden rounded-2xl border border-ink-100 bg-[#f6f3ee] p-2.5"
+                >
+                  <div class="ol-zoom-frame aspect-square w-full overflow-hidden rounded-xl bg-[#f1ece3]">
+                    @if (cat.image; as image) {
+                      <ol-image
+                        [image]="image"
+                        sizes="(min-width: 1280px) 11rem, (min-width: 640px) 22vw, 42vw"
+                        imgClass="h-full w-full object-cover"
+                      />
+                    } @else {
+                      <span class="flex h-full items-center justify-center p-4 text-center font-heading text-sm font-semibold text-brand-700" aria-hidden="true">
+                        {{ cat.name }}
+                      </span>
+                    }
+                  </div>
+                  <div class="px-1.5 pb-1.5 pt-3">
+                    <strong class="block font-heading text-sm font-bold text-ink-900 group-hover:text-brand-600">
+                      {{ cat.name }}
+                    </strong>
+                    <small class="mt-0.5 block text-sm text-ink-400">{{ cat.count }} products</small>
+                  </div>
+                </a>
+              </li>
+            }
+          </ul>
+        </div>
+      </section>
+      }
+    } @else {
+      <!-- "Shop by category", loading. A matching grid of tile skeletons so the
+           band holds its height until the per-category requests resolve. -->
+      <section aria-busy="true" aria-label="Loading categories" class="border-b border-ink-100 bg-white">
+        <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-12">
+          <ol-skeleton shape="h-3 w-40 rounded bg-ink-100" />
+          <ol-skeleton shape="mt-2 h-7 w-56 rounded bg-ink-100" />
+          <ul class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+            @for (placeholder of [0, 1, 2, 3, 4, 5, 6]; track placeholder) {
+              <li>
+                <div class="rounded-2xl border border-ink-100 bg-[#f6f3ee] p-2.5">
+                  <ol-skeleton shape="aspect-square w-full rounded-xl bg-ink-100" />
+                  <ol-skeleton shape="mx-1.5 mt-3 h-4 w-3/4 rounded bg-ink-100" />
+                  <ol-skeleton shape="mx-1.5 mb-1.5 mt-2 h-3 w-1/2 rounded bg-ink-100" />
+                </div>
+              </li>
+            }
+          </ul>
+        </div>
+      </section>
     }
 
     <!--
@@ -479,7 +667,8 @@ const SHOWCASE_STYLES: readonly ShowcaseStyle[] = ['grid', 'feature', 'rail'];
       the light-dominant page. The cards are the same shared component used
       everywhere; only the ground changes.
     -->
-    @if (bestSellers().length) {
+    @if (bestSellers(); as items) {
+      @if (items.length) {
       <section aria-labelledby="best-sellers-heading" class="relative isolate overflow-hidden bg-ink-900 text-white">
         <span aria-hidden="true" class="ol-bestsellers-glow absolute"></span>
         <div class="relative mx-auto max-w-(--container-page) px-(--spacing-gutter) py-14">
@@ -497,9 +686,32 @@ const SHOWCASE_STYLES: readonly ShowcaseStyle[] = ['grid', 'feature', 'rail'];
           </div>
 
           <ul class="ol-rail mt-8 flex snap-x gap-4 overflow-x-auto pb-2">
-            @for (product of bestSellers(); track product.uuid; let i = $index) {
+            @for (product of items; track product.uuid; let i = $index) {
               <li class="w-56 shrink-0 snap-start sm:w-60" olReveal [olRevealDelay]="(i % 6) * 50">
                 <ol-product-card [product]="product" [headingLevel]="3" imageSizes="15rem" />
+              </li>
+            }
+          </ul>
+        </div>
+      </section>
+      }
+    } @else {
+      <!-- Best sellers, loading. The dark band with a rail of card skeletons;
+           the shimmer base is white/10 so it reads on the ink ground. -->
+      <section aria-busy="true" aria-label="Loading best sellers" class="relative isolate overflow-hidden bg-ink-900 text-white">
+        <span aria-hidden="true" class="ol-bestsellers-glow absolute"></span>
+        <div class="relative mx-auto max-w-(--container-page) px-(--spacing-gutter) py-14">
+          <ol-skeleton shape="h-3 w-36 rounded bg-white/10" />
+          <ol-skeleton shape="mt-2 h-7 w-72 rounded bg-white/10" />
+          <ul class="ol-rail mt-8 flex gap-4 overflow-hidden pb-2">
+            @for (placeholder of [0, 1, 2, 3, 4, 5]; track placeholder) {
+              <li class="w-56 shrink-0 sm:w-60">
+                <div class="rounded-lg border border-white/10 bg-white/[0.03] p-4">
+                  <ol-skeleton shape="mb-3 aspect-square w-full rounded-md bg-white/10" />
+                  <ol-skeleton shape="h-4 w-5/6 rounded bg-white/10" />
+                  <ol-skeleton shape="mt-2 h-4 w-2/3 rounded bg-white/10" />
+                  <ol-skeleton shape="mt-4 h-10 w-full rounded-lg bg-white/10" />
+                </div>
               </li>
             }
           </ul>
@@ -893,6 +1105,14 @@ export class HomePage {
   protected readonly departments = computed(() => this.navigation()?.departments ?? []);
 
   /**
+   * True only in the window before navigation has resolved - undefined, not
+   * null (null is the loaded-but-failed state the catchError yields). Drives
+   * the department rail's skeleton, which a crawler never reaches because the
+   * request resolves before its HTML is serialized.
+   */
+  protected readonly navLoading = computed(() => this.navigation() === undefined);
+
+  /**
    * The hero stage slides: departments that carry a hero photograph.
    *
    * Filtered rather than assumed, so a department still awaiting its shot
@@ -997,12 +1217,60 @@ export class HomePage {
    * curate - this fills the band with real, photographed stock so the section
    * is never empty, and swaps to a curated set the day one exists.
    */
+  // No initialValue: the signal is `undefined` until the request resolves,
+  // which is the loading state the band's skeleton renders. Once resolved it is
+  // the product list (empty on failure, via catchError), never undefined again.
   protected readonly bestSellers = toSignal(
     this.api.catalogue({ perPage: 12 }).pipe(
       catchError(() => of(EMPTY_LISTING)),
       map((listing) => listing.data),
     ),
-    { initialValue: [] as readonly ProductCardData[] },
+  );
+
+  /**
+   * The "Shop by category" grid - the legacy site's major categories.
+   *
+   * One listing request per category (perPage 6, so a product with an image is
+   * almost always in the first page even when the newest few are image-less),
+   * taking the first image for the tile and the subtree total for the count.
+   * forkJoin so they resolve together; a failing category yields an empty
+   * listing rather than collapsing the grid. The whole set is filtered to
+   * categories that actually have products, so the grid is self-pruning as the
+   * catalogue fills. Runs once at build (D-009) and transfers into hydration.
+   */
+  protected readonly majorCategories = toSignal(
+    forkJoin(
+      MAJOR_CATEGORY_SOURCES.map((source) =>
+        this.api.categoryProducts(source.path, { perPage: 48 }).pipe(
+          catchError(() => of(EMPTY_LISTING)),
+          map((listing): MajorCategory => {
+            const withImage = listing.data.filter((product) => product.image);
+            const nameHas = (keywords: readonly string[]) => (product: ProductCardData) =>
+              keywords.some((keyword) => product.name.toLowerCase().includes(keyword));
+            // A verified-clean product first (only set where the first name
+            // match has a wrong source photo), then any product whose name
+            // reads like the category, then whatever has an image at all - so a
+            // mis-filed or mis-shot product is not the face of the tile.
+            const representative =
+              (source.prefer ? withImage.find(nameHas(source.prefer)) : undefined) ??
+              withImage.find(nameHas(source.match)) ??
+              withImage[0];
+
+            return {
+              name: source.name,
+              url: source.url,
+              image: representative?.image ?? null,
+              count: listing.meta.total,
+            };
+          }),
+        ),
+      ),
+    ).pipe(
+      map((categories) => categories.filter((category) => category.count > 0)),
+      catchError(() => of([] as MajorCategory[])),
+    ),
+    // No initialValue: `undefined` is the loading state the grid's skeleton
+    // renders; once resolved it is the (possibly empty) category list.
   );
 
   /**
