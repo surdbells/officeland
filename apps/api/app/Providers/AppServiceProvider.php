@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 final class AppServiceProvider extends ServiceProvider
@@ -53,6 +54,22 @@ final class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        /*
+         * Force HTTPS URL generation when the public URL is HTTPS.
+         *
+         * aaPanel and Cloudflare terminate TLS and reach this container over
+         * plain HTTP, and under Octane/FrankenPHP the forwarded scheme does not
+         * reliably reach the URL generator. Left alone, Livewire POSTs to
+         * http://.../livewire/update on an https page and the admin's
+         * connect-src 'self' CSP blocks it (a dead login form), and quotation
+         * emails and the sitemap carry http:// links. The site is only ever
+         * served over https in production, so pin url() to the scheme APP_URL
+         * declares; local dev keeps http because its APP_URL is http.
+         */
+        if (str_starts_with((string) config('app.url'), 'https://')) {
+            URL::forceScheme('https');
+        }
+
         /*
          * Under D-009 a page that is not regenerated serves stale content
          * indefinitely - there is no TTL to fall back on. Invalidation is

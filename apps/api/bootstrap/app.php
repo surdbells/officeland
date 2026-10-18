@@ -27,6 +27,24 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trust the proxy chain in front of the container.
+        //
+        // aaPanel's Nginx (and Cloudflare before it) terminate TLS and reach
+        // this container over plain HTTP on a private Docker address, passing
+        // the real scheme in X-Forwarded-Proto. Without trusting that proxy,
+        // Laravel ignores the header and builds http:// URLs on an https:// site
+        // - which made Livewire POST to http://.../livewire/update and the
+        // admin's connect-src 'self' CSP (https) block it, and would also put
+        // http:// links in quotation emails and the sitemap. The container is
+        // never exposed directly (compose binds it to loopback), so the only
+        // thing that can set these headers is the trusted proxy.
+        $middleware->trustProxies(at: [
+            '127.0.0.1',
+            '10.0.0.0/8',
+            '172.16.0.0/12',
+            '192.168.0.0/16',
+        ]);
+
         // Every request carries a trace_id through the API, the queue and the
         // logs (MASTER BUILD PROMPT section 19.1).
         $middleware->append(TraceId::class);
