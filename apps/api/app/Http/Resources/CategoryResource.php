@@ -35,10 +35,33 @@ final class CategoryResource extends JsonResource
      */
     private bool $isSubject = false;
 
+    /**
+     * The category's products as {name, url} anchors, for a leaf page's
+     * crawlable product list. Null means "not provided" (every non-leaf, and
+     * any caller that did not ask for it); an empty array means "a leaf with no
+     * products yet". The controller computes these, because the set is a query
+     * the resource must not fire per nested node.
+     *
+     * @var list<array{name: string, url: string}>|null
+     */
+    private ?array $productLinks = null;
+
     /** Marks this as the category the request asked for. */
     public function asSubject(): static
     {
         $this->isSubject = true;
+
+        return $this;
+    }
+
+    /**
+     * Attaches the leaf's products as crawlable anchors (SEO_SPEC 10.5).
+     *
+     * @param  list<array{name: string, url: string}>  $links
+     */
+    public function withProductLinks(array $links): static
+    {
+        $this->productLinks = $links;
 
         return $this;
     }
@@ -79,6 +102,22 @@ final class CategoryResource extends JsonResource
             // crawlable anchors on every category page (D-011) - that is what
             // makes every product reachable within 3 clicks.
             'children' => CategoryResource::collection($this->whenLoaded('children')),
+
+            /*
+             * A leaf's products as crawlable anchors.
+             *
+             * The child list above puts every leaf within 2 clicks of home;
+             * this puts every PRODUCT within 3, by linking them directly from
+             * the leaf rather than only through the paginated grid - whose page
+             * 2 onward would otherwise sit at 4+ clicks and strand most of a
+             * large category from the crawler (SEO_SPEC 10.5, the crawl-depth
+             * gate). Only the controller sets it, and only for leaves, so a
+             * department's thousands of descendants never land in this array.
+             */
+            'product_links' => $this->when(
+                $this->productLinks !== null,
+                fn (): array => $this->productLinks ?? [],
+            ),
 
             /*
              * The nearest ancestor's hero, for a category without one.

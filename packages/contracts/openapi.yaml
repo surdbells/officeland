@@ -243,6 +243,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Category'
+        product_links:
+          description: 'Every product in a LEAF category, as crawlable {name, url} anchors. A leaf sits at <=2 clicks from home, so linking its products directly here keeps them within the 3-click budget (SEO_SPEC 10.5) regardless of how many pages the paginated grid spans. Absent on non-leaf categories, whose products are reached through their own leaves.'
+          type: array
+          items:
+            $ref: '#/components/schemas/BreadcrumbItem'
         breadcrumb:
           type: array
           items:

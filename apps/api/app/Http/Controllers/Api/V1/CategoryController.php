@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\ProductCardResource;
 use App\Models\Category;
+use App\Models\Product;
 use App\Search\SearchEngine;
 use App\Search\SearchQuery;
 use Illuminate\Http\JsonResponse;
@@ -54,7 +55,48 @@ final class CategoryController extends Controller
             'heroMedia.derivatives',
         ]);
 
-        return response()->json(['data' => (new CategoryResource($category))->asSubject()]);
+        $resource = (new CategoryResource($category))->asSubject();
+
+        /*
+         * A leaf carries its products as crawlable anchors (SEO_SPEC 10.5).
+         *
+         * The child list above already puts every leaf within 2 clicks of
+         * home. This puts every PRODUCT within 3 by linking them straight off
+         * the leaf, rather than only through the paginated grid - whose page 2
+         * onward sits at 4+ clicks and, on a real catalogue, stranded ~3,300
+         * products from the crawler (the crawl-depth gate). Only a leaf pays
+         * the query; a department's products are reached through its own
+         * leaves, so folding its whole subtree in here would be thousands of
+         * anchors for nothing.
+         */
+        if ($category->children->isEmpty()) {
+            $resource->withProductLinks($this->productLinks($category));
+        }
+
+        return response()->json(['data' => $resource]);
+    }
+
+    /**
+     * A leaf category's active products as {name, url} anchors.
+     *
+     * Ordered by name for a stable, reproducible render - the snapshot and the
+     * crawl-depth gate both want the same bytes on every build. Minimal columns
+     * only: this feeds anchors, not cards, so it must not drag images or specs.
+     *
+     * @return list<array{name: string, url: string}>
+     */
+    private function productLinks(Category $category): array
+    {
+        return Product::query()
+            ->active()
+            ->whereHas('categories', fn ($query) => $query->whereKey($category->id))
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug'])
+            ->map(fn (Product $product): array => [
+                'name' => $product->name,
+                'url' => $product->url(),
+            ])
+            ->all();
     }
 
     /**

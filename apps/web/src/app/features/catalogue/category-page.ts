@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
+import { catchError, combineLatest, map, of, startWith, switchMap } from 'rxjs';
 import {
   CatalogueApi,
   type Category,
@@ -16,6 +16,8 @@ import { CategoryChips } from '../../shared/category-chips';
 import { ResponsiveImage } from '../../shared/responsive-image';
 import { Pagination } from '../../shared/pagination';
 import { ProductCard } from '../../shared/product-card';
+import { Skeleton } from '../../shared/skeleton';
+import { ProductCardSkeleton } from '../../shared/product-card-skeleton';
 
 /**
  * Category page - breadcrumbs, child anchors, facet rail, product grid.
@@ -36,9 +38,44 @@ import { ProductCard } from '../../shared/product-card';
   selector: 'ol-category-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ProductCard, FacetRail, Pagination, ResponsiveImage, CategoryChips],
+  imports: [
+    RouterLink,
+    ProductCard,
+    FacetRail,
+    Pagination,
+    ResponsiveImage,
+    CategoryChips,
+    Skeleton,
+    ProductCardSkeleton,
+  ],
   template: `
-    @if (category(); as cat) {
+    @if (loading()) {
+      <!--
+        Loading. A header and a first page of card skeletons that hold the
+        page's shape until the category and its products resolve - without this,
+        navigating to a category showed a blank screen until the fetch landed.
+        A crawler is served the resolved page and never reaches this branch.
+      -->
+      <div
+        class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8"
+        aria-busy="true"
+        aria-label="Loading category"
+      >
+        <ol-skeleton shape="h-3 w-72 max-w-full rounded bg-ink-100" />
+        <ol-skeleton shape="mt-5 h-9 w-80 max-w-full rounded bg-ink-100" />
+        <ol-skeleton shape="mt-3 h-4 w-full max-w-2xl rounded bg-ink-100" />
+        <div class="mt-10 flex flex-wrap gap-2.5">
+          @for (chip of [0, 1, 2, 3, 4]; track chip) {
+            <ol-skeleton shape="h-8 w-28 rounded-full bg-ink-100" />
+          }
+        </div>
+        <ul class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          @for (card of skeletonCards; track card) {
+            <li class="h-full"><ol-product-card-skeleton /></li>
+          }
+        </ul>
+      </div>
+    } @else if (category(); as cat) {
       <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8">
         <!--
           The category header.
@@ -252,6 +289,37 @@ import { ProductCard } from '../../shared/product-card';
                 }
               </p>
             }
+
+            <!--
+              The full product index - a leaf page only.
+
+              This is the link surface that makes the 3-click guarantee hold on
+              a real catalogue (SEO_SPEC 10.5). The grid above shows one page;
+              its page 2 onward sits at 4+ clicks, so on a 671-product leaf most
+              of the catalogue was stranded from the crawler. A leaf is <=2
+              clicks from home, so linking every one of its products straight
+              from here puts them all at 3 - regardless of how many pages the
+              grid spans. The API sends this list only for leaves (api carries
+              product_links), so a department never renders thousands of these.
+
+              A <details>, collapsed, so it is a quiet "jump to any item" index
+              rather than a wall of links - but its anchors are in the server
+              HTML open or closed, which is all the crawler reads.
+            -->
+            @if (cat.product_links?.length) {
+              <details class="mt-10 rounded-xl border border-ink-100 bg-ink-50/60">
+                <summary class="cursor-pointer select-none px-4 py-3 font-heading text-sm font-semibold text-ink-700 hover:text-brand-600">
+                  All {{ cat.product_links!.length }} products in {{ cat.name }}
+                </summary>
+                <ul class="gap-x-8 px-4 pb-4 sm:columns-2 lg:columns-3">
+                  @for (link of cat.product_links!; track link.url) {
+                    <li class="break-inside-avoid py-1 text-sm leading-snug">
+                      <a [routerLink]="link.url" class="text-ink-600 hover:text-brand-600 hover:underline">{{ link.name }}</a>
+                    </li>
+                  }
+                </ul>
+              </details>
+            }
           </section>
         </div>
       </div>
@@ -337,15 +405,39 @@ export class CategoryPage {
                 .pipe(catchError(() => of(EMPTY_LISTING))),
             ),
           ),
-        ]).pipe(map(([category, listing]) => ({ ...category, listing }))),
+        ]).pipe(
+          map(([category, listing]) => ({ ...category, listing, loading: false })),
+          // Re-enter the loading state at the start of every navigation, so a
+          // move to another category shows the skeleton rather than the
+          // previous category's content frozen until the new one resolves. The
+          // crawler never sees it: SSR waits for the resolved emission before
+          // serializing (D-009).
+          startWith({
+            category: null as Category | null,
+            failed: false,
+            listing: EMPTY_LISTING,
+            loading: true,
+          }),
+        ),
       ),
     ),
-    { initialValue: { category: null as Category | null, failed: false, listing: EMPTY_LISTING } },
+    {
+      initialValue: {
+        category: null as Category | null,
+        failed: false,
+        listing: EMPTY_LISTING,
+        loading: true,
+      },
+    },
   );
 
   protected readonly category = computed(() => this.result().category);
   protected readonly failed = computed(() => this.result().failed);
   protected readonly listing = computed(() => this.result().listing);
+  protected readonly loading = computed(() => this.result().loading);
+
+  /** Placeholder count for the loading grid - a full first page of cards. */
+  protected readonly skeletonCards = [0, 1, 2, 3, 4, 5, 6, 7] as const;
 
   protected readonly rangeLabel = computed(() => {
     const meta = this.listing().meta;

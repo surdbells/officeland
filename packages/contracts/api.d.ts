@@ -158,6 +158,8 @@ export interface components {
             siblings?: components["schemas"]["Category"][];
             /** @description Rendered as real crawlable anchors on every category page (D-011). */
             children?: components["schemas"]["Category"][];
+            /** @description Every product in a LEAF category, as crawlable {name, url} anchors. A leaf sits at <=2 clicks from home, so linking its products directly here keeps them within the 3-click budget (SEO_SPEC 10.5) regardless of how many pages the paginated grid spans. Absent on non-leaf categories, whose products are reached through their own leaves. */
+            product_links?: components["schemas"]["BreadcrumbItem"][];
             breadcrumb?: components["schemas"]["BreadcrumbItem"][];
             seo?: components["schemas"]["Seo"];
         };

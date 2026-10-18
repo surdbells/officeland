@@ -117,6 +117,16 @@ use OpenApi\Attributes as OA;
             items: new OA\Items(ref: '#/components/schemas/Category'),
         ),
         new OA\Property(
+            property: 'product_links',
+            description: 'Every product in a LEAF category, as crawlable {name, url} anchors. '
+                .'A leaf sits at <=2 clicks from home, so linking its products directly here '
+                .'keeps them within the 3-click budget (SEO_SPEC 10.5) regardless of how many '
+                .'pages the paginated grid spans. Absent on non-leaf categories, whose products '
+                .'are reached through their own leaves.',
+            type: 'array',
+            items: new OA\Items(ref: '#/components/schemas/BreadcrumbItem'),
+        ),
+        new OA\Property(
             property: 'breadcrumb',
             type: 'array',
             items: new OA\Items(ref: '#/components/schemas/BreadcrumbItem'),
