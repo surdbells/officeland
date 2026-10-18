@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { UrlSerializer, provideRouter } from '@angular/router';
 import { TrailingSlashUrlSerializer } from '../core/routing/trailing-slash-url-serializer';
 import { ProductCard } from './product-card';
@@ -48,6 +50,11 @@ describe('ProductCard', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: UrlSerializer, useClass: TrailingSlashUrlSerializer },
+        // The card now adds to the quote basket itself, so it injects
+        // BasketStore, which needs HttpClient; the testing backend stubs it so
+        // the add-to-quote click does not fire a real request.
+        provideHttpClient(),
+        provideHttpClientTesting(),
       ],
     });
   });

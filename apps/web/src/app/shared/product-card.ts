@@ -4,6 +4,7 @@ import type { ProductCard as ProductCardData } from '../core/api/catalogue-api';
 import { ResponsiveImage } from './responsive-image';
 import { Icon } from './icon';
 import { QuickViewService } from './quick-view.service';
+import { BasketStore } from '../core/quotes/basket-store';
 
 /**
  * The product card - one component, one prop set, one test suite (8b).
@@ -172,8 +173,8 @@ import { QuickViewService } from './quick-view.service';
         <!-- Above the stretched ::after so the button is reachable. -->
         <button
           type="button"
-          class="relative z-10 w-full rounded-lg bg-brand-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
-          (click)="addToQuote.emit(product())"
+          class="relative z-10 w-full cursor-pointer rounded-lg bg-brand-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
+          (click)="addToBasket()"
         >
           Add to quote
         </button>
@@ -183,6 +184,7 @@ import { QuickViewService } from './quick-view.service';
 })
 export class ProductCard {
   protected readonly quickView = inject(QuickViewService);
+  private readonly basket = inject(BasketStore);
 
   readonly product = input.required<ProductCardData>();
 
@@ -191,7 +193,20 @@ export class ProductCard {
 
   readonly imageSizes = input<string>('(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw');
 
+  /**
+   * Still emitted for any parent that wants to react (a toast, analytics), but
+   * the card no longer depends on one being bound: it adds to the quote basket
+   * itself. Every grid and rail renders this card without wiring an output, so
+   * leaving the add to a parent meant the button did nothing anywhere but the
+   * quick-view modal.
+   */
   readonly addToQuote = output<ProductCardData>();
+
+  /** Add this product to the quote basket, and notify any listener. */
+  protected addToBasket(): void {
+    this.basket.addProduct(this.product().slug);
+    this.addToQuote.emit(this.product());
+  }
 
   /**
    * Model code, MPN or SKU, in that order.
