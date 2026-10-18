@@ -275,15 +275,22 @@ publish redirects → reload the edge → regenerate sitemaps → verify redirec
 build that fails a gate is **never published**; the running site is untouched.
 
 `--no-build` skips the storefront build for a config-only change.
+`--no-gate` builds and publishes **without** the gate — use it for routine
+deploys (see the timing note below).
 
-> ⏱ **Budget ~75+ minutes for the gate step.** `npm run gate` crawls the entire
-> running catalogue (home + ~740 category/pagination pages + ~5,050 product
+> ⏱ **The gate takes ~an hour; `--no-gate` skips it.** `npm run gate` crawls the
+> entire catalogue (home + ~740 category/pagination pages + ~5,050 product
 > pages) through the SSR renderer, then runs the raw-HTML, crawl-depth, link and
 > a11y gates over the result. At this catalogue size that crawl alone is over an
-> hour. **Do not interrupt it** — a killed crawl leaves a partial snapshot tree
-> and the gate fails spuriously. If you need a faster path, build + gate on a
-> staging box and restore the verified data to production, or run with the stack
-> fully up and walk away. (It is safe to run `deploy.sh` in `tmux`/`screen`.)
+> hour, so it is impractical as the tax on every deploy. For a routine deploy
+> use `sh scripts/deploy.sh --no-gate` (the build is still type-checked by the
+> Angular compiler; you're only skipping the full crawl). Run the gate on its
+> own when it matters — e.g. before a release — and let it finish uninterrupted
+> (a killed crawl leaves a partial snapshot tree and fails spuriously):
+>
+> ```bash
+> docker compose exec render sh -lc 'GATE_BASE="http://localhost:${PORT:-4000}" npm run gate'
+> ```
 
 **Rollback:** `git checkout <previous-sha> && sh scripts/deploy.sh`. Migrations
 are **forward-only** and are not rolled back (which is why they run before the

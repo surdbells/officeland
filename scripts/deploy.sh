@@ -4,8 +4,17 @@
 #
 # Run on the server, from the repository root, after `git pull`.
 #
-#   scripts/deploy.sh              full deploy
+#   scripts/deploy.sh              full deploy (build, gate, publish)
 #   scripts/deploy.sh --no-build   skip the storefront build (config-only change)
+#   scripts/deploy.sh --no-gate    build and publish WITHOUT running the gates
+#
+# ── --no-gate, and when to use it ──────────────────────────────────────────
+# The gate crawls the whole catalogue through the SSR renderer, so on a real
+# catalogue (thousands of products) it takes the better part of an hour. That
+# is right for a release you want proven end to end, and impractical as the
+# tax on every routine deploy. --no-gate publishes without it; run the gate on
+# its own when it matters: docker compose exec render sh -lc \
+#   'GATE_BASE="http://localhost:${PORT:-4000}" npm run gate'
 #
 # ── The order matters ────────────────────────────────────────────────────
 # Migrate before building, because the build reads the catalogue through the
@@ -20,15 +29,18 @@ set -eu
 cd "$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)"
 
 BUILD=1
+GATE=1
 
 for arg in "$@"; do
     case "$arg" in
         --no-build) BUILD=0 ;;
+        --no-gate) GATE=0 ;;
         *) echo "Unknown option: $arg" >&2; exit 2 ;;
     esac
 done
 
 log() { printf '\033[1;34m==>\033[0m %s\n' "$1"; }
+warn() { printf '\033[1;33m!!\033[0m %s\n' "$1" >&2; }
 die() { printf '\033[1;31mxx\033[0m %s\n' "$1" >&2; exit 1; }
 
 [ -f .env ] || die 'No .env. Copy .env.production.example and fill it in.'
@@ -76,11 +88,22 @@ if [ "$BUILD" = "1" ]; then
     log 'Regenerating the Content-Security-Policy'
     docker compose exec -T render sh -lc 'node tools/csp-hashes.mjs --write' >/dev/null
 
-    # The gates run against dist/, before anything is published. A build that
-    # fails a gate must never reach the static root.
-    log 'Running gates'
-    docker compose exec -T render sh -lc 'npm run gate' \
-        || die 'A gate failed. Nothing was published; the running site is untouched.'
+    # The gates run before anything is published, so a build that fails one
+    # never reaches the static root.
+    #
+    # GATE_BASE points at the SSR server INSIDE the render container, where this
+    # runs. The default (localhost:8095) is the host-published edge, which is
+    # not reachable from in here - a sibling container - so the snapshot crawl
+    # rendered nothing and every gate after it failed. localhost:$PORT is the
+    # render worker's own SSR, which returns the same full HTML a crawler is
+    # served, so the raw-HTML, crawl-depth, link and a11y gates read real pages.
+    if [ "$GATE" = "1" ]; then
+        log 'Running gates (crawls the catalogue via the SSR renderer; can take ~an hour at scale — skip with --no-gate)'
+        docker compose exec -T render sh -lc 'GATE_BASE="http://localhost:${PORT:-4000}" npm run gate' \
+            || die 'A gate failed. Nothing was published; the running site is untouched.'
+    else
+        warn 'Skipping gates (--no-gate): publishing an UNVERIFIED build.'
+    fi
 
     log 'Publishing to the static root'
     docker compose exec -T render sh -lc 'rsync -a --delete "$BUILD_OUTPUT"/ "$STATIC_ROOT"/'
