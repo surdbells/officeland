@@ -402,6 +402,132 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
         }
       </nav>
     </header>
+
+    <!--
+      Mobile navigation (below md).
+
+      The utility bar, the search box and the department megamenu above are all
+      hidden on a phone, where a hover-driven bar does not belong. This gives a
+      handset the same reach: a fixed bottom bar - the thumb-friendly place for
+      primary navigation on a phone - with the full category tree and the search
+      box opening as bottom sheets from it.
+
+      It is a browser-only enhancement, not a second crawl surface: a crawler
+      reads the desktop nav above (which is in the DOM, only display:none on
+      mobile), so these are @if-gated and add no anchors to the served HTML.
+    -->
+    <nav aria-label="Mobile navigation" class="ol-bottomnav md:hidden">
+      <a routerLink="/" class="ol-bottomnav__item">
+        <ol-icon name="home" [size]="21" />
+        <span>Home</span>
+      </a>
+      <button
+        type="button"
+        class="ol-bottomnav__item"
+        [class.is-active]="sheet() === 'menu'"
+        [attr.aria-expanded]="sheet() === 'menu'"
+        (click)="openSheet('menu')"
+      >
+        <ol-icon name="menu" [size]="21" />
+        <span>Browse</span>
+      </button>
+      <button
+        type="button"
+        class="ol-bottomnav__item"
+        [class.is-active]="sheet() === 'search'"
+        [attr.aria-expanded]="sheet() === 'search'"
+        (click)="openSheet('search')"
+      >
+        <ol-icon name="search" [size]="21" />
+        <span>Search</span>
+      </button>
+      <a routerLink="/quote/" class="ol-bottomnav__item">
+        <span class="relative inline-flex">
+          <ol-icon name="file-text" [size]="21" />
+          @if (quoteCount() > 0) {
+            <span class="ol-bottomnav__badge">{{ quoteCount() }}</span>
+          }
+        </span>
+        <span>Quote</span>
+      </a>
+    </nav>
+
+    @if (sheet() !== null) {
+      <div class="ol-sheet-backdrop md:hidden" (click)="closeSheet()" aria-hidden="true"></div>
+    }
+
+    @if (sheet() === 'menu') {
+      <div class="ol-sheet md:hidden" role="dialog" aria-modal="true" aria-label="Browse departments">
+        <span class="ol-sheet__grip" aria-hidden="true"></span>
+        <div class="ol-sheet__head">
+          <h2 class="font-heading text-base font-bold">Browse</h2>
+          <button type="button" class="ol-sheet__close" (click)="closeSheet()" aria-label="Close">
+            <ol-icon name="x" [size]="20" />
+          </button>
+        </div>
+        <ul class="ol-sheet__body">
+          @for (department of departments(); track department.slug) {
+            <li class="border-b border-ink-100">
+              <div class="flex items-stretch">
+                <a
+                  [routerLink]="department.url"
+                  class="flex flex-1 items-center gap-3 py-3.5 font-medium text-ink-900"
+                >
+                  <ol-icon [name]="iconForDept(department.slug)" [size]="20" class="text-brand-600" />
+                  {{ department.name }}
+                </a>
+                @if (department.children.length) {
+                  <button
+                    type="button"
+                    class="flex w-12 shrink-0 items-center justify-center text-ink-400"
+                    [attr.aria-expanded]="expanded() === department.slug"
+                    [attr.aria-label]="'Show ' + department.name + ' categories'"
+                    (click)="toggleExpand(department.slug)"
+                  >
+                    <ol-icon
+                      name="chevron-right"
+                      [size]="20"
+                      class="transition-transform"
+                      [class.rotate-90]="expanded() === department.slug"
+                    />
+                  </button>
+                }
+              </div>
+              @if (expanded() === department.slug) {
+                <ul class="pb-3 pl-11">
+                  @for (sub of department.children; track sub.slug) {
+                    <li>
+                      <a [routerLink]="sub.url" class="block py-2 text-sm text-ink-600 hover:text-brand-600">
+                        {{ sub.name }}
+                      </a>
+                    </li>
+                  }
+                </ul>
+              }
+            </li>
+          }
+        </ul>
+        <a routerLink="/c/" class="ol-sheet__foot">
+          All departments
+          <ol-icon name="arrow-right" [size]="16" />
+        </a>
+      </div>
+    }
+
+    @if (sheet() === 'search') {
+      <div class="ol-sheet ol-sheet--search md:hidden" role="dialog" aria-modal="true" aria-label="Search">
+        <span class="ol-sheet__grip" aria-hidden="true"></span>
+        <div class="ol-sheet__head">
+          <h2 class="font-heading text-base font-bold">Search</h2>
+          <button type="button" class="ol-sheet__close" (click)="closeSheet()" aria-label="Close">
+            <ol-icon name="x" [size]="20" />
+          </button>
+        </div>
+        <div class="px-4 pb-5 pt-1">
+          <ol-site-search inputId="mobile-search" />
+        </div>
+      </div>
+    }
   `,
   styles: `
     /*
@@ -450,6 +576,183 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
         transform: none;
       }
     }
+
+    /*
+     * Mobile bottom navigation.
+     *
+     * Fixed to the foot of the viewport - the thumb's reach on a handset - and
+     * shown only below md. The hide is done HERE, not with the template's
+     * md:hidden: Angular's emulated encapsulation scopes this selector with an
+     * attribute, which outranks Tailwind's single-class .md\:hidden, so the
+     * utility could never win. Defaulting to display:none and switching to flex
+     * under the breakpoint keeps the whole decision inside one specificity
+     * class. It carries the safe-area inset so it clears the home indicator on
+     * a notched phone, and the global body padding in styles.css reserves its
+     * height so it never covers the last of the page.
+     */
+    .ol-bottomnav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      display: none;
+      align-items: stretch;
+      border-top: 1px solid var(--color-ink-100, #e5e7eb);
+      background: #fff;
+      padding-bottom: env(safe-area-inset-bottom, 0);
+      box-shadow: 0 -1px 8px rgb(15 23 42 / 6%);
+    }
+
+    @media (max-width: 767px) {
+      .ol-bottomnav {
+        display: flex;
+      }
+    }
+
+    .ol-bottomnav__item {
+      flex: 1 1 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.1875rem;
+      padding: 0.5rem 0.25rem;
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: var(--color-ink-500, #6b7280);
+      background: none;
+      border: 0;
+      cursor: pointer;
+      min-height: 3.25rem;
+    }
+
+    .ol-bottomnav__item.is-active,
+    .ol-bottomnav__item:active {
+      color: var(--color-brand-600, #2563eb);
+    }
+
+    .ol-bottomnav__badge {
+      position: absolute;
+      top: -0.375rem;
+      left: 0.75rem;
+      min-width: 1rem;
+      height: 1rem;
+      padding: 0 0.25rem;
+      border-radius: 9999px;
+      background: var(--color-brand-600, #2563eb);
+      color: #fff;
+      font-size: 0.625rem;
+      font-weight: 700;
+      line-height: 1rem;
+      text-align: center;
+    }
+
+    /*
+     * The sheets slide up from the bar and stop short of the top, so the page
+     * behind stays partly visible - a sheet, not a full-screen takeover. The
+     * backdrop dims the rest and closes on tap. Both animate in; @if removes
+     * them on close, so there is nothing to animate out, and the global
+     * reduced-motion block collapses the slide.
+     */
+    .ol-sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 55;
+      background: rgb(15 23 42 / 45%);
+      animation: ol-backdrop-in 0.2s ease-out;
+    }
+
+    .ol-sheet {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      max-height: 80vh;
+      border-radius: 1rem 1rem 0 0;
+      background: #fff;
+      padding-bottom: env(safe-area-inset-bottom, 0);
+      box-shadow: 0 -8px 32px rgb(15 23 42 / 18%);
+      animation: ol-sheet-in 0.26s var(--ease-out-soft, cubic-bezier(0.22, 1, 0.36, 1));
+    }
+
+    .ol-sheet__grip {
+      width: 2.25rem;
+      height: 0.25rem;
+      margin: 0.5rem auto 0;
+      border-radius: 9999px;
+      background: var(--color-ink-200, #e5e7eb);
+    }
+
+    .ol-sheet__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 1rem 0.75rem;
+      border-bottom: 1px solid var(--color-ink-100, #f3f4f6);
+    }
+
+    .ol-sheet__close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.25rem;
+      height: 2.25rem;
+      margin-right: -0.5rem;
+      border-radius: 9999px;
+      color: var(--color-ink-500, #6b7280);
+      background: none;
+      border: 0;
+      cursor: pointer;
+    }
+
+    .ol-sheet__body {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 1rem;
+    }
+
+    .ol-sheet__foot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+      padding: 0.875rem 1rem;
+      border-top: 1px solid var(--color-ink-100, #f3f4f6);
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--color-brand-600, #2563eb);
+    }
+
+    @keyframes ol-backdrop-in {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes ol-sheet-in {
+      from {
+        transform: translateY(100%);
+      }
+      to {
+        transform: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .ol-sheet,
+      .ol-sheet-backdrop {
+        animation-duration: 0.01ms;
+      }
+    }
   `,
   host: {
     '(document:keydown.escape)': 'close()',
@@ -478,6 +781,19 @@ export class SiteHeader {
 
   protected readonly moreOpen = signal(false);
 
+  /**
+   * The open mobile bottom sheet, or null when none is.
+   *
+   * The desktop megamenu is hover-driven and hidden below md; on a phone the
+   * same reach is given by a fixed bottom bar whose Browse and Search buttons
+   * raise these sheets. It is a browser-only affordance - the sheets are
+   * @if-gated, so they add nothing to the prerendered HTML a crawler reads.
+   */
+  protected readonly sheet = signal<'menu' | 'search' | null>(null);
+
+  /** The department expanded inside the Browse sheet; one open at a time. */
+  protected readonly expanded = signal<string | null>(null);
+
   constructor() {
     /*
      * Close the menu the instant a navigation lands.
@@ -500,6 +816,10 @@ export class SiteHeader {
         this.clearTimers();
         this.open.set(null);
         this.moreOpen.set(false);
+        // A mobile sheet is a navigation surface too: tapping a link in it
+        // must reveal the page it loaded, not leave the sheet over it.
+        this.sheet.set(null);
+        this.expanded.set(null);
       });
   }
 
@@ -582,6 +902,29 @@ export class SiteHeader {
   protected close(): void {
     this.clearTimers();
     this.open.set(null);
+    // Escape also dismisses an open mobile sheet.
+    this.sheet.set(null);
+  }
+
+  /**
+   * Open a bottom sheet, closing the other one if it was up.
+   *
+   * Opening Search from the menu sheet (or the reverse) swaps them rather than
+   * stacking, and a fresh menu opens with every department collapsed.
+   */
+  protected openSheet(which: 'menu' | 'search'): void {
+    this.expanded.set(null);
+    this.sheet.set(which);
+  }
+
+  protected closeSheet(): void {
+    this.sheet.set(null);
+    this.expanded.set(null);
+  }
+
+  /** Expand a department's subcategories in the Browse sheet; one at a time. */
+  protected toggleExpand(slug: string): void {
+    this.expanded.update((current) => (current === slug ? null : slug));
   }
 
   protected dismissAnnouncement(): void {

@@ -567,6 +567,22 @@
   }
 }
 
+/*
+ * Clearance for the mobile bottom navigation.
+ *
+ * Below md a fixed bottom bar carries the primary navigation (see
+ * site-header.ts). Being fixed, it sits over the foot of the page, so the last
+ * of the content - and a sticky "Add to quote" or footer CTA - would hide
+ * behind it. Reserving its height plus the safe-area inset at the body keeps
+ * every page scrollable clear of it. The bar is md:hidden, so this is scoped to
+ * the same breakpoint; above it there is no bar and no padding.
+ */
+@media (max-width: 767px) {
+  body {
+    padding-bottom: calc(3.25rem + env(safe-area-inset-bottom, 0));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
