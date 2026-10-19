@@ -2,10 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Web</title>
+  <!-- A route's real title is set by Angular's Title service per page; this is
+       only the pre-hydration/fallback title, so it names the brand rather than
+       the framework default ("Web"). -->
+  <title>OfficeLand Nigeria</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta name="theme-color" content="#0046bf">
+  <!-- Favicons. SVG is preferred by modern browsers (crisp at any size); the
+       .ico carries 16/32/48 raster for Safari and Google's search favicon, and
+       the 180px PNG is the iOS home-screen icon. All generated from the OL
+       monogram on the brand primary (#0046bf). -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/x-icon" href="favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
 </head>
 <body>
   <app-root></app-root>
