@@ -17,13 +17,18 @@
 #   'GATE_BASE="http://localhost:${PORT:-4000}" npm run gate'
 #
 # ── The order matters ────────────────────────────────────────────────────
-# Migrate before building, because the build reads the catalogue through the
-# API and a build against an un-migrated schema either fails or — worse —
-# succeeds and prerenders 200 pages from a half-updated database.
+# Migrate before starting the render container, because its entrypoint builds
+# the storefront by reading the catalogue through the API, and a build against
+# an un-migrated schema either fails or — worse — succeeds and prerenders pages
+# from a half-updated database.
 #
-# Publish and reload Caddy after the gates, not before. The gates read the
-# BUILD output; publishing first would put an unverified build in front of
-# visitors for the length of the gate run.
+# ── The render entrypoint owns the storefront build ────────────────────────
+# `docker compose up -d --wait` recreates the render container, whose entrypoint
+# builds, verifies and publishes the storefront to the static root, and only
+# then serves and reports healthy. This script does NOT build the storefront a
+# second time: doing so inside the already-serving container (as it once did)
+# let an interrupted `ng build` delete the live bundle and take the site down.
+# The gate step here verifies the build that is already serving.
 set -eu
 
 cd "$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)"
@@ -76,21 +81,35 @@ log 'Caching config, routes and views'
 docker compose exec -T api sh -lc 'php artisan config:cache && php artisan route:cache && php artisan view:cache'
 
 if [ "$BUILD" = "1" ]; then
-    log 'Building the storefront (about three minutes)'
-    # Full install, NOT --omit=dev: the Angular CLI (`ng`) that builds the
-    # storefront and the tooling the gates read (lucide-static for the icon
-    # gate, etc.) are devDependencies. Omitting them strips the very tools this
-    # step and the gate step then need, and the build fails with "ng: not
-    # found" while the icon gate reports every icon missing.
-    docker compose exec -T render sh -lc 'npm ci --no-audit --no-fund >/dev/null'
-    docker compose exec -T render sh -lc 'npm run build' | grep -E 'Prerendered|ERROR' || true
+    # ── The storefront is built ONCE, by the render entrypoint ──────────────
+    # When `docker compose up -d --wait` (above) recreated the render container
+    # from the freshly built image, its entrypoint built the storefront to
+    # completion, verified the output existed, published it to the static root
+    # and only THEN started serving and reported healthy. So by this point the
+    # new bundle is already built, published and live.
+    #
+    # This block therefore does NOT build again. The previous version ran a
+    # SECOND `npm run build` here, inside the already-serving container. `ng
+    # build` deletes dist/web as its first step, so a build interrupted at this
+    # point — a closed SSH session, a timed-out command — left the live SSR
+    # server with no bundle to serve and every page 500ing until the container
+    # was manually recreated. Making the entrypoint the single builder removes
+    # that failure mode entirely (and about three minutes of redundant work).
+    #
+    # The gates below are a post-build verification of what is already serving;
+    # a failure stops the deploy for investigation rather than rolling back, and
+    # the honest fix for a bad build is to correct it and redeploy.
+
+    # Guard: the entrypoint must have produced the browser bundle that the CSP
+    # generator and the gates read. An empty output here means the entrypoint
+    # build did not finish — stop before touching CSP or restarting the edge.
+    docker compose exec -T render sh -lc \
+        '[ -n "$(ls -A "${BUILD_OUTPUT:-/repo/apps/web/dist/web/browser}" 2>/dev/null)" ]' \
+        || die 'The render container has no build output. Check: docker compose logs render'
 
     log 'Regenerating the Content-Security-Policy'
     docker compose exec -T render sh -lc 'node tools/csp-hashes.mjs --write' >/dev/null
 
-    # The gates run before anything is published, so a build that fails one
-    # never reaches the static root.
-    #
     # GATE_BASE points at the SSR server INSIDE the render container, where this
     # runs. The default (localhost:8095) is the host-published edge, which is
     # not reachable from in here - a sibling container - so the snapshot crawl
@@ -100,13 +119,10 @@ if [ "$BUILD" = "1" ]; then
     if [ "$GATE" = "1" ]; then
         log 'Running gates (crawls the catalogue via the SSR renderer; can take ~an hour at scale — skip with --no-gate)'
         docker compose exec -T render sh -lc 'GATE_BASE="http://localhost:${PORT:-4000}" npm run gate' \
-            || die 'A gate failed. Nothing was published; the running site is untouched.'
+            || die 'A gate failed against the live build. Fix and redeploy; investigate: docker compose logs render'
     else
-        warn 'Skipping gates (--no-gate): publishing an UNVERIFIED build.'
+        warn 'Skipping gates (--no-gate): the live build is unverified.'
     fi
-
-    log 'Publishing to the static root'
-    docker compose exec -T render sh -lc 'rsync -a --delete "$BUILD_OUTPUT"/ "$STATIC_ROOT"/'
 fi
 
 log 'Publishing redirects'
