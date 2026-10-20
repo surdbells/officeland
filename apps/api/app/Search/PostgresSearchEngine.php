@@ -118,6 +118,11 @@ final class PostgresSearchEngine implements SearchEngine
         // Deliberately narrow: prefix and contains matching on indexed columns
         // only, no ranking, no joins. The budget is p95 <= 50ms and this runs
         // on every keystroke.
+        // Over-fetch, because identical product names are collapsed below. The
+        // imported catalogue carries families of same-named rows (e.g. 94 "New
+        // office chairs collection"); without de-duplication the typeahead is
+        // ten identical lines that all point somewhere different. A wider limit
+        // leaves enough distinct names after the collapse.
         $products = Product::query()
             ->active()
             ->where(function (Builder $q) use ($like, $contains): void {
@@ -126,8 +131,15 @@ final class PostgresSearchEngine implements SearchEngine
                     ->orWhereRaw('lower(sku) like ?', [$like]);
             })
             ->orderByRaw('case when lower(mpn) like ? then 0 when lower(name) like ? then 1 else 2 end', [$like, $like])
-            ->limit($limit)
+            ->limit($limit * 5)
             ->get(['name', 'slug', 'mpn']);
+
+        // One suggestion per distinct name (first wins, so ordering is kept),
+        // then back down to the requested limit.
+        $products = $products
+            ->unique(fn (Product $p): string => mb_strtolower((string) $p->name))
+            ->take($limit)
+            ->values();
 
         $categories = Category::query()
             ->whereRaw('lower(name) like ?', [$contains])
