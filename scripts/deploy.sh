@@ -23,12 +23,14 @@
 # from a half-updated database.
 #
 # ── The render entrypoint owns the storefront build ────────────────────────
-# `docker compose up -d --wait` recreates the render container, whose entrypoint
-# builds, verifies and publishes the storefront to the static root, and only
-# then serves and reports healthy. This script does NOT build the storefront a
-# second time: doing so inside the already-serving container (as it once did)
-# let an interrupted `ng build` delete the live bundle and take the site down.
-# The gate step here verifies the build that is already serving.
+# The render container is bind-mounted from the host's apps/web, so its
+# entrypoint builds the storefront from the current source when it starts. This
+# script does NOT build it a second time: doing so inside the already-serving
+# container (as it once did) let an interrupted `ng build` delete the live
+# bundle and take the site down. That entrypoint build runs asynchronously and
+# render has no build-gated healthcheck, so the BUILD block below waits for the
+# build output to appear before regenerating CSP and running the gates against
+# it.
 set -eu
 
 cd "$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)"
@@ -81,31 +83,30 @@ log 'Caching config, routes and views'
 docker compose exec -T api sh -lc 'php artisan config:cache && php artisan route:cache && php artisan view:cache'
 
 if [ "$BUILD" = "1" ]; then
-    # ── The storefront is built ONCE, by the render entrypoint ──────────────
-    # When `docker compose up -d --wait` (above) recreated the render container
-    # from the freshly built image, its entrypoint built the storefront to
-    # completion, verified the output existed, published it to the static root
-    # and only THEN started serving and reported healthy. So by this point the
-    # new bundle is already built, published and live.
+    # ── The storefront is built by the render entrypoint ────────────────────
+    # The render container is bind-mounted from the host's apps/web, so its
+    # entrypoint builds the storefront from the current source at start (to a
+    # staging dir, swapped in atomically — see infra/docker/node-render/
+    # entrypoint.sh). This script does NOT build it a second time: doing so in
+    # the already-serving container (as it once did) let an interrupted `ng
+    # build` delete the live bundle and take the site down.
     #
-    # This block therefore does NOT build again. The previous version ran a
-    # SECOND `npm run build` here, inside the already-serving container. `ng
-    # build` deletes dist/web as its first step, so a build interrupted at this
-    # point — a closed SSH session, a timed-out command — left the live SSR
-    # server with no bundle to serve and every page 500ing until the container
-    # was manually recreated. Making the entrypoint the single builder removes
-    # that failure mode entirely (and about three minutes of redundant work).
-    #
-    # The gates below are a post-build verification of what is already serving;
-    # a failure stops the deploy for investigation rather than rolling back, and
-    # the honest fix for a bad build is to correct it and redeploy.
-
-    # Guard: the entrypoint must have produced the browser bundle that the CSP
-    # generator and the gates read. An empty output here means the entrypoint
-    # build did not finish — stop before touching CSP or restarting the edge.
-    docker compose exec -T render sh -lc \
-        '[ -n "$(ls -A "${BUILD_OUTPUT:-/repo/apps/web/dist/web/browser}" 2>/dev/null)" ]' \
-        || die 'The render container has no build output. Check: docker compose logs render'
+    # That build runs ASYNCHRONOUSLY, though: render has no build-gated
+    # healthcheck, so `up -d --wait` returns the moment the container is running
+    # (seconds), not when the build finishes (minutes). So wait here for the
+    # build output to appear before using it. On a cold node_modules volume the
+    # entrypoint also runs `npm ci` first, hence the generous ceiling.
+    log 'Waiting for the render build to finish (npm ci on a cold volume + build — a few minutes)'
+    attempts=0
+    until docker compose exec -T render sh -lc \
+        '[ -n "$(ls -A "${BUILD_OUTPUT:-/repo/apps/web/dist/web/browser}" 2>/dev/null)" ]' 2>/dev/null; do
+        attempts=$((attempts + 1))
+        if [ "$attempts" -ge 90 ]; then
+            die 'Render build did not finish within ~15 minutes. Check: docker compose logs render'
+        fi
+        sleep 10
+    done
+    log 'Render build is ready'
 
     log 'Regenerating the Content-Security-Policy'
     docker compose exec -T render sh -lc 'node tools/csp-hashes.mjs --write' >/dev/null
