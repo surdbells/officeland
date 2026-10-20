@@ -12,6 +12,7 @@ import { SpecAccordion } from '../../shared/spec-accordion';
 import { ProductCard } from '../../shared/product-card';
 import { Icon } from '../../shared/icon';
 import { Skeleton } from '../../shared/skeleton';
+import { BasketStore } from '../../core/quotes/basket-store';
 import { SeoService } from '../../core/seo/seo.service';
 import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data';
 
@@ -161,7 +162,8 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
 
                 <button
                   type="button"
-                  class="flex-1 rounded-full bg-brand-600 px-6 py-3 font-semibold text-white shadow-brand transition-colors hover:bg-brand-700"
+                  class="flex-1 cursor-pointer rounded-full bg-brand-600 px-6 py-3 font-semibold text-white shadow-brand transition-colors hover:bg-brand-700"
+                  (click)="addToQuote(p.slug, qty.valueAsNumber)"
                 >
                   Add to quote
                 </button>
@@ -318,6 +320,19 @@ export class ProductPage {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(CatalogueApi);
   private readonly seo = inject(SeoService);
+  private readonly basket = inject(BasketStore);
+
+  /**
+   * Add this product to the quote basket at the chosen quantity.
+   *
+   * The quantity comes straight off the number input; the server coerces it to
+   * the product's min/step (§9b), so this only guards against an empty or junk
+   * value before sending. Success raises the shared toast via the basket store.
+   */
+  protected addToQuote(slug: string, qty: number): void {
+    const quantity = Number.isFinite(qty) && qty > 0 ? Math.floor(qty) : 1;
+    this.basket.addProduct(slug, quantity);
+  }
 
   private readonly result = toSignal(
     this.route.paramMap.pipe(

@@ -9,6 +9,7 @@ import { LocationsStrip } from './core/layout/locations-strip';
 import { SiteFooter } from './core/layout/site-footer';
 import { SiteHeader } from './core/layout/site-header';
 import { QuickView } from './shared/quick-view';
+import { ToastHost } from './shared/toast';
 import { SeoService } from './core/seo/seo.service';
 import { organizationSchema, webSiteSchema } from './core/seo/structured-data';
 
@@ -23,7 +24,7 @@ import { organizationSchema, webSiteSchema } from './core/seo/structured-data';
   selector: 'app-root',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, BrandMasthead, SiteHeader, LocationsStrip, SiteFooter, QuickView],
+  imports: [RouterOutlet, BrandMasthead, SiteHeader, LocationsStrip, SiteFooter, QuickView, ToastHost],
   template: `
     <!--
       Section 23.5: the first focusable element on every page.
@@ -49,6 +50,13 @@ import { organizationSchema, webSiteSchema } from './core/seo/structured-data';
       no markup to the prerendered HTML.
     -->
     <ol-quick-view />
+
+    <!--
+      Transient confirmations ("Added to your quote request"). Mounted once
+      here so a toast raised from any page - a card, the PDP, the quick view -
+      survives the page it was raised on. Renders nothing until one is shown.
+    -->
+    <ol-toast-host />
   `,
 })
 export class App {

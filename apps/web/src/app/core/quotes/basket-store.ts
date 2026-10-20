@@ -3,6 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import type { Basket, BasketLine } from '../api/catalogue-api';
+import { ToastService } from '../../shared/toast';
 
 /**
  * The quote basket, as the storefront sees it.
@@ -24,6 +25,7 @@ import type { Basket, BasketLine } from '../api/catalogue-api';
 @Injectable({ providedIn: 'root' })
 export class BasketStore {
   private readonly http = inject(HttpClient);
+  private readonly toast = inject(ToastService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   private readonly state = signal<Basket>({
@@ -61,6 +63,7 @@ export class BasketStore {
   addProduct(slug: string, qty = 1, note?: string): void {
     this.request(
       this.http.post<{ data: Basket }>('/api/v1/basket/items', { slug, qty, note: note ?? null }),
+      'Added to your quote request',
     );
   }
 
@@ -71,6 +74,7 @@ export class BasketStore {
         qty,
         note: note ?? null,
       }),
+      'Added to your quote request',
     );
   }
 
@@ -100,7 +104,7 @@ export class BasketStore {
     this.loaded = false;
   }
 
-  private request(observable: ReturnType<HttpClient['get']>): void {
+  private request(observable: ReturnType<HttpClient['get']>, successMessage?: string): void {
     if (!this.isBrowser) return;
 
     this.busy.set(true);
@@ -110,6 +114,12 @@ export class BasketStore {
       next: (response) => {
         this.state.set(response.data);
         this.busy.set(false);
+        // Only the mutations that pass a message (the adds) confirm visibly;
+        // a quantity change or removal updates the line in place and needs no
+        // toast.
+        if (successMessage) {
+          this.toast.show(successMessage, { actionLabel: 'View quote', actionUrl: '/quote/' });
+        }
       },
       error: (error: { error?: { error?: { message?: string } } }) => {
         /*

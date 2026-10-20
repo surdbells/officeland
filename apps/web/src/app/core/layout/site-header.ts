@@ -729,6 +729,41 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
       color: var(--color-brand-600, #2563eb);
     }
 
+    /*
+     * The search sheet drops from the TOP, not up from the bottom.
+     *
+     * The suggestions list opens directly below the input (position:absolute,
+     * top:100%). Anchored at the bottom of the screen like the Browse sheet,
+     * the input sat near the foot and its results opened off the bottom edge -
+     * typed matches were there but invisible, which read as "search is broken
+     * on mobile". From the top, the input is near the top and the whole screen
+     * below it is free for results. The sheet keeps overflow visible so the
+     * list can extend past the sheet's own short box over the dimmed page.
+     */
+    .ol-sheet--search {
+      top: 0;
+      bottom: auto;
+      padding-top: env(safe-area-inset-top, 0);
+      padding-bottom: 0;
+      border-radius: 0 0 1rem 1rem;
+      animation: ol-sheet-down 0.26s var(--ease-out-soft, cubic-bezier(0.22, 1, 0.36, 1));
+    }
+
+    /* A drag grip belongs on a bottom sheet; at the top of the search sheet it
+       is just noise, so it is removed there. */
+    .ol-sheet--search .ol-sheet__grip {
+      display: none;
+    }
+
+    @keyframes ol-sheet-down {
+      from {
+        transform: translateY(-100%);
+      }
+      to {
+        transform: none;
+      }
+    }
+
     @keyframes ol-backdrop-in {
       from {
         opacity: 0;
