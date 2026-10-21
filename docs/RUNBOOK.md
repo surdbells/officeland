@@ -793,7 +793,16 @@ docker compose logs --tail=30 worker
 docker compose exec -T api php artisan queue:monitor imports,media
 ```
 
-### 15.2 Importing a brand (the resilient way)
+### 15.2 Importing from the admin (the usual way)
+Admin → **Catalogue → Product imports → New import**. Pick brands and optional
+filters (since year, category ids, limit, images per product) and press Start.
+The import runs entirely in the background on the worker as a job batch; the list
+polls live progress (created / skipped / failed of total) and you can close the
+tab — the run keeps going and settles to completed/failed/cancelled on its own.
+Cancel stops a run mid-flight (products already created are kept). This is the
+preferred interface; it uses the same jobs and worker as the CLI below.
+
+### 15.3 Importing a brand from the CLI (scripts/cron)
 Prefer `catalogue:icecat-import` over `catalogue:icecat-discover`. It only
 streams the index and ENQUEUES one small job per new product; the worker does the
 fetching and image work. It survives an SSH disconnect (the jobs outlive your
@@ -824,7 +833,7 @@ docker compose exec -T api php artisan catalogue:icecat-publish --brand=dell --a
 > the fetching and (optionally inline) image work in one foreground loop — fine
 > for a few hundred products, fragile for a brand with thousands.
 
-### 15.3 Trimming images on already-imported products
+### 15.4 Trimming images on already-imported products
 The 3-image cap applies to new imports. To bring older products (imported when
 the cap was higher) into line:
 
@@ -836,7 +845,7 @@ docker compose exec -T api php artisan catalogue:trim-product-images --keep=3 --
 It only removes the product→media links beyond the cap; the content-addressed
 Media rows are kept.
 
-### 15.4 If the queue backs up
+### 15.5 If the queue backs up
 `queue:monitor` shows depth. The worker processes serially per container; to go
 faster, scale it:
 
