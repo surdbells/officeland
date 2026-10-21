@@ -48,6 +48,22 @@ final class Media extends Model
     }
 
     /**
+     * A public URL for previewing this image (admin thumbnails, etc.): the
+     * smallest derivative when one exists, otherwise the original. Derivatives
+     * are content-addressed under the /media prefix Caddy serves.
+     */
+    public function previewUrl(): string
+    {
+        $derivative = $this->relationLoaded('derivatives')
+            ? $this->derivatives->sortBy('width')->first()
+            : $this->derivatives()->orderBy('width')->first();
+
+        $path = $derivative->path ?? $this->path;
+
+        return rtrim((string) config('media.public_prefix'), '/').'/'.ltrim((string) $path, '/');
+    }
+
+    /**
      * Alt text is a REQUIRED field on any image attached to a product or
      * article (MASTER BUILD PROMPT section 12.6), enforced at the model layer
      * rather than only in a form - the CSV importer and Icecat ingestion write
