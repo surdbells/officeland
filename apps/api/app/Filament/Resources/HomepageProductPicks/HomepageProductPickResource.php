@@ -10,6 +10,7 @@ use App\Filament\Resources\HomepageProductPicks\Pages\ListHomepageProductPicks;
 use App\Filament\Resources\HomepageProductPicks\Schemas\HomepageProductPickForm;
 use App\Filament\Resources\HomepageProductPicks\Tables\HomepageProductPicksTable;
 use App\Models\HomepageProductPick;
+use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -37,6 +38,13 @@ class HomepageProductPickResource extends Resource
     protected static ?int $navigationSort = 40;
 
     protected static ?string $navigationLabel = 'Best-sellers band';
+
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+
+        return $user instanceof User && $user->role->managesContent();
+    }
 
     public static function form(Schema $schema): Schema
     {

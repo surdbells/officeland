@@ -10,6 +10,7 @@ use App\Filament\Resources\HeroSlides\Pages\ListHeroSlides;
 use App\Filament\Resources\HeroSlides\Schemas\HeroSlideForm;
 use App\Filament\Resources\HeroSlides\Tables\HeroSlidesTable;
 use App\Models\HeroSlide;
+use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -39,6 +40,13 @@ class HeroSlideResource extends Resource
     protected static ?string $navigationLabel = 'Hero slides';
 
     protected static ?string $recordTitleAttribute = 'headline';
+
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+
+        return $user instanceof User && $user->role->managesContent();
+    }
 
     public static function form(Schema $schema): Schema
     {

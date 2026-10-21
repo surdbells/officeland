@@ -10,6 +10,7 @@ use App\Filament\Resources\HomepageCategoryPicks\Pages\ListHomepageCategoryPicks
 use App\Filament\Resources\HomepageCategoryPicks\Schemas\HomepageCategoryPickForm;
 use App\Filament\Resources\HomepageCategoryPicks\Tables\HomepageCategoryPicksTable;
 use App\Models\HomepageCategoryPick;
+use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -37,6 +38,13 @@ class HomepageCategoryPickResource extends Resource
     protected static ?int $navigationSort = 30;
 
     protected static ?string $navigationLabel = 'Shop-by-category tiles';
+
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+
+        return $user instanceof User && $user->role->managesContent();
+    }
 
     public static function form(Schema $schema): Schema
     {

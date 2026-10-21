@@ -10,6 +10,7 @@ use App\Filament\Resources\Announcements\Pages\ListAnnouncements;
 use App\Filament\Resources\Announcements\Schemas\AnnouncementForm;
 use App\Filament\Resources\Announcements\Tables\AnnouncementsTable;
 use App\Models\Announcement;
+use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -38,6 +39,13 @@ class AnnouncementResource extends Resource
     protected static ?int $navigationSort = 10;
 
     protected static ?string $recordTitleAttribute = 'message';
+
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+
+        return $user instanceof User && $user->role->managesContent();
+    }
 
     public static function form(Schema $schema): Schema
     {
