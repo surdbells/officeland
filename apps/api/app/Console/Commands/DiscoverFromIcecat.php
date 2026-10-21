@@ -49,6 +49,7 @@ final class DiscoverFromIcecat extends Command
         {--since= : Only products Icecat catalogued on/after this date (YYYY, YYYY-MM or YYYY-MM-DD) - a recency filter against obsolete SKUs.}
         {--survey : List the brand\'s category ids and their product counts, then exit (no fetches).}
         {--dump : Fetch and print each data-sheet summary, creating nothing.}
+        {--publish : Activate a product immediately if it imported with an image (kept noindex).}
         {--refresh-index : Re-download the repository index even if the cache is fresh.}
         {--sleep=250 : Milliseconds to pause between products.}';
 
@@ -56,6 +57,7 @@ final class DiscoverFromIcecat extends Command
 
     private int $seen = 0;
     private int $created = 0;
+    private int $publishedNow = 0;
     private int $skippedExisting = 0;
     private int $missed = 0;
 
@@ -259,8 +261,22 @@ final class DiscoverFromIcecat extends Command
             $product->categories()->syncWithoutDetaching([$category->id => ['sort_order' => 0]]);
         }
 
-        // New product has no media, so images download; force is irrelevant.
-        $ingestor->write($product, $document, forceImages: true);
+        // New product has no media, so force is irrelevant; cap at one image -
+        // the single highest-resolution shot, not the whole gallery.
+        $stats = $ingestor->write($product, $document, forceImages: true, maxImages: 1);
+
+        // Auto-publish: a product that imported with an image and landed in a
+        // category is good enough to sell, so activate it now. It stays noindex
+        // (D-015) - the name/description are still Icecat's words until rewritten.
+        if ($this->option('publish') && $stats['images'] > 0 && $product->primary_category_id !== null) {
+            $product->status = 'active';
+            $product->published_at ??= now();
+            $product->save();
+            $this->publishedNow++;
+            $this->line("  created + published: [{$entry['product_id']}] {$product->slug}");
+
+            return;
+        }
 
         $this->line("  created: [{$entry['product_id']}] {$product->slug}");
     }
@@ -383,18 +399,26 @@ final class DiscoverFromIcecat extends Command
 
     private function report(bool $apply, bool $dump): void
     {
-        $this->newLine();
-        $this->table(['Metric', 'Count'], [
+        $rows = [
             ['Index entries seen', $this->seen],
             ['Already imported (skipped)', $this->skippedExisting],
             ['Missed (no data)', $this->missed],
             [$apply ? 'Created' : ($dump ? 'Dumped' : 'Would create'), $this->created],
-        ]);
+        ];
+
+        if ($apply && $this->option('publish')) {
+            $rows[] = ['Published (had an image)', $this->publishedNow];
+        }
+
+        $this->newLine();
+        $this->table(['Metric', 'Count'], $rows);
 
         if (! $apply && ! $dump) {
             $this->info('Dry run. Re-run with --apply to create the draft products.');
+        } elseif ($apply && $this->option('publish')) {
+            $this->info('Imported; those with an image are live (noindex). Imageless ones stay draft. Rewrite prose (D-015) before indexing.');
         } elseif ($apply) {
-            $this->info('Imported as DRAFTS (noindex). Review, assign categories, rewrite prose, then publish.');
+            $this->info('Imported as DRAFTS (noindex). Review, then: catalogue:icecat-publish --brand=…');
         }
     }
 }

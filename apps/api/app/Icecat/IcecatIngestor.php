@@ -41,9 +41,13 @@ final class IcecatIngestor
      *
      * @return array{images: int, specs: int, relations: int}
      */
-    public function write(Product $product, IcecatDocument $document, bool $forceImages = false): array
-    {
-        $images = $this->attachImages($product, $document, $forceImages);
+    public function write(
+        Product $product,
+        IcecatDocument $document,
+        bool $forceImages = false,
+        ?int $maxImages = null,
+    ): array {
+        $images = $this->attachImages($product, $document, $forceImages, $maxImages);
         $specs = $this->writeSpecifications($product, $document);
         $relations = $this->linkRelations($product, $document);
         $this->applyFacts($product, $document);
@@ -80,7 +84,12 @@ final class IcecatIngestor
         $product->icecat_synced_at = now();
     }
 
-    private function attachImages(Product $product, IcecatDocument $document, bool $force): int
+    /**
+     * @param  int|null  $maxImages  cap on images attached; 1 keeps only the
+     *                               single highest-resolution image (HighPic,
+     *                               which imageUrls() lists first), null = all.
+     */
+    private function attachImages(Product $product, IcecatDocument $document, bool $force, ?int $maxImages): int
     {
         // Skip when the product already has images and we are not forcing - the
         // derivative generation is the expensive part and need not repeat.
@@ -92,6 +101,13 @@ final class IcecatIngestor
         $sort = 0;
 
         foreach ($document->imageUrls() as $url) {
+            // Stop once the cap is reached. Because imageUrls() is ordered best
+            // first and $count only rises on a successful attach, a cap of 1
+            // yields the best image that actually downloaded, skipping a dud.
+            if ($maxImages !== null && $count >= $maxImages) {
+                break;
+            }
+
             $tmp = null;
 
             try {
