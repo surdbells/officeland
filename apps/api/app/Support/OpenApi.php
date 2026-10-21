@@ -112,6 +112,24 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'description_html', type: 'string', nullable: true),
         new OA\Property(property: 'product_count', type: 'integer'),
         new OA\Property(
+            property: 'hero',
+            description: 'The category hero image, or null. Rendered as a <picture>; the storefront falls back to a typographic treatment when absent, so an image is always an improvement and never a prerequisite.',
+            ref: '#/components/schemas/Image',
+            nullable: true,
+        ),
+        new OA\Property(
+            property: 'hero_inherited',
+            description: 'The nearest ancestor category\'s hero, returned only when this category has none of its own. Used for the page hero so every category page carries an image; NOT used for chips or child cards, where inheriting would show one photograph five times.',
+            ref: '#/components/schemas/Image',
+            nullable: true,
+        ),
+        new OA\Property(
+            property: 'siblings',
+            description: 'Categories alongside this one, returned only when it has no children of its own. Drives the chip row on a leaf page.',
+            type: 'array',
+            items: new OA\Items(ref: '#/components/schemas/Category'),
+        ),
+        new OA\Property(
             property: 'children',
             description: 'Rendered as real crawlable anchors on every category page (D-011).',
             type: 'array',
@@ -186,6 +204,12 @@ use OpenApi\Attributes as OA;
         ),
         new OA\Property(property: 'min_order_qty', type: 'integer', minimum: 1),
         new OA\Property(property: 'qty_step', type: 'integer', minimum: 1),
+        new OA\Property(
+            property: 'short_description',
+            description: 'A sentence or two for the card, clamped by the storefront. The full description_html stays on the PDP payload.',
+            type: 'string',
+            nullable: true,
+        ),
         new OA\Property(
             property: 'key_specs',
             description: '4-6 bullets shown above the fold, ordered by the source'.'"'.'s own buyer-orientation priority (Icecat ProductFeature@No). Present only when the caller loaded attribute values.',

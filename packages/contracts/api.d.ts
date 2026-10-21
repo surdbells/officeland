@@ -170,6 +170,12 @@ export interface components {
             intro_copy?: string | null;
             description_html?: string | null;
             product_count?: number;
+            /** @description The category hero image, or null. Rendered as a <picture>; the storefront falls back to a typographic treatment when absent, so an image is always an improvement and never a prerequisite. */
+            hero?: components["schemas"]["Image"] | null;
+            /** @description The nearest ancestor category's hero, returned only when this category has none of its own. Used for the page hero so every category page carries an image; NOT used for chips or child cards, where inheriting would show one photograph five times. */
+            hero_inherited?: components["schemas"]["Image"] | null;
+            /** @description Categories alongside this one, returned only when it has no children of its own. Drives the chip row on a leaf page. */
+            siblings?: components["schemas"]["Category"][];
             /** @description Rendered as real crawlable anchors on every category page (D-011). */
             children?: components["schemas"]["Category"][];
             /** @description Every product in a LEAF category, as crawlable {name, url} anchors. A leaf sits at <=2 clicks from home, so linking its products directly here keeps them within the 3-click budget (SEO_SPEC 10.5) regardless of how many pages the paginated grid spans. Absent on non-leaf categories, whose products are reached through their own leaves. */
@@ -223,6 +229,8 @@ export interface components {
             pricing_mode: "public" | "quote_only";
             min_order_qty?: number;
             qty_step?: number;
+            /** @description A sentence or two for the card, clamped by the storefront. The full description_html stays on the PDP payload. */
+            short_description?: string | null;
             /** @description 4-6 bullets shown above the fold, ordered by the source"s own buyer-orientation priority (Icecat ProductFeature@No). Present only when the caller loaded attribute values. */
             key_specs?: {
                 /** @example Page yield */

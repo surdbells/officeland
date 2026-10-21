@@ -239,6 +239,27 @@ components:
             - 'null'
         product_count:
           type: integer
+        hero:
+          oneOf:
+            -
+              $ref: '#/components/schemas/Image'
+              description: 'The category hero image, or null. Rendered as a <picture>; the storefront falls back to a typographic treatment when absent, so an image is always an improvement and never a prerequisite.'
+            -
+              type: 'null'
+          description: 'The category hero image, or null. Rendered as a <picture>; the storefront falls back to a typographic treatment when absent, so an image is always an improvement and never a prerequisite.'
+        hero_inherited:
+          oneOf:
+            -
+              $ref: '#/components/schemas/Image'
+              description: "The nearest ancestor category's hero, returned only when this category has none of its own. Used for the page hero so every category page carries an image; NOT used for chips or child cards, where inheriting would show one photograph five times."
+            -
+              type: 'null'
+          description: "The nearest ancestor category's hero, returned only when this category has none of its own. Used for the page hero so every category page carries an image; NOT used for chips or child cards, where inheriting would show one photograph five times."
+        siblings:
+          description: 'Categories alongside this one, returned only when it has no children of its own. Drives the chip row on a leaf page.'
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
         children:
           description: 'Rendered as real crawlable anchors on every category page (D-011).'
           type: array
@@ -366,6 +387,11 @@ components:
         qty_step:
           type: integer
           minimum: 1
+        short_description:
+          description: 'A sentence or two for the card, clamped by the storefront. The full description_html stays on the PDP payload.'
+          type:
+            - string
+            - 'null'
         key_specs:
           description: '4-6 bullets shown above the fold, ordered by the source"s own buyer-orientation priority (Icecat ProductFeature@No). Present only when the caller loaded attribute values.'
           type: array
