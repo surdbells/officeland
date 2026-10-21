@@ -44,4 +44,39 @@ final class ImageUploads
             Storage::disk('local')->delete($relative);
         }
     }
+
+    /**
+     * Fold a form's optional image upload into a media_id, inside a create/edit
+     * mutate hook.
+     *
+     * The form carries a temporary upload under $fileKey and its alt text under
+     * $altKey. When one was uploaded it is ingested, derivatives generated, and
+     * $mediaKey set to the stored Media id; the two virtual fields are always
+     * stripped so they never reach the model. A blank upload leaves media_id
+     * untouched - so editing a record without re-uploading keeps its image.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public static function mutate(
+        array $data,
+        string $altFallback = 'Image',
+        string $fileKey = 'image_upload',
+        string $altKey = 'image_alt',
+        string $mediaKey = 'media_id',
+    ): array {
+        $file = $data[$fileKey] ?? null;
+        $alt = trim((string) ($data[$altKey] ?? ''));
+        unset($data[$fileKey], $data[$altKey]);
+
+        if (is_string($file) && $file !== '') {
+            $media = self::ingest([
+                'file' => $file,
+                'alt_text' => $alt !== '' ? $alt : $altFallback,
+            ]);
+            $data[$mediaKey] = $media->id;
+        }
+
+        return $data;
+    }
 }

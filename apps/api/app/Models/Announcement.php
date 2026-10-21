@@ -8,6 +8,7 @@ use App\Models\Concerns\HasPublicUuid;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * A site-wide banner shown above the header.
@@ -31,6 +32,19 @@ final class Announcement extends Model
     use SoftDeletes;
 
     protected $guarded = ['id'];
+
+    /**
+     * The announcement rides on the navigation payload, which is cached for an
+     * hour. Any change to an announcement must drop that cache or the banner
+     * would not appear (or disappear) until the TTL expired.
+     */
+    protected static function booted(): void
+    {
+        $forget = static fn (): bool => Cache::forget('api:navigation:v1');
+
+        self::saved($forget);
+        self::deleted($forget);
+    }
 
     /** @return array<string, string> */
     protected function casts(): array
