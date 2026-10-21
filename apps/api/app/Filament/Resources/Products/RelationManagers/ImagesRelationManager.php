@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Products\RelationManagers;
 
-use App\Media\DerivativeGenerator;
-use App\Media\MediaIngestor;
+use App\Filament\Support\ImageUploads;
 use App\Models\Media;
 use Filament\Actions\Action;
 use Filament\Actions\DetachAction;
@@ -16,7 +15,6 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Manage a product's images from its edit page: upload (through the content-
@@ -104,33 +102,21 @@ class ImagesRelationManager extends RelationManager
             ]);
     }
 
-    /** @param array<string, mixed> $data */
+    /** @param array{file: string, alt_text: string} $data */
     private function uploadImage(array $data): void
     {
-        $relative = (string) $data['file'];
-        $path = Storage::disk('local')->path($relative);
+        $media = ImageUploads::ingest($data);
 
-        try {
-            $media = app(MediaIngestor::class)->ingest($path, [
-                'alt_text' => $data['alt_text'],
-                'source' => 'manual',
-            ]);
+        $product = $this->getOwnerRecord();
+        $hasImages = $product->media()->exists();
+        $nextSort = (int) $product->media()->max('product_media.sort_order') + 1;
 
-            app(DerivativeGenerator::class)->generate($media);
-
-            $product = $this->getOwnerRecord();
-            $hasImages = $product->media()->exists();
-            $nextSort = (int) $product->media()->max('product_media.sort_order') + 1;
-
-            $product->media()->syncWithoutDetaching([
-                $media->id => [
-                    'role' => $hasImages ? 'gallery' : 'primary',
-                    'sort_order' => $nextSort,
-                ],
-            ]);
-        } finally {
-            Storage::disk('local')->delete($relative);
-        }
+        $product->media()->syncWithoutDetaching([
+            $media->id => [
+                'role' => $hasImages ? 'gallery' : 'primary',
+                'sort_order' => $nextSort,
+            ],
+        ]);
     }
 
     private function makePrimary(Media $record): void

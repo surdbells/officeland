@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Brands\Schemas;
 
 use App\Filament\Forms\SeoFields;
+use App\Models\Brand;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -12,6 +14,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
 /**
@@ -69,6 +72,14 @@ final class BrandForm
                             ->helperText('Lower numbers appear first.'),
                     ])->columns(2),
 
+                    Section::make('Logo')
+                        ->description('Use the "Set logo" button at the top of the page to upload or replace it.')
+                        ->schema([
+                            Placeholder::make('logo_preview')
+                                ->hiddenLabel()
+                                ->content(fn (?Brand $record): HtmlString => self::logoPreview($record)),
+                        ]),
+
                     Section::make('Product data')->schema([
                         TextInput::make('icecat_supplier_name')
                             ->label('Icecat supplier name')
@@ -81,5 +92,20 @@ final class BrandForm
                 ),
             ])->columnSpanFull(),
         ]);
+    }
+
+    /** Renders the current logo, or a hint when none is set. */
+    private static function logoPreview(?Brand $record): HtmlString
+    {
+        $media = $record?->logoMedia;
+
+        if ($media === null) {
+            return new HtmlString('<span style="color:#6b7280">No logo set yet.</span>');
+        }
+
+        return new HtmlString(
+            '<img src="'.e($media->previewUrl()).'" alt="" '
+            .'style="max-height:80px;max-width:240px;object-fit:contain;background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:6px">'
+        );
     }
 }

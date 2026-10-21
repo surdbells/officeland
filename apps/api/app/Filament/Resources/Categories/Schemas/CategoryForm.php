@@ -6,6 +6,7 @@ namespace App\Filament\Resources\Categories\Schemas;
 
 use App\Filament\Forms\SeoFields;
 use App\Models\Category;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -104,6 +105,14 @@ final class CategoryForm
                                 ->label('Longer copy (shown below the product grid)')
                                 ->columnSpanFull(),
                         ]),
+
+                    Section::make('Hero image')
+                        ->description('Use the "Set hero image" button at the top of the page to upload or replace it.')
+                        ->schema([
+                            Placeholder::make('hero_preview')
+                                ->hiddenLabel()
+                                ->content(fn (?Category $record): HtmlString => self::heroPreview($record)),
+                        ]),
                 ]),
 
                 Tab::make('Search appearance')->schema(SeoFields::make('/c')),
@@ -135,6 +144,21 @@ final class CategoryForm
 
         $set('path', $parent->path.$slug.'/');
         $set('depth', $parent->depth + 1);
+    }
+
+    /** Renders the current hero image, or a hint when none is set. */
+    private static function heroPreview(?Category $record): HtmlString
+    {
+        $media = $record?->heroMedia;
+
+        if ($media === null) {
+            return new HtmlString('<span style="color:#6b7280">No hero image set yet.</span>');
+        }
+
+        return new HtmlString(
+            '<img src="'.e($media->previewUrl()).'" alt="" '
+            .'style="max-height:140px;max-width:320px;object-fit:cover;border:1px solid #e5e7eb;border-radius:6px">'
+        );
     }
 
     private static function introCounter(?string $state): HtmlString
