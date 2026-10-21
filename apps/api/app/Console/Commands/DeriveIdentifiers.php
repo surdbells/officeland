@@ -9,6 +9,7 @@ use App\Models\Product;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -23,9 +24,11 @@ use Throwable;
  * identifiers sit in the product names ("Fellowes Powershred LX200") and SKUs.
  * This reads them out:
  *
- *   - BRAND: the first known brand whose name appears as a whole word in the
- *     product name. Matched against the brands already in the table, longest
- *     name first so "Double A" wins over a stray "A". Safe, so it always runs.
+ *   - BRAND: the first known manufacturer (from CANONICAL_BRANDS) that appears
+ *     as a whole word near the start of the product name. The brands table on a
+ *     fresh WooCommerce import is empty, so matched brands are CREATED (on
+ *     --apply); the earliest match wins so a maker leading the title beats a
+ *     brand named later in a compatibility list.
  *   - MODEL CODE: a model-code-shaped token from the name (letters+digits, e.g.
  *     LX200, CF410A). Display/search only, never a match key, so it also always
  *     runs when the field is empty.
@@ -49,10 +52,42 @@ final class DeriveIdentifiers extends Command
 
     protected $description = 'Derive brand, model code and optional MPN from product names and SKUs';
 
+    /**
+     * Known manufacturers to recognise in product names, canonical spelling.
+     *
+     * Led by the brands the catalogue is being built around (the IT lines and
+     * shredders imported/enriched from Icecat), followed by the other makers
+     * already present in the migrated WooCommerce data. It is a curated list on
+     * purpose: matching the first word of every title would turn "Newest", "Buy"
+     * and "MONITOR" into brands. Order does not matter - matching is by position
+     * in the name - so add new brands anywhere.
+     *
+     * @var list<string>
+     */
+    private const CANONICAL_BRANDS = [
+        // Target brands for the Icecat build.
+        'Apple', 'TP-Link', 'Ubiquiti', 'UniFi', 'Dell', 'Lenovo', 'ASUS', 'Logitech',
+        'Canon', 'Havit', 'Belkin', 'WiWU', 'Fellowes', 'Rexel', 'Leitz', 'GoECOlife',
+        // Other manufacturers seen in the migrated catalogue.
+        'HP', 'Epson', 'Brother', 'Xerox', 'Ricoh', 'Kyocera', 'Samsung', 'LG', 'Sony',
+        'MSI', 'Acer', 'Toshiba', 'Fujitsu', 'Microsoft', 'Intel', 'AMD', 'Nvidia',
+        'Gigabyte', 'Kingston', 'SanDisk', 'Western Digital', 'Seagate', 'Crucial',
+        'Transcend', 'APC', 'CyberPower', 'Anker', 'Ugreen', 'Baseus', 'Oraimo', 'Remax',
+        'Hoco', 'Porodo', 'Promate', 'Hikvision', 'Dahua', 'Netgear', 'D-Link', 'Tenda',
+        'MikroTik', 'Zebra', 'Dymo', 'Durable', 'Esselte', 'Elba', 'Bantex', 'Avery',
+        'Faber-Castell', 'Staedtler', 'Stabilo', 'Pentel', 'Pilot', 'BIC', 'Maped',
+        'Deli', 'Grandluxe', 'Pelikan', 'Parker', 'Casio', 'Nikon', 'JBL', 'Razer',
+        'Redragon', 'Corsair', 'HyperX', 'A4Tech', 'Rapoo', 'Genius', 'Philips',
+        'Panasonic',
+    ];
+
     private int $brandsSet = 0;
     private int $modelCodesSet = 0;
     private int $mpnsSet = 0;
     private int $skippedUnique = 0;
+
+    /** @var array<string, Brand> lower(name) => brand, created/found this run */
+    private array $brandCache = [];
 
     /** @var list<array{slug: string, brand: ?string, model_code: ?string, mpn: ?string}> */
     private array $samples = [];
@@ -70,22 +105,14 @@ final class DeriveIdentifiers extends Command
         $apply = (bool) $this->option('apply');
         $sampleLimit = (int) $this->option('samples');
 
-        // Known brands, longest name first so "Double A" is tried before a bare
-        // "A" would be, and the house brand is excluded (every product is ours).
-        $brands = Brand::query()
-            ->whereRaw('lower(name) <> ?', ['officeland'])
-            ->get(['id', 'name'])
-            ->sortByDesc(fn (Brand $b): int => mb_strlen((string) $b->name))
-            ->values();
-
         $processed = 0;
 
         $this->candidates()->chunkById(500, function (Collection $chunk) use (
-            $brands, $mpnFrom, $apply, $sampleLimit, &$processed
+            $mpnFrom, $apply, $sampleLimit, &$processed
         ): void {
             foreach ($chunk as $product) {
                 $processed++;
-                $this->derive($product, $brands, $mpnFrom, $apply, $sampleLimit);
+                $this->derive($product, $mpnFrom, $apply, $sampleLimit);
             }
         });
 
@@ -105,46 +132,34 @@ final class DeriveIdentifiers extends Command
             ->when((int) $this->option('limit') > 0, fn (Builder $q) => $q->limit((int) $this->option('limit')));
     }
 
-    /** @param Collection<int, Brand> $brands */
-    private function derive(Product $product, Collection $brands, string $mpnFrom, bool $apply, int $sampleLimit): void
+    private function derive(Product $product, string $mpnFrom, bool $apply, int $sampleLimit): void
     {
-        $changed = false;
-        $setBrand = null;
-        $setModel = null;
-        $setMpn = null;
-
-        if ($product->brand_id === null && ($brand = $this->matchBrand((string) $product->name, $brands)) !== null) {
-            $product->brand_id = $brand->id;
-            $product->brand_name_cached = $brand->name;
-            $setBrand = $brand->name;
-            $this->brandsSet++;
-            $changed = true;
-        }
+        // Brand is computed as a NAME here and only created/assigned on --apply,
+        // so a dry run writes nothing (not even a brand row).
+        $setBrand = $product->brand_id === null
+            ? $this->matchBrandName((string) $product->name)
+            : null;
 
         $modelCode = $this->extractModelCode((string) $product->name);
+        $setModel = ($product->model_code ?? '') === '' && $modelCode !== null ? $modelCode : null;
 
-        if (($product->model_code ?? '') === '' && $modelCode !== null) {
-            $product->model_code = $modelCode;
-            $setModel = $modelCode;
-            $this->modelCodesSet++;
-            $changed = true;
-        }
-
+        $setMpn = null;
         if ($mpnFrom !== 'none' && ($product->mpn ?? '') === '') {
-            $mpn = $mpnFrom === 'sku'
-                ? $this->cleanOrNull((string) $product->sku)
-                : $modelCode;
-
-            if ($mpn !== null) {
-                $product->mpn = $mpn;
-                $setMpn = $mpn;
-                $this->mpnsSet++;
-                $changed = true;
-            }
+            $setMpn = $mpnFrom === 'sku' ? $this->cleanOrNull((string) $product->sku) : $modelCode;
         }
 
-        if (! $changed) {
+        if ($setBrand === null && $setModel === null && $setMpn === null) {
             return;
+        }
+
+        if ($setBrand !== null) {
+            $this->brandsSet++;
+        }
+        if ($setModel !== null) {
+            $this->modelCodesSet++;
+        }
+        if ($setMpn !== null) {
+            $this->mpnsSet++;
         }
 
         if (count($this->samples) < $sampleLimit) {
@@ -160,11 +175,23 @@ final class DeriveIdentifiers extends Command
             return;
         }
 
+        if ($setBrand !== null) {
+            $brand = $this->createBrand($setBrand);
+            $product->brand_id = $brand->id;
+            $product->brand_name_cached = $brand->name;
+        }
+        if ($setModel !== null) {
+            $product->model_code = $setModel;
+        }
+        if ($setMpn !== null) {
+            $product->mpn = $setMpn;
+        }
+
         try {
             $product->save();
         } catch (Throwable $e) {
             // The (brand_id, mpn) unique index can collide when two products in
-            // the same brand carry the same SKU/code. Skip rather than abort.
+            // the same brand carry the same code. Skip rather than abort.
             $this->skippedUnique++;
 
             if ($setBrand !== null) {
@@ -179,27 +206,55 @@ final class DeriveIdentifiers extends Command
         }
     }
 
-    /** @param Collection<int, Brand> $brands */
-    private function matchBrand(string $name, Collection $brands): ?Brand
+    /**
+     * The canonical name of the first known manufacturer that appears as a whole
+     * word near the start of the product name, or null.
+     *
+     * Matched against CANONICAL_BRANDS rather than the first word of the title,
+     * so "Newest", "Buy" and "MONITOR" are not turned into brands, and the
+     * EARLIEST match wins so a maker leading the title beats a brand named later
+     * in a compatibility list ("… for HP Canon Brother"). A match beyond the
+     * first ~40 characters is ignored for the same reason.
+     */
+    private function matchBrandName(string $name): ?string
     {
-        // Brands lead a product title ("HP LaserJet…", "Fellowes Powershred…"),
-        // so match only at the START, after an optional filler word. Matching
-        // anywhere mis-branded compatibility accessories whose names list every
-        // printer they fit ("… cleaning kit for Epson Canon HP Brother"); a
-        // start-anchored match attributes those to their actual maker instead.
-        $head = preg_replace('/^(original|genuine|new|the)\s+/i', '', trim($name)) ?? trim($name);
+        $best = null;
+        $bestPos = PHP_INT_MAX;
 
-        foreach ($brands as $brand) {
-            // Start-anchored, case-insensitive, with a trailing word boundary so
-            // "HP" does not match the start of "HPE" or "Hporz".
-            $pattern = '/^'.preg_quote((string) $brand->name, '/').'(?![\p{L}\p{N}])/iu';
+        foreach (self::CANONICAL_BRANDS as $brand) {
+            // Whole word, case-insensitive. The boundaries stop "HP" matching
+            // inside "SHARP" or after a digit in "731HP", and "LG" inside "LGBT".
+            $pattern = '/(?<![\p{L}\p{N}])'.preg_quote($brand, '/').'(?![\p{L}\p{N}])/iu';
 
-            if (preg_match($pattern, $head) === 1) {
-                return $brand;
+            if (preg_match($pattern, $name, $m, PREG_OFFSET_CAPTURE) !== 1) {
+                continue;
+            }
+
+            $pos = (int) $m[0][1];
+
+            if ($pos > 40) {
+                continue;
+            }
+
+            // Earliest wins; on a tie the longer (more specific) brand does.
+            if ($pos < $bestPos || ($pos === $bestPos && mb_strlen($brand) > mb_strlen((string) $best))) {
+                $best = $brand;
+                $bestPos = $pos;
             }
         }
 
-        return null;
+        return $best;
+    }
+
+    /** Find or create the brand row for a canonical name (cached per run). */
+    private function createBrand(string $name): Brand
+    {
+        $key = Str::lower($name);
+
+        return $this->brandCache[$key] ??= Brand::query()->firstOrCreate(
+            ['slug' => Str::slug($name)],
+            ['uuid' => (string) Str::uuid(), 'name' => $name],
+        );
     }
 
     /**
