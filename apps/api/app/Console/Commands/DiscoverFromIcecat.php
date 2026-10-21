@@ -1,0 +1,308 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Console\Commands;
+
+use App\Icecat\IcecatClient;
+use App\Icecat\IcecatDocument;
+use App\Icecat\IcecatIndex;
+use App\Icecat\IcecatIngestor;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Product;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
+use Throwable;
+
+/**
+ * Discover and import NEW products from Icecat for a brand (Phase 5b).
+ *
+ *   php artisan catalogue:icecat-discover --brand=dell            # dry run
+ *   php artisan catalogue:icecat-discover --brand=dell --dump --limit=5
+ *   php artisan catalogue:icecat-discover --brand=dell --apply --limit=200
+ *
+ * ── How it finds products ────────────────────────────────────────────────
+ * Icecat has no "all products for brand X" call, so this streams the gzipped
+ * repository index (files.index.xml, ~3.9 GB uncompressed, cached locally),
+ * filters it to the brand's supplier id for on-market, full-data entries, then
+ * fetches each data-sheet and CREATES a product from it.
+ *
+ * ── What it creates ──────────────────────────────────────────────────────
+ * Every imported product is a DRAFT (status=draft, is_indexable=false): the
+ * Icecat title/description are stored as source_* drafts only (D-015) and the
+ * category is left for review unless its Catid is mapped. Images, specs and
+ * relations are written by the shared IcecatIngestor - the same code the enrich
+ * command uses. Deduplicated by icecat_id, so re-running only adds what is new.
+ * Legacy products are left untouched; curation/replacement is a later step.
+ *
+ * Runs only where Icecat is reachable (the whitelisted server).
+ */
+final class DiscoverFromIcecat extends Command
+{
+    protected $signature = 'catalogue:icecat-discover
+        {--brand= : Brand to import (key from config/icecat.php suppliers, e.g. dell).}
+        {--apply : Create products. Without this the command only reports.}
+        {--limit=0 : Maximum index entries to process (0 = no limit).}
+        {--dump : Fetch and print each data-sheet summary, creating nothing.}
+        {--refresh-index : Re-download the repository index even if the cache is fresh.}
+        {--sleep=250 : Milliseconds to pause between products.}';
+
+    protected $description = 'Discover and import new products from Icecat for a brand';
+
+    private int $seen = 0;
+    private int $created = 0;
+    private int $skippedExisting = 0;
+    private int $missed = 0;
+
+    public function handle(IcecatClient $client, IcecatIngestor $ingestor): int
+    {
+        $brand = Str::lower(trim((string) $this->option('brand')));
+
+        if ($brand === '') {
+            $this->error('--brand is required (e.g. --brand=dell).');
+
+            return self::INVALID;
+        }
+
+        $supplierId = config("icecat.suppliers.{$brand}");
+
+        if ($supplierId === null) {
+            $this->error("Unknown brand '{$brand}'. Known: ".implode(', ', array_keys((array) config('icecat.suppliers'))));
+
+            return self::INVALID;
+        }
+
+        if ((string) config('icecat.username') === '') {
+            $this->warn('ICECAT_USERNAME is not set; relying on IP whitelisting alone.');
+        }
+
+        $indexPath = $this->ensureIndex();
+
+        if ($indexPath === null) {
+            return self::FAILURE;
+        }
+
+        $apply = (bool) $this->option('apply');
+        $dump = (bool) $this->option('dump');
+        $limit = (int) $this->option('limit');
+        $sleepMs = (int) $this->option('sleep');
+
+        $this->info("Scanning the index for supplier {$supplierId} ({$brand})…");
+
+        foreach (IcecatIndex::stream('compress.zlib://'.$indexPath, [(int) $supplierId]) as $entry) {
+            if ($limit > 0 && $this->seen >= $limit) {
+                break;
+            }
+            $this->seen++;
+
+            // Dedup: an Icecat product already imported is left alone.
+            if (Product::query()->where('icecat_id', $entry['product_id'])->exists()) {
+                $this->skippedExisting++;
+
+                continue;
+            }
+
+            try {
+                $document = $client->fetchById($entry['product_id']);
+            } catch (Throwable $e) {
+                $this->warn("  error: id {$entry['product_id']} - {$e->getMessage()}");
+                $this->missed++;
+                $this->pause($sleepMs);
+
+                continue;
+            }
+
+            if ($document === null || $this->isEmpty($document)) {
+                $this->missed++;
+                $this->pause($sleepMs);
+
+                continue;
+            }
+
+            if ($dump) {
+                $this->dump($entry, $document);
+                $this->pause($sleepMs);
+
+                continue;
+            }
+
+            if ($apply) {
+                try {
+                    $this->create($entry, $document, $brand, $ingestor);
+                    $this->created++;
+                } catch (Throwable $e) {
+                    $this->warn("  failed: id {$entry['product_id']} - {$e->getMessage()}");
+                }
+            } else {
+                $this->line(sprintf(
+                    '  would import: [%d] %s',
+                    $entry['product_id'],
+                    Str::limit((string) ($document->title() ?? $entry['model_name']), 70),
+                ));
+                $this->created++; // "would create" tally
+            }
+
+            $this->pause($sleepMs);
+        }
+
+        $this->report($apply, $dump);
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Create the draft product shell, then let the shared ingestor write images,
+     * specs, relations and facts onto it.
+     *
+     * @param  array{product_id: int, mpn: ?string, supplier_id: int, catid: ?int, model_name: ?string, ean: ?string}  $entry
+     */
+    private function create(array $entry, IcecatDocument $document, string $brandKey, IcecatIngestor $ingestor): void
+    {
+        $brand = $this->brand($document->brandName() ?? ucfirst($brandKey));
+        $name = $document->title() ?? $entry['model_name'] ?? ('Product '.$entry['product_id']);
+
+        $product = Product::query()->create([
+            'uuid' => (string) Str::uuid(),
+            'name' => $name,
+            'slug' => $this->uniqueSlug($name, $entry['product_id']),
+            'brand_id' => $brand->id,
+            'brand_name_cached' => $brand->name,
+            'mpn' => $document->mpn() ?? $entry['mpn'],
+            'ean' => $entry['ean'],
+            'icecat_id' => $entry['product_id'],
+            'primary_category_id' => $this->category($entry['catid'])?->id,
+            // Draft + not indexable: the review step assigns a category, rewrites
+            // the prose (D-015) and publishes. Never live straight from import.
+            'status' => 'draft',
+            'is_indexable' => false,
+            'source' => 'icecat',
+        ]);
+
+        // New product has no media, so images download; force is irrelevant.
+        $ingestor->write($product, $document, forceImages: true);
+
+        $this->line("  created: [{$entry['product_id']}] {$product->slug}");
+    }
+
+    /** Download the repository index to the cache if missing, stale, or forced. */
+    private function ensureIndex(): ?string
+    {
+        $path = (string) config('icecat.index_cache');
+        $ttl = (int) config('icecat.index_ttl_hours', 24) * 3600;
+        $fresh = is_file($path) && (time() - (int) filemtime($path)) < $ttl;
+
+        if ($fresh && ! $this->option('refresh-index')) {
+            $this->line('Using the cached Icecat index ('.$this->humanSize(filesize($path) ?: 0).').');
+
+            return $path;
+        }
+
+        @mkdir(dirname($path), 0775, true);
+        $this->info('Downloading the Icecat index (~310 MB; cached for next time)…');
+
+        try {
+            $response = Http::withBasicAuth((string) config('icecat.username'), (string) config('icecat.password'))
+                ->timeout(1800)
+                ->sink($path)
+                ->get((string) config('icecat.endpoints.index'));
+        } catch (Throwable $e) {
+            $this->error('Index download failed: '.$e->getMessage());
+
+            return null;
+        }
+
+        if (! $response->successful() || ! is_file($path) || (filesize($path) ?: 0) < 1_000_000) {
+            $this->error('Index download failed (HTTP '.$response->status().'). Check credentials and IP whitelisting.');
+            @unlink($path);
+
+            return null;
+        }
+
+        $this->line('Index downloaded ('.$this->humanSize(filesize($path) ?: 0).').');
+
+        return $path;
+    }
+
+    private function brand(string $name): Brand
+    {
+        return Brand::query()->firstOrCreate(
+            ['slug' => Str::slug($name)],
+            ['uuid' => (string) Str::uuid(), 'name' => $name],
+        );
+    }
+
+    private function category(?int $catid): ?Category
+    {
+        if ($catid === null) {
+            return null;
+        }
+
+        $path = config("icecat.category_map.{$catid}");
+
+        return $path !== null ? Category::query()->where('path', $path)->first() : null;
+    }
+
+    /** A slug unique against existing products; the Icecat id disambiguates. */
+    private function uniqueSlug(string $name, int $icecatId): string
+    {
+        $base = rtrim(Str::limit(Str::slug($name) ?: 'product', 180, ''), '-');
+
+        if (! Product::query()->where('slug', $base)->exists()) {
+            return $base;
+        }
+
+        return $base.'-'.$icecatId;
+    }
+
+    private function isEmpty(IcecatDocument $document): bool
+    {
+        return $document->icecatId() === null
+            && $document->imageUrls() === []
+            && $document->featureGroups() === [];
+    }
+
+    /**
+     * @param  array{product_id: int, mpn: ?string, catid: ?int, model_name: ?string, ean: ?string}  $entry
+     */
+    private function dump(array $entry, IcecatDocument $document): void
+    {
+        $specs = array_sum(array_map(static fn ($g) => count($g['features']), $document->featureGroups()));
+        $this->info("── [{$entry['product_id']}] ".Str::limit((string) $document->title(), 70));
+        $this->line('  brand/mpn: '.($document->brandName() ?? '-').' / '.($document->mpn() ?? $entry['mpn'] ?? '-'));
+        $this->line('  catid:     '.($entry['catid'] ?? '-').'  ean: '.($entry['ean'] ?? '-'));
+        $this->line('  images:    '.count($document->imageUrls()).'  specs: '.$specs.'  relations: '.count($document->relations()));
+    }
+
+    private function pause(int $ms): void
+    {
+        if ($ms > 0) {
+            usleep($ms * 1000);
+        }
+    }
+
+    private function humanSize(int $bytes): string
+    {
+        return $bytes >= 1_073_741_824
+            ? round($bytes / 1_073_741_824, 1).' GB'
+            : round($bytes / 1_048_576).' MB';
+    }
+
+    private function report(bool $apply, bool $dump): void
+    {
+        $this->newLine();
+        $this->table(['Metric', 'Count'], [
+            ['Index entries seen', $this->seen],
+            ['Already imported (skipped)', $this->skippedExisting],
+            ['Missed (no data)', $this->missed],
+            [$apply ? 'Created' : ($dump ? 'Dumped' : 'Would create'), $this->created],
+        ]);
+
+        if (! $apply && ! $dump) {
+            $this->info('Dry run. Re-run with --apply to create the draft products.');
+        } elseif ($apply) {
+            $this->info('Imported as DRAFTS (noindex). Review, assign categories, rewrite prose, then publish.');
+        }
+    }
+}

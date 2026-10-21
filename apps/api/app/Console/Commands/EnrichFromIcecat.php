@@ -6,16 +6,10 @@ namespace App\Console\Commands;
 
 use App\Icecat\IcecatClient;
 use App\Icecat\IcecatDocument;
-use App\Media\DerivativeGenerator;
-use App\Media\MediaIngestor;
-use App\Models\Attribute;
-use App\Models\AttributeGroup;
-use App\Models\Brand;
+use App\Icecat\IcecatIngestor;
 use App\Models\Product;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -64,14 +58,8 @@ final class EnrichFromIcecat extends Command
     private int $specsWritten = 0;
     private int $relationsLinked = 0;
 
-    /** @var array<string, Brand> name(lower) => brand */
-    private array $brandCache = [];
-
-    public function handle(
-        IcecatClient $client,
-        MediaIngestor $ingestor,
-        DerivativeGenerator $generator,
-    ): int {
+    public function handle(IcecatClient $client, IcecatIngestor $ingestor): int
+    {
         if ((string) config('icecat.username') === '') {
             $this->warn('ICECAT_USERNAME is not set; relying on IP whitelisting alone. '.
                 'If every lookup misses, that is the likely cause.');
@@ -130,7 +118,11 @@ final class EnrichFromIcecat extends Command
 
             if ($apply) {
                 try {
-                    $this->ingest($product, $document, $ingestor, $generator);
+                    $stats = $ingestor->write($product, $document, (bool) $this->option('force'));
+                    $this->imagesAttached += $stats['images'];
+                    $this->specsWritten += $stats['specs'];
+                    $this->relationsLinked += $stats['relations'];
+                    $this->line("  enriched: {$product->slug}");
                 } catch (Throwable $e) {
                     $this->warn("  failed: {$product->slug} - {$e->getMessage()}");
                 }
@@ -212,265 +204,6 @@ final class EnrichFromIcecat extends Command
         }
 
         return null;
-    }
-
-    private function ingest(
-        Product $product,
-        IcecatDocument $document,
-        MediaIngestor $ingestor,
-        DerivativeGenerator $generator,
-    ): void {
-        $this->attachImages($product, $document, $ingestor, $generator);
-        $this->writeSpecifications($product, $document);
-        $this->linkRelations($product, $document);
-
-        // Product-level facts and drafts. Prose stays in source_* (draft only);
-        // only warranty, identifiers and provenance become published facts.
-        $product->source_title = $document->title() ?? $product->source_title;
-        $product->source_description = $document->longDescription()
-            ?? $document->shortDescription()
-            ?? $product->source_description;
-
-        if (($product->warranty_text ?? '') === '' && $document->warranty() !== null) {
-            $product->warranty_text = $document->warranty();
-        }
-
-        if ($product->icecat_id === null && $document->icecatId() !== null) {
-            $product->icecat_id = $document->icecatId();
-        }
-
-        if (($product->ean ?? '') === '' && $document->eans() !== []) {
-            $product->ean = $document->eans()[0];
-        }
-
-        $product->source = 'icecat';
-        $product->icecat_synced_at = now();
-        $product->save();
-
-        $this->line("  enriched: {$product->slug}");
-    }
-
-    private function attachImages(
-        Product $product,
-        IcecatDocument $document,
-        MediaIngestor $ingestor,
-        DerivativeGenerator $generator,
-    ): void {
-        // Skip when the product already has images and we are not forcing - the
-        // derivative generation is the expensive part and need not repeat.
-        if (! $this->option('force') && $product->media()->exists()) {
-            return;
-        }
-
-        $sort = 0;
-
-        foreach ($document->imageUrls() as $url) {
-            $tmp = null;
-
-            try {
-                $response = Http::timeout((int) config('icecat.timeout', 45))->retry(2, 1500, throw: false)->get($url);
-
-                if (! $response->successful()) {
-                    continue;
-                }
-
-                $ext = pathinfo((string) (parse_url($url, PHP_URL_PATH) ?: ''), PATHINFO_EXTENSION) ?: 'jpg';
-                $tmp = tempnam(sys_get_temp_dir(), 'icecat').'.'.strtolower($ext);
-                file_put_contents($tmp, $response->body());
-
-                $media = $ingestor->ingest($tmp, [
-                    'alt_text' => $product->name,
-                    'source' => 'icecat',
-                    'source_url' => $url,
-                ]);
-
-                $generator->generate($media);
-
-                $product->media()->syncWithoutDetaching([
-                    $media->id => [
-                        // The first image is the primary (the LCP element); the
-                        // rest are the gallery (Product::media orders primary first).
-                        'role' => $sort === 0 ? 'primary' : 'gallery',
-                        'sort_order' => $sort,
-                    ],
-                ]);
-
-                $this->imagesAttached++;
-                $sort++;
-            } catch (Throwable $e) {
-                $this->warn("    image failed ({$url}): {$e->getMessage()}");
-            } finally {
-                if ($tmp !== null && is_file($tmp)) {
-                    @unlink($tmp);
-                }
-            }
-        }
-    }
-
-    private function writeSpecifications(Product $product, IcecatDocument $document): void
-    {
-        $groups = $document->featureGroups();
-
-        if ($groups === []) {
-            return;
-        }
-
-        DB::transaction(function () use ($product, $groups): void {
-            // Replace wholesale so the spec table always matches Icecat's
-            // current data rather than accreting stale rows across runs.
-            $product->attributeValues()->delete();
-
-            $searchText = [];
-
-            foreach ($groups as $group) {
-                $attributeGroup = $this->resolveGroup($group);
-
-                foreach ($group['features'] as $feature) {
-                    $attribute = $this->resolveAttribute($feature, $attributeGroup);
-
-                    $product->attributeValues()->create([
-                        'attribute_id' => $attribute->id,
-                        'value_raw' => $feature['value_raw'],
-                        'value_presentation' => $feature['value_presentation'],
-                        'value_numeric' => $this->numericOf($feature['value_raw']),
-                        'sort_order' => $feature['order'],
-                    ]);
-
-                    $this->specsWritten++;
-                    $searchText[] = $feature['name'].' '.($feature['value_presentation'] ?? $feature['value_raw']);
-                }
-            }
-
-            // search_text_specs feeds the weight-C term of the generated search
-            // vector; it is not maintained automatically, so rebuild it here.
-            $product->search_text_specs = Str::limit(implode(' ', $searchText), 8000, '');
-        });
-    }
-
-    /** @param array{group_id: int|null, group_name: string|null, group_order: int, features: mixed} $group */
-    private function resolveGroup(array $group): ?AttributeGroup
-    {
-        if ($group['group_id'] === null) {
-            return null;
-        }
-
-        return AttributeGroup::query()->firstOrCreate(
-            ['icecat_group_id' => $group['group_id']],
-            [
-                'uuid' => (string) Str::uuid(),
-                'code' => 'icecat-grp-'.$group['group_id'],
-                'name' => $group['group_name'] ?? ('Group '.$group['group_id']),
-                'display_order' => $group['group_order'],
-            ],
-        );
-    }
-
-    /**
-     * @param  array{feature_id: int|null, name: string, unit_symbol: ?string, order: int, searchable: bool, value_raw: string, value_presentation: ?string}  $feature
-     */
-    private function resolveAttribute(array $feature, ?AttributeGroup $group): Attribute
-    {
-        $isNumeric = $this->numericOf($feature['value_raw']) !== null;
-
-        $defaults = [
-            'uuid' => (string) Str::uuid(),
-            'name' => $feature['name'],
-            'group_id' => $group?->id,
-            'data_type' => $isNumeric ? 'numeric' : 'string',
-            'unit_symbol' => $feature['unit_symbol'],
-            'is_filterable' => $feature['searchable'],
-            'display_order' => $feature['order'],
-        ];
-
-        // Prefer Icecat's stable feature id as the key; fall back to a slug of
-        // the name when a product carries an unidentified feature.
-        if ($feature['feature_id'] !== null) {
-            $attribute = Attribute::query()->firstOrCreate(
-                ['icecat_feature_id' => $feature['feature_id']],
-                ['code' => 'icecat-feat-'.$feature['feature_id']] + $defaults,
-            );
-        } else {
-            $code = 'spec-'.Str::slug($feature['name']);
-            $attribute = Attribute::query()->firstOrCreate(['code' => $code], $defaults);
-        }
-
-        // Backfill the group on an attribute first seen without one.
-        if ($group !== null && $attribute->group_id === null) {
-            $attribute->group_id = $group->id;
-            $attribute->save();
-        }
-
-        return $attribute;
-    }
-
-    private function linkRelations(Product $product, IcecatDocument $document): void
-    {
-        $sort = 0;
-
-        foreach ($document->relations() as $relation) {
-            if ($relation['type'] === null || $relation['mpn'] === null) {
-                continue;
-            }
-
-            $brand = $relation['brand'] !== null ? $this->brand($relation['brand']) : null;
-
-            $related = Product::query()
-                ->where('mpn', $relation['mpn'])
-                ->when($brand !== null, fn (Builder $q) => $q->where('brand_id', $brand->id))
-                ->first();
-
-            // Only link to products we actually stock; the FK requires the
-            // related product to exist, and a rail to a product we do not sell
-            // is a dead end.
-            if ($related === null || $related->id === $product->id) {
-                continue;
-            }
-
-            $product->relatedProducts()->syncWithoutDetaching([
-                $related->id => [
-                    'relation_type' => $relation['type'],
-                    'source' => 'icecat',
-                    'sort_order' => $sort++,
-                ],
-            ]);
-
-            $this->relationsLinked++;
-        }
-    }
-
-    private function brand(string $name): ?Brand
-    {
-        $key = Str::lower(trim($name));
-
-        if ($key === '') {
-            return null;
-        }
-
-        if (array_key_exists($key, $this->brandCache)) {
-            return $this->brandCache[$key];
-        }
-
-        return $this->brandCache[$key] = Brand::query()->whereRaw('lower(name) = ?', [$key])->first();
-    }
-
-    /** Leading numeric value, for range facets. "20 ppm" → 20.0, "A4" → null. */
-    private function numericOf(string $raw): ?float
-    {
-        if (preg_match('/-?\d+(?:[.,]\d+)?/', $raw, $m) !== 1) {
-            return null;
-        }
-
-        $value = (float) str_replace(',', '.', $m[0]);
-
-        // value_numeric is DECIMAL(16,4) - twelve integer digits at most. A
-        // larger number is never a real range facet (it is an EAN or other code
-        // Icecat carries as a spec value) and would overflow the column, failing
-        // the whole product's spec write. Drop it; value_raw still holds it.
-        if (abs($value) >= 1e12) {
-            return null;
-        }
-
-        return $value;
     }
 
     private function countFeatures(IcecatDocument $document): int
