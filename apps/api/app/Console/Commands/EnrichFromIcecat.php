@@ -501,9 +501,11 @@ final class EnrichFromIcecat extends Command
 
         if ($processed > 0 && $this->matched === 0 && $client->sawOnlyNotFound()) {
             $this->warn(
-                'Every lookup returned 404. Icecat returns 404 (not 403) for a non-whitelisted IP, '.
-                "so confirm this server's IP is whitelisted and the credentials are correct before ".
-                'concluding the catalogue is simply absent from Icecat.'
+                'No product matched Icecat. When EVERY lookup fails like this the cause is almost '.
+                'always access, not an absent catalogue: a 401 means the credentials are wrong or '.
+                'missing, and a 404 means this server\'s IP is not whitelisted (Icecat returns 404, '.
+                'not 403, for that). Confirm ICECAT_USERNAME/ICECAT_PASSWORD in .env and that this '.
+                "server's IP is whitelisted in the Icecat account, then re-run."
             );
         }
 
