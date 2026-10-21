@@ -75,7 +75,13 @@ final class IcecatIndex
                             'supplier_id' => $supplierId,
                             'catid' => ($c = $reader->getAttribute('Catid')) !== null && $c !== '' ? (int) $c : null,
                             'model_name' => self::clean($reader->getAttribute('Model_Name')),
-                            'ean' => self::firstEan($reader),
+                            // EAN is read from the fetched data-sheet, not here: the
+                            // index carries it only in child <EAN_UPC> nodes, and
+                            // expanding every entry to a DOM to read them made
+                            // XMLReader accumulate the parsed tree and exhaust memory
+                            // over a large brand. Attributes alone keep the scan at
+                            // constant memory.
+                            'ean' => null,
                             // When Icecat first catalogued the product, as YYYYMMDD -
                             // a workable proxy for product age / recency.
                             'date_added' => self::ymd($reader->getAttribute('Date_Added')),
@@ -92,49 +98,6 @@ final class IcecatIndex
         } finally {
             $reader->close();
         }
-    }
-
-    /**
-     * The preferred GTIN of the current <file>: an approved GTIN-13 if present,
-     * else the first approved, else the first of any. Only called for a wanted
-     * entry, so expanding it to a DOM is cheap.
-     */
-    private static function firstEan(XMLReader $reader): ?string
-    {
-        $node = $reader->expand();
-
-        if (! $node instanceof \DOMNode) {
-            return null;
-        }
-
-        $codes = (new \DOMDocument())->importNode($node, true);
-        $eans = [];
-
-        foreach ($codes->getElementsByTagName('EAN_UPC') as $ean) {
-            /** @var \DOMElement $ean */
-            $value = preg_replace('/\D/', '', (string) $ean->getAttribute('Value'));
-
-            if ($value === null || $value === '') {
-                continue;
-            }
-
-            $approved = $ean->getAttribute('IsApproved') === '1';
-            $gtin13 = $ean->getAttribute('Format') === 'GTIN-13';
-
-            if ($approved && $gtin13) {
-                return $value; // best match, stop early
-            }
-
-            $eans[] = ['value' => $value, 'approved' => $approved];
-        }
-
-        foreach ($eans as $e) {
-            if ($e['approved']) {
-                return $e['value'];
-            }
-        }
-
-        return $eans[0]['value'] ?? null;
     }
 
     private static function clean(?string $value): ?string

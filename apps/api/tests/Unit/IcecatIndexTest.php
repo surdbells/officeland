@@ -64,7 +64,7 @@ XML;
         $this->assertSame([1399, 2000], array_column($entries, 'product_id'));
     }
 
-    public function test_it_extracts_the_fields_and_prefers_an_approved_gtin13(): void
+    public function test_it_extracts_the_entry_fields(): void
     {
         $path = $this->fixturePath();
 
@@ -82,23 +82,11 @@ XML;
         $this->assertSame(1, $hp['supplier_id']);
         $this->assertSame(846, $hp['catid']);
         $this->assertSame('HP 80 175-ml Cyan Ink', $hp['model_name']);
-        // The approved GTIN-13 wins over the unapproved one listed first.
-        $this->assertSame('5705965480557', $hp['ean']);
         // Date_Added's first 8 digits become the YYYYMMDD recency key.
         $this->assertSame(20051027, $hp['date_added']);
-    }
-
-    public function test_it_falls_back_to_any_gtin_when_none_approved(): void
-    {
-        $path = $this->fixturePath();
-
-        try {
-            $entries = iterator_to_array(IcecatIndex::stream($path, [292]), false);
-        } finally {
-            @unlink($path);
-        }
-
-        $this->assertSame('000123', $entries[0]['ean']);
+        // EAN is read from the fetched data-sheet, not the index (reading it here
+        // meant expanding every entry to a DOM, which exhausted memory at scale).
+        $this->assertNull($hp['ean']);
     }
 
     public function test_an_unwanted_supplier_yields_nothing(): void
