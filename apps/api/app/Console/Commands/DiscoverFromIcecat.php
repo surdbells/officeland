@@ -46,6 +46,7 @@ final class DiscoverFromIcecat extends Command
         {--apply : Create products. Without this the command only reports.}
         {--limit=0 : Maximum index entries to process (0 = no limit).}
         {--catids= : Comma-separated Icecat category ids to import; others are skipped.}
+        {--since= : Only products Icecat catalogued on/after this date (YYYY, YYYY-MM or YYYY-MM-DD) - a recency filter against obsolete SKUs.}
         {--survey : List the brand\'s category ids and their product counts, then exit (no fetches).}
         {--dump : Fetch and print each data-sheet summary, creating nothing.}
         {--refresh-index : Re-download the repository index even if the cache is fresh.}
@@ -102,6 +103,10 @@ final class DiscoverFromIcecat extends Command
             explode(',', (string) $this->option('catids')),
         )));
 
+        // Optional recency filter against obsolete SKUs (a brand's full index is
+        // its whole history, back to products from 2008).
+        $since = $this->parseSince((string) $this->option('since'));
+
         $this->info("Scanning the index for supplier {$supplierId} ({$brand})…");
 
         foreach (IcecatIndex::stream('compress.zlib://'.$indexPath, [(int) $supplierId]) as $entry) {
@@ -109,9 +114,15 @@ final class DiscoverFromIcecat extends Command
                 break;
             }
 
-            // Category filter is applied before the limit/fetch so --limit counts
-            // only the products we would actually import.
+            // Category and recency filters are applied before the limit/fetch so
+            // --limit counts only the products we would actually import. A product
+            // with no catalogued date is excluded once --since is in play, since
+            // its recency cannot be confirmed.
             if ($catids !== [] && ! in_array($entry['catid'], $catids, true)) {
+                continue;
+            }
+
+            if ($since !== null && ($entry['date_added'] === null || $entry['date_added'] < $since)) {
                 continue;
             }
 
@@ -313,6 +324,19 @@ final class DiscoverFromIcecat extends Command
         }
 
         return $base.'-'.$icecatId;
+    }
+
+    /** "2023", "2023-05" or "2023-05-10" → YYYYMMDD int, or null. */
+    private function parseSince(string $value): ?int
+    {
+        $digits = preg_replace('/\D/', '', $value) ?? '';
+
+        return match (strlen($digits)) {
+            0 => null,
+            4 => (int) ($digits.'0101'),
+            6 => (int) ($digits.'01'),
+            default => (int) substr(str_pad($digits, 8, '0'), 0, 8),
+        };
     }
 
     private function isEmpty(IcecatDocument $document): bool

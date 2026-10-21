@@ -32,7 +32,7 @@ final class IcecatIndex
      * @param  bool  $fullOnly  skip Limited="Yes" entries (not fetchable at this tier)
      * @return Generator<int, array{
      *   product_id: int, mpn: ?string, supplier_id: int, catid: ?int,
-     *   model_name: ?string, ean: ?string
+     *   model_name: ?string, ean: ?string, date_added: ?int
      * }>
      */
     public static function stream(
@@ -76,6 +76,9 @@ final class IcecatIndex
                             'catid' => ($c = $reader->getAttribute('Catid')) !== null && $c !== '' ? (int) $c : null,
                             'model_name' => self::clean($reader->getAttribute('Model_Name')),
                             'ean' => self::firstEan($reader),
+                            // When Icecat first catalogued the product, as YYYYMMDD -
+                            // a workable proxy for product age / recency.
+                            'date_added' => self::ymd($reader->getAttribute('Date_Added')),
                         ];
                     }
                 }
@@ -139,5 +142,15 @@ final class IcecatIndex
         $value = trim((string) $value);
 
         return $value === '' ? null : $value;
+    }
+
+    /** "20051027000000" → 20051027 (int), or null. */
+    private static function ymd(?string $value): ?int
+    {
+        $value = (string) $value;
+
+        return strlen($value) >= 8 && ctype_digit(substr($value, 0, 8))
+            ? (int) substr($value, 0, 8)
+            : null;
     }
 }

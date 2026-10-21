@@ -24,7 +24,7 @@ final class IcecatIndexTest extends TestCase
 <?xml version="1.0" encoding="UTF-8"?>
 <ICECAT-interface>
 <files.index Generated="20261021000000">
-<file path="export/freexml/EN/1399.xml" Limited="No" Product_ID="1399" Quality="ICECAT" Prod_ID="C4872A" Supplier_id="1" Catid="846" On_Market="1" Model_Name="HP 80 175-ml Cyan Ink">
+<file path="export/freexml/EN/1399.xml" Limited="No" Product_ID="1399" Quality="ICECAT" Prod_ID="C4872A" Supplier_id="1" Catid="846" On_Market="1" Model_Name="HP 80 175-ml Cyan Ink" Date_Added="20051027000000">
   <EAN_UPCS>
     <EAN_UPC Value="0777785507870" IsApproved="0" Format="GTIN-13"/>
     <EAN_UPC Value="5705965480557" IsApproved="1" Format="GTIN-13"/>
@@ -84,6 +84,8 @@ XML;
         $this->assertSame('HP 80 175-ml Cyan Ink', $hp['model_name']);
         // The approved GTIN-13 wins over the unapproved one listed first.
         $this->assertSame('5705965480557', $hp['ean']);
+        // Date_Added's first 8 digits become the YYYYMMDD recency key.
+        $this->assertSame(20051027, $hp['date_added']);
     }
 
     public function test_it_falls_back_to_any_gtin_when_none_approved(): void
