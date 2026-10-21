@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Icecat;
 
 use Generator;
+use Illuminate\Support\Facades\Http;
 use RuntimeException;
+use Throwable;
 use XMLReader;
 
 /**
@@ -25,6 +27,44 @@ use XMLReader;
 final class IcecatIndex
 {
     /**
+     * Ensure the gzipped repository index is cached locally, downloading it if
+     * missing, stale, or forced. Returns the local path, or null on failure.
+     *
+     * Shared by every entry point that scans the index (the CLI dispatcher and
+     * the admin prepare job) so the ~310 MB download and its TTL live in one
+     * place.
+     */
+    public static function ensureCached(bool $refresh = false): ?string
+    {
+        $path = (string) config('icecat.index_cache');
+        $ttl = (int) config('icecat.index_ttl_hours', 24) * 3600;
+        $fresh = is_file($path) && (time() - (int) filemtime($path)) < $ttl;
+
+        if ($fresh && ! $refresh) {
+            return $path;
+        }
+
+        @mkdir(dirname($path), 0775, true);
+
+        try {
+            $response = Http::withBasicAuth((string) config('icecat.username'), (string) config('icecat.password'))
+                ->timeout(1800)
+                ->sink($path)
+                ->get((string) config('icecat.endpoints.index'));
+        } catch (Throwable) {
+            return null;
+        }
+
+        if (! $response->successful() || ! is_file($path) || (filesize($path) ?: 0) < 1_000_000) {
+            @unlink($path);
+
+            return null;
+        }
+
+        return $path;
+    }
+
+    /**
      * @param  string  $uri  an XMLReader-openable URI; for the gzip index use
      *                       "compress.zlib:///path/to/files.index.xml.gz"
      * @param  list<int>  $supplierIds  only entries for these suppliers are yielded
@@ -43,7 +83,7 @@ final class IcecatIndex
     ): Generator {
         $wanted = array_flip($supplierIds);
 
-        $reader = new XMLReader();
+        $reader = new XMLReader;
 
         // libxml must be allowed to resolve the gzip stream; the index also
         // declares a DTD we neither need nor want to fetch.
