@@ -67,3 +67,12 @@ Schedule::command('media:reap --apply')
     ->weeklyOn(0, '05:00')
     ->timezone('Africa/Lagos')
     ->withoutOverlapping(60);
+
+/*
+ * Keep the storefront's cached product counts honest. Imports already recount on
+ * finish; this catches drift from manual edits, publishes and deletions.
+ */
+Schedule::command('catalogue:recount')
+    ->dailyAt('04:30')
+    ->timezone('Africa/Lagos')
+    ->withoutOverlapping(30);

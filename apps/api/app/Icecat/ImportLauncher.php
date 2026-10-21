@@ -7,6 +7,7 @@ namespace App\Icecat;
 use App\Jobs\PrepareIcecatImport;
 use App\Models\ImportRun;
 use Illuminate\Bus\Batch;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Str;
 use Throwable;
@@ -65,6 +66,12 @@ final class ImportLauncher
                         $run->total,
                     ),
                 ]);
+
+                // Imported products change what brands and categories contain, so
+                // refresh the storefront's cached counts once the run settles.
+                if ($run->created > 0) {
+                    Artisan::call('catalogue:recount');
+                }
             })
             ->dispatch();
 
