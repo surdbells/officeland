@@ -74,10 +74,11 @@ XML;
     {
         $doc = IcecatDocument::fromXml($this->fixture());
 
+        // High-res only: HighPic + each gallery Pic. The LowPic duplicate of
+        // picture 1 is dropped (we derive our own sizes from the originals).
         $this->assertSame([
             'https://images.icecat.biz/img/high/12345-hp.jpg',
             'https://images.icecat.biz/img/gallery/12345-1.jpg',
-            'https://images.icecat.biz/img/low/12345-1.jpg',
             'https://images.icecat.biz/img/gallery/12345-2.jpg',
         ], $doc->imageUrls());
     }

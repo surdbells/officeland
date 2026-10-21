@@ -50,6 +50,7 @@ final class DiscoverFromIcecat extends Command
         {--survey : List the brand\'s category ids and their product counts, then exit (no fetches).}
         {--dump : Fetch and print each data-sheet summary, creating nothing.}
         {--publish : Activate a product immediately if it imported with an image (kept noindex).}
+        {--max-images=10 : Maximum high-res images to mirror per product.}
         {--refresh-index : Re-download the repository index even if the cache is fresh.}
         {--sleep=250 : Milliseconds to pause between products.}';
 
@@ -261,9 +262,11 @@ final class DiscoverFromIcecat extends Command
             $product->categories()->syncWithoutDetaching([$category->id => ['sort_order' => 0]]);
         }
 
-        // New product has no media, so force is irrelevant; cap at one image -
-        // the single highest-resolution shot, not the whole gallery.
-        $stats = $ingestor->write($product, $document, forceImages: true, maxImages: 1);
+        // New product has no media, so force is irrelevant. Mirror up to
+        // --max-images high-res shots (HighPic + the gallery originals, low-res
+        // duplicates already excluded by the parser).
+        $maxImages = max(1, (int) $this->option('max-images'));
+        $stats = $ingestor->write($product, $document, forceImages: true, maxImages: $maxImages);
 
         // Auto-publish: a product that imported with an image and landed in a
         // category is good enough to sell, so activate it now. It stays noindex

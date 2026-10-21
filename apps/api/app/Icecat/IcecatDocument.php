@@ -161,10 +161,12 @@ final class IcecatDocument
         $add((string) ($this->product['HighPic'] ?? ''));
 
         foreach ($this->product->ProductGallery->ProductPicture ?? [] as $picture) {
-            // Pic is the full image; fall back to the other sizes only if it is
-            // absent, so a gallery entry is never skipped for lacking HighPic.
-            $add((string) ($picture['Pic'] ?? ''));
-            $add((string) ($picture['LowPic'] ?? ''));
+            // Pic is the full-resolution gallery image. LowPic is a downscaled
+            // duplicate of the same shot, so it is NOT collected - we mirror the
+            // high-res originals only and derive our own sizes from them. Fall
+            // back to LowPic solely when a picture has no Pic at all.
+            $hiRes = (string) ($picture['Pic'] ?? '');
+            $add($hiRes !== '' ? $hiRes : (string) ($picture['LowPic'] ?? ''));
         }
 
         return $urls;
