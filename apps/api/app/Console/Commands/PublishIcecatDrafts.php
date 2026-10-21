@@ -51,13 +51,13 @@ final class PublishIcecatDrafts extends Command
 
         $published = 0;
         $eligible = 0;
-        $skipped = ['no image' => 0, 'too few specs' => 0, 'no category' => 0];
+        $skipped = ['no renderable image' => 0, 'too few specs' => 0, 'no category' => 0];
 
         foreach ($this->candidates()->cursor() as $product) {
             $reasons = [];
 
-            if ($product->media_count < $minImages) {
-                $reasons[] = 'no image';
+            if ($product->renderable_media_count < $minImages) {
+                $reasons[] = 'no renderable image';
             }
             if ($product->attribute_values_count < $minSpecs) {
                 $reasons[] = 'too few specs';
@@ -97,7 +97,14 @@ final class PublishIcecatDrafts extends Command
         return Product::query()
             ->where('source', 'icecat')
             ->where('status', 'draft')
-            ->withCount(['media', 'attributeValues'])
+            // Count only media that actually have derivatives: an original with
+            // none renders as nothing (ImageResource src is null), so it does not
+            // count as a usable image - this is also what makes publish wait for
+            // the queued derivative jobs to finish.
+            ->withCount([
+                'media as renderable_media_count' => fn (Builder $q) => $q->whereHas('derivatives'),
+                'attributeValues',
+            ])
             ->when((string) $this->option('brand') !== '', fn (Builder $q) => $q->whereHas(
                 'brand',
                 fn (Builder $b) => $b->where('name', 'ilike', (string) $this->option('brand')),
@@ -138,7 +145,7 @@ final class PublishIcecatDrafts extends Command
         $this->newLine();
         $this->table(['Metric', 'Count'], [
             [$apply ? 'Activated' : 'Eligible (would activate)', $apply ? $published : $eligible],
-            ['Skipped — no image', $skipped['no image']],
+            ['Skipped — no renderable image', $skipped['no renderable image']],
             ['Skipped — too few specs', $skipped['too few specs']],
             ['Skipped — no category', $skipped['no category']],
         ]);

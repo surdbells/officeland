@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Icecat;
 
+use App\Jobs\GenerateMediaDerivatives;
 use App\Media\DerivativeGenerator;
 use App\Media\MediaIngestor;
 use App\Models\Attribute;
@@ -46,8 +47,9 @@ final class IcecatIngestor
         IcecatDocument $document,
         bool $forceImages = false,
         ?int $maxImages = null,
+        bool $queueDerivatives = false,
     ): array {
-        $images = $this->attachImages($product, $document, $forceImages, $maxImages);
+        $images = $this->attachImages($product, $document, $forceImages, $maxImages, $queueDerivatives);
         $specs = $this->writeSpecifications($product, $document);
         $relations = $this->linkRelations($product, $document);
         $this->applyFacts($product, $document);
@@ -88,8 +90,11 @@ final class IcecatIngestor
      * @param  int|null  $maxImages  cap on images attached; 1 keeps only the
      *                               single highest-resolution image (HighPic,
      *                               which imageUrls() lists first), null = all.
+     * @param  bool  $queueDerivatives  dispatch derivative generation to the queue
+     *                                  (parallel workers) instead of generating it
+     *                                  inline - far faster for a large import.
      */
-    private function attachImages(Product $product, IcecatDocument $document, bool $force, ?int $maxImages): int
+    private function attachImages(Product $product, IcecatDocument $document, bool $force, ?int $maxImages, bool $queueDerivatives = false): int
     {
         // Skip when the product already has images and we are not forcing - the
         // derivative generation is the expensive part and need not repeat.
@@ -133,7 +138,15 @@ final class IcecatIngestor
                     'source_url' => $url,
                 ]);
 
-                $this->derivatives->generate($media);
+                // Inline for a small enrich; queued for a bulk import so parallel
+                // workers do the CPU-heavy encoding across all cores. The job is
+                // idempotent and WithoutOverlapping, so a shared image enqueued
+                // twice is safe.
+                if ($queueDerivatives) {
+                    GenerateMediaDerivatives::dispatch($media->id);
+                } else {
+                    $this->derivatives->generate($media);
+                }
 
                 $product->media()->syncWithoutDetaching([
                     $media->id => [

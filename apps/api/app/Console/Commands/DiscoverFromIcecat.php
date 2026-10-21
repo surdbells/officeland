@@ -49,7 +49,8 @@ final class DiscoverFromIcecat extends Command
         {--since= : Only products Icecat catalogued on/after this date (YYYY, YYYY-MM or YYYY-MM-DD) - a recency filter against obsolete SKUs.}
         {--survey : List the brand\'s category ids and their product counts, then exit (no fetches).}
         {--dump : Fetch and print each data-sheet summary, creating nothing.}
-        {--publish : Activate a product immediately if it imported with an image (kept noindex).}
+        {--publish : Activate a product immediately if it imported with an image (kept noindex). Ignored with --queue-derivatives.}
+        {--queue-derivatives : Dispatch derivative generation to the queue for parallel workers, instead of generating inline (much faster for bulk).}
         {--max-images=10 : Maximum high-res images to mirror per product.}
         {--refresh-index : Re-download the repository index even if the cache is fresh.}
         {--sleep=250 : Milliseconds to pause between products.}';
@@ -271,12 +272,20 @@ final class DiscoverFromIcecat extends Command
         // --max-images high-res shots (HighPic + the gallery originals, low-res
         // duplicates already excluded by the parser).
         $maxImages = max(1, (int) $this->option('max-images'));
-        $stats = $ingestor->write($product, $document, forceImages: true, maxImages: $maxImages);
+        $queueDerivatives = (bool) $this->option('queue-derivatives');
+        $stats = $ingestor->write(
+            $product,
+            $document,
+            forceImages: true,
+            maxImages: $maxImages,
+            queueDerivatives: $queueDerivatives,
+        );
 
-        // Auto-publish: a product that imported with an image and landed in a
-        // category is good enough to sell, so activate it now. It stays noindex
-        // (D-015) - the name/description are still Icecat's words until rewritten.
-        if ($this->option('publish') && $stats['images'] > 0 && $product->primary_category_id !== null) {
+        // Auto-publish inline only when derivatives were generated inline. With
+        // --queue-derivatives the images are not renderable yet (src is null
+        // until a worker finishes), so publishing is left to catalogue:icecat-
+        // publish, which gates on a derivative existing.
+        if (! $queueDerivatives && $this->option('publish') && $stats['images'] > 0 && $product->primary_category_id !== null) {
             $product->status = 'active';
             $product->published_at ??= now();
             $product->save();
@@ -423,6 +432,10 @@ final class DiscoverFromIcecat extends Command
 
         if (! $apply && ! $dump) {
             $this->info('Dry run. Re-run with --apply to create the draft products.');
+        } elseif ($apply && $this->option('queue-derivatives')) {
+            $this->info('Imported as drafts; derivative jobs queued. Run workers to build images:');
+            $this->line('  docker compose exec -d api php artisan queue:work --queue=media --stop-when-empty --tries=3   (× your core count)');
+            $this->line('Then publish the renderable ones:  php artisan catalogue:icecat-publish --brand=<b> --apply');
         } elseif ($apply && $this->option('publish')) {
             $this->info('Imported; those with an image are live (noindex). Imageless ones stay draft. Rewrite prose (D-015) before indexing.');
         } elseif ($apply) {
