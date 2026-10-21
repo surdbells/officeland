@@ -8,17 +8,22 @@ import express from 'express';
 import { join } from 'node:path';
 
 /*
- * ── On angular.json security.allowedHosts ────────────────────────────────
- * Angular 22 rejects a server-rendered request whose Host header is not on
- * that list. It is SSRF protection, which is exactly why it is NOT a
+ * ── On the allowed-hosts list ─────────────────────────────────────────────
+ * Angular 22 rejects a server-rendered request whose Host header is not
+ * allowlisted. It is SSRF protection, which is exactly why it is NOT a
  * wildcard: this process renders arbitrary routes and would otherwise make a
  * useful confused deputy.
  *
- * Only the internal names the render worker is reached by are listed. The API
- * asks it for one route at a time over the compose network
- * (http://render:4000), Caddy never proxies here, and nothing outside that
- * network can reach it. Adding a public hostname there would be a real change
- * in exposure, not a configuration tidy-up.
+ * Under dynamic rendering (D-009) Caddy DOES proxy crawler traffic here,
+ * preserving the public Host, so the public domain MUST be allowed - otherwise
+ * every bot request is answered with "Bad Request", a failure the crawl gate
+ * never sees because it renders via localhost. The list therefore carries both
+ * the internal names (render, localhost) and the public domain(s).
+ *
+ * The runtime source of truth is the NG_ALLOWED_HOSTS env var (set in
+ * compose.yaml), which overrides the baked angular.json list; both are kept in
+ * sync. NG_TRUST_PROXY_HEADERS lets the server read the real host and scheme
+ * from Caddy's x-forwarded-* headers.
  */
 
 const browserDistFolder = join(import.meta.dirname, '../browser');

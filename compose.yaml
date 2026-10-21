@@ -176,6 +176,19 @@ services:
       # The incremental renderer serves one route at a time to the API
       # (Phase 8c). Internal to the compose network; Caddy never proxies here.
       PORT: "4000"
+      # Angular 22's SSR server rejects any request whose Host is not allowlisted
+      # (SSRF protection). Under dynamic rendering Caddy DOES proxy crawler
+      # traffic here preserving the public Host, so the public domain must be
+      # allowed or every bot request returns "Bad Request" - invisible to the
+      # gate, which crawls via localhost. NG_ALLOWED_HOSTS (read at runtime)
+      # overrides the baked angular.json list, so it must carry every host: the
+      # internal names AND the public domain(s). Override in .env if the domain
+      # changes.
+      NG_ALLOWED_HOSTS: ${NG_ALLOWED_HOSTS:-render,localhost,127.0.0.1,officelandng.com,www.officelandng.com}
+      # Trust Caddy's forwarded headers so the SSR server sees the real host and
+      # https scheme (for correct canonical/OG URLs) instead of the internal
+      # http hop, and so the "trustProxyHeaders not set up" warnings stop.
+      NG_TRUST_PROXY_HEADERS: ${NG_TRUST_PROXY_HEADERS:-x-forwarded-host,x-forwarded-proto,x-forwarded-for,x-forwarded-port}
     volumes:
       # The monorepo layout is mirrored, not flattened: apps/web resolves
       # @contracts/api at ../../packages, so packages/ must sit two levels up.

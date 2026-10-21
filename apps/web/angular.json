@@ -30,7 +30,7 @@
             "server": "src/main.server.ts",
             "outputMode": "server",
             "security": {
-              "allowedHosts": ["render", "localhost", "127.0.0.1"]
+              "allowedHosts": ["render", "localhost", "127.0.0.1", "officelandng.com", "www.officelandng.com"]
             },
             "ssr": {
               "entry": "src/server.ts"
