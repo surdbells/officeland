@@ -53,6 +53,43 @@ interface MajorCategory {
 }
 
 /**
+ * One hero slide, resolved for the template.
+ *
+ * Two sources feed this: admin-curated hero slides (each carries its own copy),
+ * and - when none are curated - the departments that have a hero photograph,
+ * behind the default copy below. The template reads the same shape either way,
+ * so it does not care which source won.
+ */
+interface HeroSlideView {
+  readonly key: string;
+  readonly image: Image | null;
+  readonly headline: string;
+  readonly subheadline: string | null;
+  readonly ctaLabel: string | null;
+  readonly ctaUrl: string | null;
+  readonly secondaryCtaLabel: string | null;
+  readonly secondaryCtaUrl: string | null;
+  /** The department chip shown on fallback slides; null on curated slides. */
+  readonly caption: string | null;
+  readonly captionUrl: string | null;
+}
+
+/**
+ * The copy the hero has always shown, now the fallback used when no slide is
+ * curated in admin. Kept here so the department-derived rotation and the empty
+ * state read identically to the page before the CMS existed.
+ */
+const DEFAULT_HERO = {
+  headline: 'Nigeria’s office supply partner',
+  subheadline:
+    'Furniture, IT and consumables for businesses, schools and government. Two Victoria Island showrooms, nationwide delivery and installation.',
+  ctaLabel: 'Browse the catalogue',
+  ctaUrl: '/shop/',
+  secondaryCtaLabel: 'Send a requisition list',
+  secondaryCtaUrl: '/quote/request/',
+} as const;
+
+/**
  * The "major categories" the legacy WordPress storefront surfaced to shoppers
  * (officelandng.com) - the granular, high-intent entry points a buyer actually
  * types, rather than the nine abstract departments. Every one already exists in
@@ -170,18 +207,20 @@ const MAJOR_CATEGORY_SOURCES: readonly {
           aria-roledescription="carousel"
           aria-label="Featured departments"
         >
-          @for (slide of heroSlides(); track slide.slug; let i = $index) {
+          @for (slide of heroSlides(); track slide.key; let i = $index) {
             <div
               class="ol-heroslide absolute inset-0"
               [class.is-active]="heroIndex() === i"
               [attr.aria-hidden]="heroIndex() !== i"
             >
-              <ol-image
-                [image]="slide.hero"
-                [priority]="i === 0"
-                sizes="(min-width: 1600px) 1536px, 100vw"
-                imgClass="h-full w-full object-cover"
-              />
+              @if (slide.image) {
+                <ol-image
+                  [image]="slide.image"
+                  [priority]="i === 0"
+                  sizes="(min-width: 1600px) 1536px, 100vw"
+                  imgClass="h-full w-full object-cover"
+                />
+              }
             </div>
           }
 
@@ -193,58 +232,67 @@ const MAJOR_CATEGORY_SOURCES: readonly {
               Business, school &amp; government supply
             </span>
 
-            <h1 class="max-w-3xl text-display font-extrabold leading-[1.02] text-white drop-shadow-sm sm:text-display-xl">
-              Nigeria&rsquo;s office supply partner
-            </h1>
+            @if (currentHero(); as hero) {
+              <h1 class="max-w-3xl text-display font-extrabold leading-[1.02] text-white drop-shadow-sm sm:text-display-xl">
+                {{ hero.headline }}
+              </h1>
 
-            <p class="max-w-xl text-lg text-white/85">
-              Furniture, IT and consumables for businesses, schools and government.
-              Two Victoria Island showrooms, nationwide delivery and installation.
-            </p>
+              @if (hero.subheadline) {
+                <p class="max-w-xl text-lg text-white/85">{{ hero.subheadline }}</p>
+              }
 
-            <div class="flex flex-wrap items-center gap-3">
-              <a
-                routerLink="/shop/"
-                class="rounded-full bg-brand-600 px-7 py-3.5 font-semibold text-white shadow-brand transition-transform hover:-translate-y-0.5 hover:bg-brand-700"
-              >
-                Browse the catalogue
-              </a>
-              <a
-                routerLink="/quote/request/"
-                class="rounded-full border border-white/70 bg-white/10 px-7 py-3.5 font-semibold text-white backdrop-blur transition-colors hover:bg-white/20"
-              >
-                Send a requisition list
-              </a>
-            </div>
+              <div class="flex flex-wrap items-center gap-3">
+                @if (hero.ctaUrl && hero.ctaLabel) {
+                  <a
+                    [routerLink]="hero.ctaUrl"
+                    class="rounded-full bg-brand-600 px-7 py-3.5 font-semibold text-white shadow-brand transition-transform hover:-translate-y-0.5 hover:bg-brand-700"
+                  >
+                    {{ hero.ctaLabel }}
+                  </a>
+                }
+                @if (hero.secondaryCtaUrl && hero.secondaryCtaLabel) {
+                  <a
+                    [routerLink]="hero.secondaryCtaUrl"
+                    class="rounded-full border border-white/70 bg-white/10 px-7 py-3.5 font-semibold text-white backdrop-blur transition-colors hover:bg-white/20"
+                  >
+                    {{ hero.secondaryCtaLabel }}
+                  </a>
+                }
+              </div>
+            }
 
             <!--
               The caption names the department on show and links to it, so the
               stage is a way in rather than decoration. It sits above the dots.
             -->
             <div class="mt-2 flex flex-wrap items-center justify-between gap-4">
-              @if (heroSlides()[heroIndex()]; as current) {
-                <a
-                  [routerLink]="current.url"
-                  class="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-ink-900 shadow-sm transition-colors hover:bg-white"
-                >
-                  {{ current.name }}
-                  <ol-icon name="arrow-right" [size]="16" class="text-brand-600" />
-                </a>
+              @if (currentHero(); as current) {
+                @if (current.caption && current.captionUrl) {
+                  <a
+                    [routerLink]="current.captionUrl"
+                    class="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-ink-900 shadow-sm transition-colors hover:bg-white"
+                  >
+                    {{ current.caption }}
+                    <ol-icon name="arrow-right" [size]="16" class="text-brand-600" />
+                  </a>
+                }
               }
 
-              <div class="flex items-center gap-2" role="tablist" aria-label="Choose a featured department">
-                @for (slide of heroSlides(); track slide.slug; let i = $index) {
-                  <button
-                    type="button"
-                    role="tab"
-                    class="ol-herodot"
-                    [class.is-active]="heroIndex() === i"
-                    [attr.aria-selected]="heroIndex() === i"
-                    [attr.aria-label]="'Show ' + slide.name"
-                    (click)="selectHero(i)"
-                  ></button>
-                }
-              </div>
+              @if (heroSlides().length > 1) {
+                <div class="flex items-center gap-2" role="tablist" aria-label="Choose a featured slide">
+                  @for (slide of heroSlides(); track slide.key; let i = $index) {
+                    <button
+                      type="button"
+                      role="tab"
+                      class="ol-herodot"
+                      [class.is-active]="heroIndex() === i"
+                      [attr.aria-selected]="heroIndex() === i"
+                      [attr.aria-label]="'Show ' + (slide.caption ?? slide.headline)"
+                      (click)="selectHero(i)"
+                    ></button>
+                  }
+                </div>
+              }
             </div>
           </div>
         </div>
@@ -1102,6 +1150,16 @@ export class HomePage {
     this.api.navigation().pipe(catchError(() => of(null))),
   );
 
+  /**
+   * Curated homepage content. `undefined` while the request is in flight, null
+   * if it failed - either way the storefront falls back to its derived
+   * behaviour, so a missing /home never empties the page. Fetched once at build
+   * (D-009) and carried into hydration by TransferState.
+   */
+  private readonly home = toSignal(
+    this.api.home().pipe(catchError(() => of(null))),
+  );
+
   protected readonly departments = computed(() => this.navigation()?.departments ?? []);
 
   /**
@@ -1113,18 +1171,71 @@ export class HomePage {
   protected readonly navLoading = computed(() => this.navigation() === undefined);
 
   /**
-   * The hero stage slides: departments that carry a hero photograph.
+   * The hero stage slides, from whichever source is curated.
    *
-   * Filtered rather than assumed, so a department still awaiting its shot
-   * simply does not appear in the rotation instead of showing a blank frame.
-   * Falls back to nothing only if navigation has not loaded, in which case the
-   * stage renders its scrim and copy over an empty ground - still legible.
+   * 1. Admin hero slides, when any are active - each with its own photo and copy.
+   * 2. Otherwise the departments that carry a hero photograph, behind the
+   *    default copy (exactly the rotation the page has always shown).
+   * 3. Otherwise a single copy-only slide, so the stage still renders its scrim
+   *    and headline over an empty ground rather than disappearing.
    */
-  protected readonly heroSlides = computed(() =>
-    this.departments()
+  protected readonly heroSlides = computed<readonly HeroSlideView[]>(() => {
+    const curated = this.home()?.hero_slides ?? [];
+
+    if (curated.length > 0) {
+      return curated.map((slide, i): HeroSlideView => ({
+        key: 'cms-' + i,
+        image: slide.image ?? null,
+        headline: slide.headline,
+        subheadline: slide.subheadline ?? null,
+        ctaLabel: slide.cta_label ?? null,
+        ctaUrl: slide.cta_url ?? null,
+        secondaryCtaLabel: slide.secondary_cta_label ?? null,
+        secondaryCtaUrl: slide.secondary_cta_url ?? null,
+        caption: null,
+        captionUrl: null,
+      }));
+    }
+
+    const derived = this.departments()
       .filter((d) => d.hero)
-      .map((d) => ({ slug: d.slug, name: d.name, url: d.url, hero: d.hero ?? null })),
-  );
+      .map((d): HeroSlideView => ({
+        key: 'dept-' + d.slug,
+        image: d.hero ?? null,
+        headline: DEFAULT_HERO.headline,
+        subheadline: DEFAULT_HERO.subheadline,
+        ctaLabel: DEFAULT_HERO.ctaLabel,
+        ctaUrl: DEFAULT_HERO.ctaUrl,
+        secondaryCtaLabel: DEFAULT_HERO.secondaryCtaLabel,
+        secondaryCtaUrl: DEFAULT_HERO.secondaryCtaUrl,
+        caption: d.name,
+        captionUrl: d.url,
+      }));
+
+    if (derived.length > 0) {
+      return derived;
+    }
+
+    return [{
+      key: 'default',
+      image: null,
+      headline: DEFAULT_HERO.headline,
+      subheadline: DEFAULT_HERO.subheadline,
+      ctaLabel: DEFAULT_HERO.ctaLabel,
+      ctaUrl: DEFAULT_HERO.ctaUrl,
+      secondaryCtaLabel: DEFAULT_HERO.secondaryCtaLabel,
+      secondaryCtaUrl: DEFAULT_HERO.secondaryCtaUrl,
+      caption: null,
+      captionUrl: null,
+    }];
+  });
+
+  /** The slide currently on show, clamped so an out-of-range index still resolves. */
+  protected readonly currentHero = computed<HeroSlideView | null>(() => {
+    const slides = this.heroSlides();
+    if (slides.length === 0) return null;
+    return slides[this.heroIndex()] ?? slides[0];
+  });
 
   /** Which hero slide is showing. Advanced on a timer in the browser only. */
   protected readonly heroIndex = signal(0);
@@ -1220,12 +1331,25 @@ export class HomePage {
   // No initialValue: the signal is `undefined` until the request resolves,
   // which is the loading state the band's skeleton renders. Once resolved it is
   // the product list (empty on failure, via catchError), never undefined again.
-  protected readonly bestSellers = toSignal(
+  private readonly derivedBestSellers = toSignal(
     this.api.catalogue({ perPage: 12 }).pipe(
       catchError(() => of(EMPTY_LISTING)),
       map((listing) => listing.data),
     ),
   );
+
+  /**
+   * The best-sellers band, curated when admin has picked products, otherwise
+   * the cross-section of the catalogue above. `undefined` only while /home is
+   * still loading, which is the skeleton state.
+   */
+  protected readonly bestSellers = computed<readonly ProductCardData[] | undefined>(() => {
+    const home = this.home();
+    if (home === undefined) return undefined;
+
+    const picks = home?.product_picks ?? [];
+    return picks.length > 0 ? picks : this.derivedBestSellers();
+  });
 
   /**
    * The "Shop by category" grid - the legacy site's major categories.
@@ -1238,7 +1362,7 @@ export class HomePage {
    * categories that actually have products, so the grid is self-pruning as the
    * catalogue fills. Runs once at build (D-009) and transfers into hydration.
    */
-  protected readonly majorCategories = toSignal(
+  private readonly derivedMajorCategories = toSignal(
     forkJoin(
       MAJOR_CATEGORY_SOURCES.map((source) =>
         this.api.categoryProducts(source.path, { perPage: 48 }).pipe(
@@ -1272,6 +1396,28 @@ export class HomePage {
     // No initialValue: `undefined` is the loading state the grid's skeleton
     // renders; once resolved it is the (possibly empty) category list.
   );
+
+  /**
+   * The "Shop by category" grid, curated when admin has chosen tiles, otherwise
+   * the derived set above. `undefined` only while /home is still loading, which
+   * is the grid's skeleton state.
+   */
+  protected readonly majorCategories = computed<readonly MajorCategory[] | undefined>(() => {
+    const home = this.home();
+    if (home === undefined) return undefined;
+
+    const picks = home?.category_picks ?? [];
+    if (picks.length === 0) {
+      return this.derivedMajorCategories();
+    }
+
+    return picks.map((pick): MajorCategory => ({
+      name: pick.name,
+      url: pick.url,
+      image: pick.image ?? null,
+      count: pick.product_count,
+    }));
+  });
 
   /**
    * PVC's material properties.

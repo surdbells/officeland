@@ -6,7 +6,7 @@ import { Icon, type IconName } from '../../shared/icon';
 import { ResponsiveImage } from '../../shared/responsive-image';
 import { SiteSearch } from '../../shared/site-search';
 import { iconForCategory, iconForDepartment } from './category-icons';
-import type { Navigation, NavigationNode } from '../api/catalogue-api';
+import type { Announcement, Navigation, NavigationNode } from '../api/catalogue-api';
 
 /**
  * Site header, utility bar and megamenu (MASTER BUILD PROMPT section 23.1).
@@ -44,12 +44,28 @@ import type { Navigation, NavigationNode } from '../api/catalogue-api';
          and was skipped entirely by screen-reader landmark navigation. Caught
          by the axe-core gate (Phase 13c). -->
     @if (announcementVisible()) {
-      <section aria-label="Service announcement" class="bg-ink-900 text-white text-sm">
+      <section aria-label="Service announcement" class="text-sm" [class]="announcementClass()">
         <div class="mx-auto flex max-w-(--container-page) items-center justify-between gap-4 px-(--spacing-gutter) py-2">
-          <p class="truncate">Quotes answered within 1 business day · Nationwide delivery &amp; installation</p>
+          @if (announcement(); as a) {
+            <!-- Admin-curated banner. One line; an optional link makes the
+                 whole thing actionable without a second element. -->
+            <p class="truncate">
+              {{ a.message }}
+              @if (a.url) {
+                @if (isExternal(a.url)) {
+                  <a [href]="a.url" rel="noopener" class="ml-2 font-semibold underline underline-offset-2">{{ a.link_label || 'Learn more' }}</a>
+                } @else {
+                  <a [routerLink]="a.url" class="ml-2 font-semibold underline underline-offset-2">{{ a.link_label || 'Learn more' }}</a>
+                }
+              }
+            </p>
+          } @else {
+            <!-- The standing service promise, shown when nothing is curated. -->
+            <p class="truncate">Quotes answered within 1 business day · Nationwide delivery &amp; installation</p>
+          }
           <button
             type="button"
-            class="shrink-0 rounded px-2 py-1 text-white/70 hover:text-white"
+            class="shrink-0 rounded px-2 py-1 opacity-70 hover:opacity-100"
             aria-label="Dismiss announcement"
             (click)="dismissAnnouncement()"
           >&times;</button>
@@ -799,6 +815,32 @@ export class SiteHeader {
 
   protected readonly open = signal<string | null>(null);
   protected readonly announcementVisible = signal(true);
+
+  /**
+   * The admin-curated announcement, or null when none is live - in which case
+   * the bar shows the standing service promise instead. Carried on the
+   * navigation payload (it is global chrome every page loads).
+   */
+  protected readonly announcement = computed<Announcement | null>(
+    () => this.navigation()?.announcement ?? null,
+  );
+
+  /** The bar's colour, from the announcement variant; the default promise is neutral. */
+  protected announcementClass(): string {
+    switch (this.announcement()?.variant) {
+      case 'promo':
+        return 'bg-brand-600 text-white';
+      case 'warning':
+        return 'bg-amber-500 text-ink-900';
+      default:
+        return 'bg-ink-900 text-white';
+    }
+  }
+
+  /** A full URL leaves the SPA and needs a plain anchor; a path stays in-app. */
+  protected isExternal(url: string): boolean {
+    return /^https?:\/\//i.test(url);
+  }
 
   /**
    * How many departments the header bar shows before "More".

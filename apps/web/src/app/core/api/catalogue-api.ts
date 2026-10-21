@@ -32,6 +32,11 @@ export type Basket = components['schemas']['Basket'];
 export type BasketLine = components['schemas']['BasketLine'];
 export type ApiError = components['schemas']['Error'];
 
+/** Curated homepage content. Every section is optional - an empty array means the storefront keeps its derived default. */
+export type Home = components['schemas']['Home'];
+export type HeroSlide = components['schemas']['HeroSlide'];
+export type HomeCategoryTile = components['schemas']['HomeCategoryTile'];
+
 /**
  * A brand as the megamenu shows it.
  *
@@ -74,8 +79,26 @@ export interface NavigationNode {
   readonly hero?: Image | null;
 }
 
+/**
+ * The site-wide announcement bar, or null when none is live.
+ *
+ * Hand-typed rather than generated: the announcement rides on the navigation
+ * payload (it is global chrome every page loads), and navigation is one of the
+ * few endpoints whose body is not in the OpenAPI contract.
+ */
+export interface Announcement {
+  readonly message: string;
+  readonly url: string | null;
+  readonly link_label: string | null;
+  /** 'info' | 'promo' | 'warning' - drives the bar's colour. */
+  readonly variant: string;
+}
+
 export interface Navigation {
   readonly departments: readonly NavigationNode[];
+
+  /** The one banner to show above the header, or null/absent when none is live. */
+  readonly announcement?: Announcement | null;
 }
 
 /** One typeahead row. `meta` carries the model code, or null. */
@@ -163,6 +186,16 @@ export class CatalogueApi {
 
   navigation(): Observable<Navigation> {
     return this.unwrap<Navigation>(`${this.base}/navigation`);
+  }
+
+  /**
+   * Curated homepage content - hero slides, shop-by-category tiles and the
+   * best-sellers band. Each section is optional; an empty array is the
+   * storefront's signal to keep its built-in derived behaviour for that
+   * section. Fetched once at build time (D-009) like every other read.
+   */
+  home(): Observable<Home> {
+    return this.unwrap<Home>(`${this.base}/home`);
   }
 
   categories(): Observable<readonly Category[]> {
