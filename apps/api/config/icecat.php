@@ -42,7 +42,64 @@ return [
         'export' => env('ICECAT_EXPORT_BASE', 'https://data.icecat.biz/export'),
         // Search by MPN+brand or GTIN.
         'search' => env('ICECAT_SEARCH_BASE', 'https://data.icecat.biz/xml_s3/xml_server3.cgi'),
+        // The gzipped repository index of every data-sheet (~310 MB), streamed
+        // and filtered by supplier for auto-discovery. ~3.9 GB uncompressed, so
+        // it is never loaded whole.
+        'index' => env('ICECAT_INDEX_URL', 'https://data.icecat.biz/export/freexml/EN/files.index.xml.gz'),
     ],
 
     'timeout' => (int) env('ICECAT_TIMEOUT', 45),
+
+    // Where the downloaded index is cached between runs, and how long before it
+    // is considered stale and re-fetched.
+    'index_cache' => storage_path('app/icecat/files.index.xml.gz'),
+    'index_ttl_hours' => (int) env('ICECAT_INDEX_TTL_HOURS', 24),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Brand → Icecat supplier id
+    |--------------------------------------------------------------------------
+    |
+    | Resolved from SuppliersList.xml (2026-10-21). The index filters on
+    | Supplier_id, so auto-discovery needs the id for each brand it imports.
+    | Brands WITHOUT an Open-Icecat sponsorship (Belkin, Ubiquiti, Havit) carry
+    | mostly Limited="Yes" data-sheets, which this tier cannot fetch in full -
+    | they are listed for completeness but will yield little until a higher tier.
+    |
+    */
+    'suppliers' => [
+        'hp' => 1,
+        'apple' => 9,
+        'canon' => 10,
+        'epson' => 13,
+        'belkin' => 32,          // not a sponsor
+        'fellowes' => 74,
+        'logitech' => 91,
+        'asus' => 161,
+        'dell' => 292,
+        'leitz' => 361,
+        'rexel' => 619,
+        'lenovo' => 728,
+        'jbl' => 769,
+        'tp-link' => 2988,
+        'ubiquiti' => 3405,      // not a sponsor
+        'havit' => 7448,         // not a sponsor
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Icecat category id (Catid) → our taxonomy path
+    |--------------------------------------------------------------------------
+    |
+    | Icecat's category tree is not our IA (docs/ICECAT_MAPPING.md §3), so an
+    | imported product's primary category is mapped here. An unmapped Catid
+    | leaves the product with no category, to be assigned during the draft
+    | review - which is fine because every imported product is a draft anyway.
+    | Grown as the target brands' real Catids are observed.
+    |
+    | @var array<int, string>
+    */
+    'category_map' => [
+        // Catid => '/c/<dept>/<sub>/'  (seed as real Catids are confirmed)
+    ],
 ];
