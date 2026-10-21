@@ -107,6 +107,18 @@ final class EnrichFromIcecat extends Command
                 continue;
             }
 
+            // Icecat can answer with a product shell that carries no id, image
+            // or specification - the data-sheet is absent at this tier, or the
+            // identifier matched only a placeholder. There is nothing to ingest,
+            // so it is a miss, not a match, and must not overwrite the product.
+            if ($this->isEmpty($document)) {
+                $this->missed++;
+                $this->line("  miss (no Icecat data): {$product->slug} ({$this->matchKeyLabel($product)})");
+                $this->pause($sleepMs);
+
+                continue;
+            }
+
             $this->matched++;
 
             if ($dump) {
@@ -454,6 +466,14 @@ final class EnrichFromIcecat extends Command
     private function countFeatures(IcecatDocument $document): int
     {
         return array_sum(array_map(static fn ($g) => count($g['features']), $document->featureGroups()));
+    }
+
+    /** A response with nothing worth ingesting: no id, no image, no spec. */
+    private function isEmpty(IcecatDocument $document): bool
+    {
+        return $document->icecatId() === null
+            && $document->imageUrls() === []
+            && $document->featureGroups() === [];
     }
 
     private function matchKeyLabel(Product $product): string
