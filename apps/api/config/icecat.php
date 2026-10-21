@@ -102,14 +102,34 @@ return [
     'category_map' => [
         // Icecat Catid => our category `path` (DB path, no /c/ prefix). Catids
         // are global across brands, so these apply to every import. Confirmed
-        // from the Dell survey (2026-10-21); extend as other brands are surveyed.
-        151 => '/it-products/computers/laptops/',                     // Inspiron…
-        153 => '/it-products/computers/desktops-all-in-ones/',        // Zino HD…
-        156 => '/it-products/computers/workstations-servers/',        // PowerEdge…
-        222 => '/it-products/monitors-displays/monitors/',           // S2309W…
-        567 => '/it-products/monitors-displays/projectors-screens/',  // Projector…
-        195 => '/it-products/computer-accessories/keyboards-mice/',   // USB Mouse…
-        258 => '/it-products/networking/switches-adapters/',          // PowerConnect…
-        235 => '/printers-consumables/printers/laser-printers/',      // Laser Printer…
+        // from the Dell + HP surveys (2026-10-21); extend as more are surveyed.
+
+        // IT products — computers & displays
+        151 => '/it-products/computers/laptops/',                     // omnibook / Inspiron…
+        153 => '/it-products/computers/desktops-all-in-ones/',        // vectra / Zino…
+        2282 => '/it-products/computers/desktops-all-in-ones/',       // TouchSmart all-in-one
+        156 => '/it-products/computers/workstations-servers/',        // ProLiant / PowerEdge
+        222 => '/it-products/monitors-displays/monitors/',            // LCD monitor
+        567 => '/it-products/monitors-displays/projectors-screens/',  // projector
+
+        // IT products — accessories, storage, networking
+        195 => '/it-products/computer-accessories/keyboards-mice/',   // mouse / keyboard
+        1637 => '/it-products/computer-accessories/headsets-audio/',  // earset / headset
+        2315 => '/it-products/computer-accessories/headsets-audio/',  // speaker bar
+        1285 => '/it-products/computer-accessories/laptop-bags-cases/', // carrying case
+        1823 => '/it-products/storage-memory/external-hard-drives/',  // external HDD
+        258 => '/it-products/networking/switches-adapters/',          // ProCurve / PowerConnect
+
+        // Printers & consumables
+        235 => '/printers-consumables/printers/laser-printers/',      // laser printer
+        230 => '/printers-consumables/printers/large-format-plotters/', // DesignJet
+        225 => '/printers-consumables/printers/all-in-one-printers/', // OfficeJet all-in-one
+        302 => '/printers-consumables/copiers/',                      // copier
+        197 => '/printers-consumables/scanners/',                     // Scanjet
+        377 => '/printers-consumables/ink-toner/ink-cartridges/',     // inkjet cartridge
+        846 => '/printers-consumables/ink-toner/ink-cartridges/',     // large-format ink
+        375 => '/printers-consumables/ink-toner/toner-cartridges/',   // toner cartridge
+        381 => '/printers-consumables/ink-toner/drums-maintenance-kits/', // imaging drum
+        379 => '/printers-consumables/ink-toner/drums-maintenance-kits/', // maintenance kit
     ],
 ];
