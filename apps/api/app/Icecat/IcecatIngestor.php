@@ -111,17 +111,21 @@ final class IcecatIngestor
             $tmp = null;
 
             try {
+                $ext = pathinfo((string) (parse_url($url, PHP_URL_PATH) ?: ''), PATHINFO_EXTENSION) ?: 'jpg';
+                $tmp = tempnam(sys_get_temp_dir(), 'icecat').'.'.strtolower($ext);
+
+                // Stream straight to disk. Icecat's high-res originals are
+                // multi-megabyte (4200px), and buffering each one in memory via
+                // ->body() exhausted the CLI memory limit over a batch; sink()
+                // writes the response body to the file without holding it.
                 $response = Http::timeout((int) config('icecat.timeout', 45))
                     ->retry(2, 1500, throw: false)
+                    ->sink($tmp)
                     ->get($url);
 
                 if (! $response->successful()) {
                     continue;
                 }
-
-                $ext = pathinfo((string) (parse_url($url, PHP_URL_PATH) ?: ''), PATHINFO_EXTENSION) ?: 'jpg';
-                $tmp = tempnam(sys_get_temp_dir(), 'icecat').'.'.strtolower($ext);
-                file_put_contents($tmp, $response->body());
 
                 $media = $this->media->ingest($tmp, [
                     'alt_text' => $product->name,

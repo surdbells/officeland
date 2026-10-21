@@ -64,6 +64,11 @@ final class DiscoverFromIcecat extends Command
 
     public function handle(IcecatClient $client, IcecatIngestor $ingestor): int
     {
+        // Headroom for image work: generating derivatives from Icecat's 4200px
+        // originals needs more than the 128 MB CLI default, even with downloads
+        // streamed to disk.
+        @ini_set('memory_limit', '512M');
+
         $brand = Str::lower(trim((string) $this->option('brand')));
 
         if ($brand === '') {

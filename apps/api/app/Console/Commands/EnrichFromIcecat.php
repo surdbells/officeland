@@ -60,6 +60,10 @@ final class EnrichFromIcecat extends Command
 
     public function handle(IcecatClient $client, IcecatIngestor $ingestor): int
     {
+        // Headroom for generating image derivatives from Icecat's 4200px
+        // originals - more than the 128 MB CLI default.
+        @ini_set('memory_limit', '512M');
+
         if ((string) config('icecat.username') === '') {
             $this->warn('ICECAT_USERNAME is not set; relying on IP whitelisting alone. '.
                 'If every lookup misses, that is the likely cause.');
