@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Brands\Tables;
 
+use App\Models\Brand;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
@@ -23,8 +25,12 @@ final class BrandsTable
             // products only - so brands whose catalogue is still draft (e.g. a
             // fresh Icecat import) read as 0 there. The admin wants the true
             // total it is managing, drafts included.
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->withCount('products'))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->withCount('products')->with('logoMedia.derivatives'))
             ->columns([
+                ImageColumn::make('logo')
+                    ->label('')
+                    ->getStateUsing(fn (Brand $record): ?string => $record->logoMedia?->previewUrl())
+                    ->height(36),
                 TextColumn::make('name')->searchable()->sortable(),
                 TextColumn::make('slug')->searchable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('products_count')->label('Products')->numeric()->sortable(),

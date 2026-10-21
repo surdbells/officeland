@@ -80,6 +80,30 @@ final class IcecatDocument
             : null;
     }
 
+    /**
+     * The supplier/brand logo URL Icecat carries on the <Supplier> element, if
+     * any. Icecat exposes it at a few attribute names depending on tier; the
+     * high-res one is preferred.
+     */
+    public function supplierLogoUrl(): ?string
+    {
+        $supplier = $this->product->Supplier ?? null;
+
+        if (! $supplier instanceof SimpleXMLElement) {
+            return null;
+        }
+
+        foreach (['LogoHighPic', 'LogoPic', 'LogoMediumPic', 'LogoLowPic'] as $attr) {
+            $url = trim((string) ($supplier[$attr] ?? ''));
+
+            if ($url !== '' && str_starts_with($url, 'http')) {
+                return $url;
+            }
+        }
+
+        return null;
+    }
+
     /** @return list<string> */
     public function eans(): array
     {

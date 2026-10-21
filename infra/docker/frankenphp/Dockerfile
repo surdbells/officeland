@@ -47,6 +47,10 @@ RUN install-php-extensions \
         libheif1 \
         libheif-plugin-aomenc \
         libaom3 \
+        # Generated brand-logo monograms (catalogue:brand-logos) render text
+        # with GD's imagettftext, which needs a real TTF; pin one so it is there
+        # whatever the base image ships.
+        fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 # libvips42 alone can READ avif but not WRITE it: heifsave fails with
