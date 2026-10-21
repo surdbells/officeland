@@ -108,6 +108,24 @@ if [ "$BUILD" = "1" ]; then
     done
     log 'Render build is ready'
 
+    # Build output existing is not the same as the SSR server listening: the
+    # entrypoint starts `node` only after the freshly built bundle is swapped in,
+    # so there is a window where the files are there but nothing answers on the
+    # port. The gates crawl that port (localhost:$PORT); firing into it too early
+    # renders nothing and fails the snapshot gate at once (0 pages in ~0.2s). So
+    # wait until the server actually answers before gating.
+    log 'Waiting for the SSR renderer to start serving'
+    attempts=0
+    until docker compose exec -T render sh -lc \
+        'node -e "require(\"http\").get(\"http://localhost:\"+(process.env.PORT||4000)+\"/\",r=>process.exit(r.statusCode<500?0:1)).on(\"error\",()=>process.exit(1))"' 2>/dev/null; do
+        attempts=$((attempts + 1))
+        if [ "$attempts" -ge 60 ]; then
+            die 'The SSR renderer did not start serving within ~10 minutes. Check: docker compose logs render'
+        fi
+        sleep 10
+    done
+    log 'SSR renderer is serving'
+
     log 'Regenerating the Content-Security-Policy'
     docker compose exec -T render sh -lc 'node tools/csp-hashes.mjs --write' >/dev/null
 
