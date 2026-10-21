@@ -232,6 +232,7 @@ final class DiscoverFromIcecat extends Command
     {
         $brand = $this->brand($document->brandName() ?? ucfirst($brandKey));
         $name = $document->title() ?? $entry['model_name'] ?? ('Product '.$entry['product_id']);
+        $category = $this->category($entry['catid']);
 
         $product = Product::query()->create([
             'uuid' => (string) Str::uuid(),
@@ -242,13 +243,21 @@ final class DiscoverFromIcecat extends Command
             'mpn' => $document->mpn() ?? $entry['mpn'],
             'ean' => $entry['ean'],
             'icecat_id' => $entry['product_id'],
-            'primary_category_id' => $this->category($entry['catid'])?->id,
-            // Draft + not indexable: the review step assigns a category, rewrites
-            // the prose (D-015) and publishes. Never live straight from import.
+            'primary_category_id' => $category?->id,
+            // Draft + not indexable: the review step rewrites the prose (D-015),
+            // assigns a category if none mapped, and publishes. Never live
+            // straight from import.
             'status' => 'draft',
             'is_indexable' => false,
             'source' => 'icecat',
         ]);
+
+        // Attach the category pivot too, not just primary_category_id: category
+        // LISTINGS query the product_category pivot, so without this the product
+        // would have a breadcrumb/URL but never appear on its category page.
+        if ($category !== null) {
+            $product->categories()->syncWithoutDetaching([$category->id => ['sort_order' => 0]]);
+        }
 
         // New product has no media, so images download; force is irrelevant.
         $ingestor->write($product, $document, forceImages: true);
