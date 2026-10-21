@@ -41,6 +41,22 @@ if ! grep -q '^APP_KEY=base64:' /app/.env 2>/dev/null; then
     php artisan key:generate --force --no-interaction
 fi
 
+# Refresh the autoloader against the current source.
+#
+# Code lives on the bind mount (./apps/api), but vendor/ — and with it
+# Composer's classmap — is a NAMED VOLUME that survives deploys and shadows the
+# classmap the image build dumped. So a class added since that volume was last
+# dumped (a new Filament resource, say) is absent from the classmap, and under
+# an optimized/authoritative autoloader it never loads: the admin panel simply
+# does not show it, and the route:cache below bakes that omission in. Dumping
+# here, before anything boots the framework, keeps the classmap honest on every
+# deploy without anyone having to remember.
+if command -v composer >/dev/null 2>&1; then
+    log "refreshing the autoloader"
+    composer dump-autoload --optimize --no-interaction --working-dir=/app >/dev/null 2>&1 \
+        || err "composer dump-autoload failed; new classes may be missing"
+fi
+
 # Octane holds the framework in memory, so stale cached config survives a
 # deploy. Clearing on boot is cheap and removes a whole class of confusion.
 php artisan config:clear --no-interaction >/dev/null 2>&1 || true
