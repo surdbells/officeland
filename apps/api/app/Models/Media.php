@@ -51,6 +51,12 @@ final class Media extends Model
      * A public URL for previewing this image (admin thumbnails, etc.): the
      * smallest derivative when one exists, otherwise the original. Derivatives
      * are content-addressed under the /media prefix Caddy serves.
+     *
+     * Returned ABSOLUTE (via url()), not root-relative: Filament's ImageColumn
+     * only renders a value it recognises as a URL and silently drops a bare
+     * "/media/..." path (empty src, no thumbnail). url() builds it from the
+     * current request host, so it is correct on localhost and in production
+     * without hardcoding either.
      */
     public function previewUrl(): string
     {
@@ -60,7 +66,7 @@ final class Media extends Model
 
         $path = $derivative->path ?? $this->path;
 
-        return rtrim((string) config('media.public_prefix'), '/').'/'.ltrim((string) $path, '/');
+        return url(rtrim((string) config('media.public_prefix'), '/').'/'.ltrim((string) $path, '/'));
     }
 
     /**
