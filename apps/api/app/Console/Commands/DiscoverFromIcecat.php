@@ -45,6 +45,8 @@ final class DiscoverFromIcecat extends Command
         {--brand= : Brand to import (key from config/icecat.php suppliers, e.g. dell).}
         {--apply : Create products. Without this the command only reports.}
         {--limit=0 : Maximum index entries to process (0 = no limit).}
+        {--catids= : Comma-separated Icecat category ids to import; others are skipped.}
+        {--survey : List the brand\'s category ids and their product counts, then exit (no fetches).}
         {--dump : Fetch and print each data-sheet summary, creating nothing.}
         {--refresh-index : Re-download the repository index even if the cache is fresh.}
         {--sleep=250 : Milliseconds to pause between products.}';
@@ -84,10 +86,21 @@ final class DiscoverFromIcecat extends Command
             return self::FAILURE;
         }
 
+        if ($this->option('survey')) {
+            return $this->survey($indexPath, (int) $supplierId, $brand);
+        }
+
         $apply = (bool) $this->option('apply');
         $dump = (bool) $this->option('dump');
         $limit = (int) $this->option('limit');
         $sleepMs = (int) $this->option('sleep');
+
+        // Optional category filter: import only these Icecat category ids. Use
+        // `--survey` first to see which ids a brand carries.
+        $catids = array_values(array_filter(array_map(
+            static fn ($c) => (int) trim($c),
+            explode(',', (string) $this->option('catids')),
+        )));
 
         $this->info("Scanning the index for supplier {$supplierId} ({$brand})…");
 
@@ -95,6 +108,13 @@ final class DiscoverFromIcecat extends Command
             if ($limit > 0 && $this->seen >= $limit) {
                 break;
             }
+
+            // Category filter is applied before the limit/fetch so --limit counts
+            // only the products we would actually import.
+            if ($catids !== [] && ! in_array($entry['catid'], $catids, true)) {
+                continue;
+            }
+
             $this->seen++;
 
             // Dedup: an Icecat product already imported is left alone.
@@ -148,6 +168,45 @@ final class DiscoverFromIcecat extends Command
         }
 
         $this->report($apply, $dump);
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Stream the index for a brand and tally products per Icecat category, with
+     * a sample product name so each category is identifiable at a glance - the
+     * fast way to pick which categories to import, with no data-sheet fetches.
+     */
+    private function survey(string $indexPath, int $supplierId, string $brand): int
+    {
+        $this->info("Surveying supplier {$supplierId} ({$brand}) — category distribution (no fetches)…");
+
+        $counts = [];
+        $samples = [];
+        $total = 0;
+
+        foreach (IcecatIndex::stream('compress.zlib://'.$indexPath, [$supplierId]) as $entry) {
+            $cid = $entry['catid'] ?? 0;
+            $counts[$cid] = ($counts[$cid] ?? 0) + 1;
+            $samples[$cid] ??= $entry['model_name'] ?? '';
+            $total++;
+        }
+
+        arsort($counts);
+
+        $rows = [];
+        foreach ($counts as $cid => $n) {
+            $rows[] = [
+                $cid ?: '(none)',
+                $n,
+                config("icecat.category_map.{$cid}") ?? '—',
+                Str::limit((string) $samples[$cid], 48),
+            ];
+        }
+
+        $this->table(['Catid', 'Products', 'Mapped to', 'Sample product'], $rows);
+        $this->info("{$brand}: {$total} on-market, full-data products across ".count($counts).' categories.');
+        $this->line('Pick the categories to import, then: --apply --catids=<id,id,...>');
 
         return self::SUCCESS;
     }
