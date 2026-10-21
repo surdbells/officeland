@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ImageResource;
+use App\Models\Announcement;
 use App\Models\Category;
 use App\Models\Media;
 use Illuminate\Http\JsonResponse;
@@ -57,6 +58,12 @@ final class NavigationController extends Controller
                     $this->brandsByDepartment(),
                     $this->departmentHeroes($categories),
                 ),
+                // Global chrome, not a department: the site-wide banner the
+                // header renders. Rides on the navigation payload because every
+                // page already loads it, so it needs no endpoint of its own.
+                // Inside the same hour cache, which is why saving an
+                // announcement in admin forgets this key.
+                'announcement' => $this->announcement(),
             ];
         });
 
@@ -100,6 +107,31 @@ final class NavigationController extends Controller
         }
 
         return $nodes;
+    }
+
+    /**
+     * The one announcement the storefront should show, or null.
+     *
+     * The first that is active and inside its date window, lowest sort_order
+     * first - the Announcement::scopeLive order. Null when nothing is live, and
+     * the header renders no bar.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function announcement(): ?array
+    {
+        $announcement = Announcement::query()->live()->first();
+
+        if ($announcement === null) {
+            return null;
+        }
+
+        return [
+            'message' => $announcement->message,
+            'url' => $announcement->url,
+            'link_label' => $announcement->link_label,
+            'variant' => $announcement->variant,
+        ];
     }
 
     /**

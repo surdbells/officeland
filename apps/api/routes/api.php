@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\BasketController;
 use App\Http\Controllers\Api\V1\BrandController;
 use App\Http\Controllers\Api\V1\CategoryController;
+use App\Http\Controllers\Api\V1\HomeController;
 use App\Http\Controllers\Api\V1\MailWebhookController;
 use App\Http\Controllers\Api\V1\NavigationController;
 use App\Http\Controllers\Api\V1\ProductController;
@@ -31,6 +32,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.')->middleware('throttle:catalogue')->group(function (): void {
     Route::get('navigation', NavigationController::class)->name('navigation');
+
+    // Curated homepage content (hero, category tiles, best-sellers). Empty
+    // sections fall back to the storefront's built-in derived behaviour.
+    Route::get('home', HomeController::class)->name('home');
 
     Route::get('brands', [BrandController::class, 'index'])->name('brands.index');
     Route::get('brands/{brand}', [BrandController::class, 'show'])->name('brands.show');

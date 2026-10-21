@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/api/v1/home": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Homepage content
+         * @description Curated homepage content. Empty sections mean the storefront keeps its built-in derived behaviour.
+         */
+        get: operations["getHome"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/navigation": {
         parameters: {
             query?: never;
@@ -148,14 +168,8 @@ export interface components {
             url: string;
             depth: number;
             intro_copy?: string | null;
-            /** @description The category hero image, or null. Rendered as a <picture>; the storefront falls back to a typographic treatment when absent, so an image is always an improvement and never a prerequisite. */
-            hero?: components["schemas"]["Image"] | null;
             description_html?: string | null;
             product_count?: number;
-            /** @description The nearest ancestor category's hero, returned only when this category has none of its own. Used for the page hero so every category page carries an image; NOT used for chips or child cards, where inheriting would show one photograph five times. */
-            hero_inherited?: components["schemas"]["Image"] | null;
-            /** @description Categories alongside this one, returned only when it has no children of its own. Drives the chip row on a leaf page. */
-            siblings?: components["schemas"]["Category"][];
             /** @description Rendered as real crawlable anchors on every category page (D-011). */
             children?: components["schemas"]["Category"][];
             /** @description Every product in a LEAF category, as crawlable {name, url} anchors. A leaf sits at <=2 clicks from home, so linking its products directly here keeps them within the 3-click budget (SEO_SPEC 10.5) regardless of how many pages the paginated grid spans. Absent on non-leaf categories, whose products are reached through their own leaves. */
@@ -163,7 +177,7 @@ export interface components {
             breadcrumb?: components["schemas"]["BreadcrumbItem"][];
             seo?: components["schemas"]["Seo"];
         };
-        /** @description One image, shaped for a <picture> element (section 12.5). Only derivatives that actually exist are advertised — generation is resumable, so a srcset must never promise a 404. */
+        /** @description One image, shaped for a <picture> element (section 12.5). Only derivatives that actually exist are advertised - generation is resumable, so a srcset must never promise a 404. */
         Image: {
             /** Format: uuid */
             uuid: string;
@@ -199,8 +213,6 @@ export interface components {
             mpn?: string | null;
             model_code?: string | null;
             brand?: components["schemas"]["Brand"] | null;
-            /** @description A sentence or two for the card, clamped by the storefront. The full description_html stays on the PDP payload. */
-            short_description?: string | null;
             /** @enum {string} */
             availability: "in_stock" | "limited" | "made_to_order" | "lead_time" | "discontinued";
             lead_time_days?: number | null;
@@ -220,6 +232,31 @@ export interface components {
             }[];
             /** @description The primary image only. A 24-item grid does not need four gallery shots per card. */
             image?: components["schemas"]["Image"] | null;
+        };
+        /** @description One slide of the homepage hero carousel. Managed in admin; the storefront falls back to department-derived slides when none are active. */
+        HeroSlide: {
+            headline: string;
+            subheadline?: string | null;
+            cta_label?: string | null;
+            cta_url?: string | null;
+            secondary_cta_label?: string | null;
+            secondary_cta_url?: string | null;
+            image?: components["schemas"]["Image"] | null;
+        };
+        /** @description One tile in the homepage "Shop by category" grid - a curated pointer to a category. */
+        HomeCategoryTile: {
+            name: string;
+            /** @example /c/it-products/computers/laptops/ */
+            url: string;
+            product_count: number;
+            image?: components["schemas"]["Image"] | null;
+        };
+        /** @description Editorial content for the homepage. Every section is optional: an empty array means the storefront keeps its built-in derived behaviour for that section. */
+        Home: {
+            hero_slides: components["schemas"]["HeroSlide"][];
+            category_picks: components["schemas"]["HomeCategoryTile"][];
+            /** @description The curated "best sellers" band. Empty means the storefront fills the band from the catalogue instead. */
+            product_picks: components["schemas"]["ProductCard"][];
         };
         /** @description Specifications arrive already grouped from the source (Icecat CategoryFeatureGroup). */
         SpecificationGroup: {
@@ -245,6 +282,7 @@ export interface components {
             ean?: string | null;
             primary_category?: components["schemas"]["Category"] | null;
             breadcrumb?: components["schemas"]["BreadcrumbItem"][];
+            short_description?: string | null;
             description_html?: string | null;
             warranty_text?: string | null;
             /** @description The full gallery, primary first. The storefront gives the first image fetchpriority=high as the LCP element. */
@@ -308,6 +346,28 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getHome: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["Home"];
+                    };
+                };
+            };
+        };
+    };
     getNavigation: {
         parameters: {
             query?: never;

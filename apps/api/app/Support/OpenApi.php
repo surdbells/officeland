@@ -38,6 +38,7 @@ use OpenApi\Attributes as OA;
     ],
     tags: [
         new OA\Tag(name: 'Navigation', description: 'Category tree and featured brands'),
+        new OA\Tag(name: 'Home', description: 'Homepage editorial content'),
         new OA\Tag(name: 'Categories', description: 'Category pages and listings'),
         new OA\Tag(name: 'Products', description: 'Product detail'),
         new OA\Tag(name: 'Brands', description: 'Brand hubs and listings'),
@@ -199,6 +200,49 @@ use OpenApi\Attributes as OA;
             description: 'The primary image only. A 24-item grid does not need four gallery shots per card.',
             ref: '#/components/schemas/Image',
             nullable: true,
+        ),
+    ],
+    type: 'object',
+)]
+#[OA\Schema(
+    schema: 'HeroSlide',
+    description: 'One slide of the homepage hero carousel. Managed in admin; the storefront falls back to department-derived slides when none are active.',
+    required: ['headline'],
+    properties: [
+        new OA\Property(property: 'headline', type: 'string'),
+        new OA\Property(property: 'subheadline', type: 'string', nullable: true),
+        new OA\Property(property: 'cta_label', type: 'string', nullable: true),
+        new OA\Property(property: 'cta_url', type: 'string', nullable: true),
+        new OA\Property(property: 'secondary_cta_label', type: 'string', nullable: true),
+        new OA\Property(property: 'secondary_cta_url', type: 'string', nullable: true),
+        new OA\Property(property: 'image', ref: '#/components/schemas/Image', nullable: true),
+    ],
+    type: 'object',
+)]
+#[OA\Schema(
+    schema: 'HomeCategoryTile',
+    description: 'One tile in the homepage "Shop by category" grid - a curated pointer to a category.',
+    required: ['name', 'url', 'product_count'],
+    properties: [
+        new OA\Property(property: 'name', type: 'string'),
+        new OA\Property(property: 'url', type: 'string', example: '/c/it-products/computers/laptops/'),
+        new OA\Property(property: 'product_count', type: 'integer'),
+        new OA\Property(property: 'image', ref: '#/components/schemas/Image', nullable: true),
+    ],
+    type: 'object',
+)]
+#[OA\Schema(
+    schema: 'Home',
+    description: 'Editorial content for the homepage. Every section is optional: an empty array means the storefront keeps its built-in derived behaviour for that section.',
+    required: ['hero_slides', 'category_picks', 'product_picks'],
+    properties: [
+        new OA\Property(property: 'hero_slides', type: 'array', items: new OA\Items(ref: '#/components/schemas/HeroSlide')),
+        new OA\Property(property: 'category_picks', type: 'array', items: new OA\Items(ref: '#/components/schemas/HomeCategoryTile')),
+        new OA\Property(
+            property: 'product_picks',
+            description: 'The curated "best sellers" band. Empty means the storefront fills the band from the catalogue instead.',
+            type: 'array',
+            items: new OA\Items(ref: '#/components/schemas/ProductCard'),
         ),
     ],
     type: 'object',

@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: 'OfficeLand Catalogue API'
-  description: "Public catalogue endpoints for the OfficeLand storefront.\n\nThe storefront is prerendered to static HTML, so these endpoints are\nconsumed mainly by the build-time render worker and by client-side\nfacet filtering — not on the critical path of a page view.\n\nNo prices are returned anywhere: OfficeLand is quote-first, and\n`pricing_mode` drives the call to action from data rather than from a\nhardcoded rule."
+  description: "Public catalogue endpoints for the OfficeLand storefront.\n\nThe storefront is prerendered to static HTML, so these endpoints are\nconsumed mainly by the build-time render worker and by client-side\nfacet filtering - not on the critical path of a page view.\n\nNo prices are returned anywhere: OfficeLand is quote-first, and\n`pricing_mode` drives the call to action from data rather than from a\nhardcoded rule."
   version: 1.0.0
 servers:
   -
@@ -11,6 +11,22 @@ servers:
     url: 'http://localhost:8095'
     description: 'Local development'
 paths:
+  /api/v1/home:
+    get:
+      tags:
+        - Home
+      summary: 'Homepage content'
+      description: 'Curated homepage content. Empty sections mean the storefront keeps its built-in derived behaviour.'
+      operationId: getHome
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                properties:
+                  data: { $ref: '#/components/schemas/Home' }
+                type: object
   /api/v1/navigation:
     get:
       tags:
@@ -217,27 +233,12 @@ components:
           type:
             - string
             - 'null'
-        hero:
-          description: 'The category hero image, or null. Rendered as a <picture>; the storefront falls back to a typographic treatment when absent, so an image is always an improvement and never a prerequisite.'
-          oneOf:
-            - $ref: '#/components/schemas/Image'
-            - type: 'null'
         description_html:
           type:
             - string
             - 'null'
         product_count:
           type: integer
-        hero_inherited:
-          description: 'The nearest ancestor category''s hero, returned only when this category has none of its own. Used for the page hero so every category page carries an image; NOT used for chips or child cards, where inheriting would show one photograph five times.'
-          oneOf:
-            - $ref: '#/components/schemas/Image'
-            - type: 'null'
-        siblings:
-          description: 'Categories alongside this one, returned only when it has no children of its own. Drives the chip row on a leaf page.'
-          type: array
-          items:
-            $ref: '#/components/schemas/Category'
         children:
           description: 'Rendered as real crawlable anchors on every category page (D-011).'
           type: array
@@ -256,7 +257,7 @@ components:
           $ref: '#/components/schemas/Seo'
       type: object
     Image:
-      description: 'One image, shaped for a <picture> element (section 12.5). Only derivatives that actually exist are advertised — generation is resumable, so a srcset must never promise a 404.'
+      description: 'One image, shaped for a <picture> element (section 12.5). Only derivatives that actually exist are advertised - generation is resumable, so a srcset must never promise a 404.'
       required:
         - uuid
         - alt
@@ -341,11 +342,6 @@ components:
               $ref: '#/components/schemas/Brand'
             -
               type: 'null'
-        short_description:
-          description: 'A sentence or two for the card, clamped by the storefront. The full description_html stays on the PDP payload.'
-          type:
-            - string
-            - 'null'
         availability:
           type: string
           enum:
@@ -393,6 +389,82 @@ components:
             -
               type: 'null'
           description: 'The primary image only. A 24-item grid does not need four gallery shots per card.'
+      type: object
+    HeroSlide:
+      description: 'One slide of the homepage hero carousel. Managed in admin; the storefront falls back to department-derived slides when none are active.'
+      required:
+        - headline
+      properties:
+        headline:
+          type: string
+        subheadline:
+          type:
+            - string
+            - 'null'
+        cta_label:
+          type:
+            - string
+            - 'null'
+        cta_url:
+          type:
+            - string
+            - 'null'
+        secondary_cta_label:
+          type:
+            - string
+            - 'null'
+        secondary_cta_url:
+          type:
+            - string
+            - 'null'
+        image:
+          oneOf:
+            -
+              $ref: '#/components/schemas/Image'
+            -
+              type: 'null'
+      type: object
+    HomeCategoryTile:
+      description: 'One tile in the homepage "Shop by category" grid - a curated pointer to a category.'
+      required:
+        - name
+        - url
+        - product_count
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+          example: /c/it-products/computers/laptops/
+        product_count:
+          type: integer
+        image:
+          oneOf:
+            -
+              $ref: '#/components/schemas/Image'
+            -
+              type: 'null'
+      type: object
+    Home:
+      description: 'Editorial content for the homepage. Every section is optional: an empty array means the storefront keeps its built-in derived behaviour for that section.'
+      required:
+        - hero_slides
+        - category_picks
+        - product_picks
+      properties:
+        hero_slides:
+          type: array
+          items:
+            $ref: '#/components/schemas/HeroSlide'
+        category_picks:
+          type: array
+          items:
+            $ref: '#/components/schemas/HomeCategoryTile'
+        product_picks:
+          description: 'The curated "best sellers" band. Empty means the storefront fills the band from the catalogue instead.'
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductCard'
       type: object
     SpecificationGroup:
       description: 'Specifications arrive already grouped from the source (Icecat CategoryFeatureGroup).'
@@ -445,6 +517,10 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/BreadcrumbItem'
+            short_description:
+              type:
+                - string
+                - 'null'
             description_html:
               type:
                 - string
@@ -587,9 +663,11 @@ tags:
     name: Navigation
     description: 'Category tree and featured brands'
   -
+    name: Home
+    description: 'Homepage editorial content'
+  -
     name: Products
     description: 'Product detail'
   -
     name: Search
     description: Search
-
