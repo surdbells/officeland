@@ -6,10 +6,8 @@ namespace App\Console\Commands;
 
 use App\Icecat\IcecatClient;
 use App\Icecat\IcecatDocument;
+use App\Icecat\IcecatImporter;
 use App\Icecat\IcecatIndex;
-use App\Icecat\IcecatIngestor;
-use App\Models\Brand;
-use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
@@ -51,19 +49,23 @@ final class DiscoverFromIcecat extends Command
         {--dump : Fetch and print each data-sheet summary, creating nothing.}
         {--publish : Activate a product immediately if it imported with an image (kept noindex). Ignored with --queue-derivatives.}
         {--queue-derivatives : Dispatch derivative generation to the queue for parallel workers, instead of generating inline (much faster for bulk).}
-        {--max-images=10 : Maximum high-res images to mirror per product.}
+        {--max-images= : Maximum high-res images to mirror per product (default: config icecat.max_images).}
         {--refresh-index : Re-download the repository index even if the cache is fresh.}
         {--sleep=250 : Milliseconds to pause between products.}';
 
     protected $description = 'Discover and import new products from Icecat for a brand';
 
     private int $seen = 0;
+
     private int $created = 0;
+
     private int $publishedNow = 0;
+
     private int $skippedExisting = 0;
+
     private int $missed = 0;
 
-    public function handle(IcecatClient $client, IcecatIngestor $ingestor): int
+    public function handle(IcecatClient $client, IcecatImporter $importer): int
     {
         // Headroom for image work: generating derivatives from Icecat's 4200px
         // originals needs more than the 128 MB CLI default, even with downloads
@@ -170,7 +172,7 @@ final class DiscoverFromIcecat extends Command
 
             if ($apply) {
                 try {
-                    $this->create($entry, $document, $brand, $ingestor);
+                    $this->create($entry, $document, $brand, $importer);
                     $this->created++;
                 } catch (Throwable $e) {
                     $this->warn("  failed: id {$entry['product_id']} - {$e->getMessage()}");
@@ -232,60 +234,24 @@ final class DiscoverFromIcecat extends Command
     }
 
     /**
-     * Create the draft product shell, then let the shared ingestor write images,
-     * specs, relations and facts onto it.
+     * Create the draft product via the shared importer, then optionally publish.
      *
      * @param  array{product_id: int, mpn: ?string, supplier_id: int, catid: ?int, model_name: ?string, ean: ?string}  $entry
      */
-    private function create(array $entry, IcecatDocument $document, string $brandKey, IcecatIngestor $ingestor): void
+    private function create(array $entry, IcecatDocument $document, string $brandKey, IcecatImporter $importer): void
     {
-        $brand = $this->brand($document->brandName() ?? ucfirst($brandKey));
-        $name = $document->title() ?? $entry['model_name'] ?? ('Product '.$entry['product_id']);
-        $category = $this->category($entry['catid']);
-
-        $product = Product::query()->create([
-            'uuid' => (string) Str::uuid(),
-            'name' => $name,
-            'slug' => $this->uniqueSlug($name, $entry['product_id']),
-            'brand_id' => $brand->id,
-            'brand_name_cached' => $brand->name,
-            'mpn' => $document->mpn() ?? $entry['mpn'],
-            'ean' => $entry['ean'],
-            'icecat_id' => $entry['product_id'],
-            'primary_category_id' => $category?->id,
-            // Draft + not indexable: the review step rewrites the prose (D-015),
-            // assigns a category if none mapped, and publishes. Never live
-            // straight from import.
-            'status' => 'draft',
-            'is_indexable' => false,
-            'source' => 'icecat',
-        ]);
-
-        // Attach the category pivot too, not just primary_category_id: category
-        // LISTINGS query the product_category pivot, so without this the product
-        // would have a breadcrumb/URL but never appear on its category page.
-        if ($category !== null) {
-            $product->categories()->syncWithoutDetaching([$category->id => ['sort_order' => 0]]);
-        }
-
-        // New product has no media, so force is irrelevant. Mirror up to
-        // --max-images high-res shots (HighPic + the gallery originals, low-res
-        // duplicates already excluded by the parser).
-        $maxImages = max(1, (int) $this->option('max-images'));
+        $maxImages = $this->option('max-images') !== null
+            ? max(1, (int) $this->option('max-images'))
+            : (int) config('icecat.max_images', 3);
         $queueDerivatives = (bool) $this->option('queue-derivatives');
-        $stats = $ingestor->write(
-            $product,
-            $document,
-            forceImages: true,
-            maxImages: $maxImages,
-            queueDerivatives: $queueDerivatives,
-        );
+
+        $product = $importer->createFrom($entry, $document, $brandKey, $maxImages, $queueDerivatives);
 
         // Auto-publish inline only when derivatives were generated inline. With
         // --queue-derivatives the images are not renderable yet (src is null
         // until a worker finishes), so publishing is left to catalogue:icecat-
         // publish, which gates on a derivative existing.
-        if (! $queueDerivatives && $this->option('publish') && $stats['images'] > 0 && $product->primary_category_id !== null) {
+        if (! $queueDerivatives && $this->option('publish') && $product->media()->exists() && $product->primary_category_id !== null) {
             $product->status = 'active';
             $product->published_at ??= now();
             $product->save();
@@ -335,37 +301,6 @@ final class DiscoverFromIcecat extends Command
         $this->line('Index downloaded ('.$this->humanSize(filesize($path) ?: 0).').');
 
         return $path;
-    }
-
-    private function brand(string $name): Brand
-    {
-        return Brand::query()->firstOrCreate(
-            ['slug' => Str::slug($name)],
-            ['uuid' => (string) Str::uuid(), 'name' => $name],
-        );
-    }
-
-    private function category(?int $catid): ?Category
-    {
-        if ($catid === null) {
-            return null;
-        }
-
-        $path = config("icecat.category_map.{$catid}");
-
-        return $path !== null ? Category::query()->where('path', $path)->first() : null;
-    }
-
-    /** A slug unique against existing products; the Icecat id disambiguates. */
-    private function uniqueSlug(string $name, int $icecatId): string
-    {
-        $base = rtrim(Str::limit(Str::slug($name) ?: 'product', 180, ''), '-');
-
-        if (! Product::query()->where('slug', $base)->exists()) {
-            return $base;
-        }
-
-        return $base.'-'.$icecatId;
     }
 
     /** "2023", "2023-05" or "2023-05-10" → YYYYMMDD int, or null. */

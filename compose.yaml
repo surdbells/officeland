@@ -160,6 +160,74 @@ services:
       start_period: 90s
     restart: unless-stopped
 
+  # Always-on queue worker: drains the import and media queues in the background.
+  #
+  # Without this, queued work (Icecat import jobs, image derivatives) simply never
+  # ran in production — a bulk import either had to generate images inline in a
+  # fragile foreground command, or queued jobs that nobody consumed. This worker
+  # processes them steadily, resiliently and OFF the request path, so a large
+  # import can never again compete with live traffic or die with an SSH session.
+  #
+  # Bounded on purpose: --max-time recycles the process hourly (fresh memory, and
+  # it re-reads code/autoload on restart), --memory makes it exit before it grows
+  # too large, and the container limits below cap it so a runaway job can take at
+  # most this worker down — never the whole box or the api.
+  worker:
+    # Same image as api (same Dockerfile/target); Docker's layer cache means this
+    # second build is near-instant after the api build. Just a different command.
+    build:
+      context: .
+      dockerfile: infra/docker/frankenphp/Dockerfile
+      target: ${BUILD_TARGET:-dev}
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_URL: ${APP_URL:-http://localhost:8095}
+      DB_CONNECTION: pgsql
+      DB_HOST: pgbouncer
+      DB_PORT: 6432
+      DB_DATABASE: ${DB_DATABASE:-officeland}
+      DB_USERNAME: ${DB_USERNAME:-officeland}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      DB_DIRECT_HOST: postgres
+      DB_DIRECT_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CACHE_STORE: redis
+      QUEUE_CONNECTION: redis
+      SESSION_DRIVER: redis
+    volumes:
+      - ./apps/api:/app
+      - api_vendor:/app/vendor
+      # Image derivatives are written here, same as the api/CLI paths.
+      - media:/app/storage-media
+    # The image's default entrypoint boots FrankenPHP; the worker runs the queue
+    # instead. It clears stale config and refreshes the autoloader (the vendor
+    # volume shadows the image's classmap, so a newly added job class must be
+    # re-dumped) before consuming jobs. A single `sh -c <script>` entrypoint,
+    # not a folded command: entrypoint+command folding silently truncated the
+    # script to its first word.
+    entrypoint:
+      - sh
+      - -c
+      - |
+        php artisan config:clear >/dev/null 2>&1 || true
+        composer dump-autoload --optimize --no-interaction --working-dir=/app >/dev/null 2>&1 || true
+        exec php artisan queue:work redis --queue=imports,media,default \
+          --sleep=1 --tries=3 --backoff=30 --max-time=3600 --max-jobs=1000 --memory=448 --timeout=300
+    # The worker runs no web server, so the image's HTTP healthcheck would always
+    # fail and report it unhealthy. It is not on the request path, so no probe.
+    healthcheck:
+      disable: true
+    mem_limit: 1536m
+    cpus: 2.0
+    restart: unless-stopped
+
   render:
     build:
       context: .

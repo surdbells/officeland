@@ -206,6 +206,29 @@ Almost always a template change with no full build. See §1.
 ### Everything is slow, including `/health/live`
 See §6.
 
+### The site flaps 502 ("connection refused" to 127.0.0.1:8095)
+The edge (aaPanel nginx) proxies to the `api` container on `127.0.0.1:8095`. A
+`502 connection refused` means nothing was listening *at that instant* — almost
+always the brief window while the `api` container restarts during a deploy
+(`restart: unless-stopped` brings it back in ~15–20s). It is NOT normally memory:
+check first with `free -h` and `dmesg -T | grep -i oom` — the box is 62 GB and an
+OOM would show there. A flood of successful `200`s in `docker compose logs api`
+either side of the gap confirms it was a restart window, not an outage.
+
+Two mitigations:
+- **Run routine deploys with `--no-gate`.** The gate crawls the whole catalogue
+  through the SSR renderer (every page fires many API calls); it is an hour of
+  self-inflicted load and is pure verification — run it deliberately, off-peak.
+- **Let the edge retry the upstream** so a restart is invisible. In the aaPanel
+  site's proxy `location` block (the one pointing at `127.0.0.1:8095`):
+
+  ```nginx
+  proxy_connect_timeout 3s;
+  proxy_next_upstream error timeout http_502 http_503 http_504;
+  proxy_next_upstream_tries 3;
+  proxy_next_upstream_timeout 15s;
+  ```
+
 ---
 
 ## 6. Development-environment performance (Docker Desktop for Windows)
@@ -748,3 +771,79 @@ docker compose restart render          # publish — see §2 step 3
 
 > Seeding the taxonomy does not clear the cache. Until it does, `cache:clear`
 > belongs in the same breath as `db:seed --class=TaxonomySeeder`.
+
+---
+
+## 15. Bulk product import (Icecat)
+
+### 15.1 The worker is what runs the import
+There is an always-on `worker` service (compose.yaml) running `queue:work` over
+the `imports`, `media` and `default` queues. It is what actually drains queued
+work — Icecat import jobs and image derivatives — in the background, off the
+request path. It recycles itself hourly (`--max-time`) and exits if it grows past
+`--memory=448`MB; `restart: unless-stopped` brings it straight back. Its
+container is capped (`mem_limit 1536m`, `cpus 2.0`) so a runaway job can take down
+at most the worker, never the api or the box.
+
+Confirm it is running and consuming:
+
+```bash
+docker compose ps worker
+docker compose logs --tail=30 worker
+docker compose exec -T api php artisan queue:monitor imports,media
+```
+
+### 15.2 Importing a brand (the resilient way)
+Prefer `catalogue:icecat-import` over `catalogue:icecat-discover`. It only
+streams the index and ENQUEUES one small job per new product; the worker does the
+fetching and image work. It survives an SSH disconnect (the jobs outlive your
+shell), retries transient Icecat errors on its own, and spreads the load.
+
+```bash
+# dry run — how many NEW products would be queued
+docker compose exec -T api php artisan catalogue:icecat-import --brand=dell --since=2022
+
+# enqueue them (worker drains in the background)
+docker compose exec -T api php artisan catalogue:icecat-import --brand=dell --since=2022 --apply
+
+# every configured brand in a single index pass
+docker compose exec -T api php artisan catalogue:icecat-import --all --since=2022 --apply
+```
+
+It is resumable: products already imported (dedup by `icecat_id`) are never
+re-queued, so re-running only adds what is new. Each product mirrors at most
+`config('icecat.max_images')` images (default 3).
+
+Then publish the drafts that have a renderable image, specs and a category:
+
+```bash
+docker compose exec -T api php artisan catalogue:icecat-publish --brand=dell --apply
+```
+
+> `catalogue:icecat-discover` still exists for small/interactive runs, but it does
+> the fetching and (optionally inline) image work in one foreground loop — fine
+> for a few hundred products, fragile for a brand with thousands.
+
+### 15.3 Trimming images on already-imported products
+The 3-image cap applies to new imports. To bring older products (imported when
+the cap was higher) into line:
+
+```bash
+docker compose exec -T api php artisan catalogue:trim-product-images --keep=3          # dry run
+docker compose exec -T api php artisan catalogue:trim-product-images --keep=3 --apply
+```
+
+It only removes the product→media links beyond the cap; the content-addressed
+Media rows are kept.
+
+### 15.4 If the queue backs up
+`queue:monitor` shows depth. The worker processes serially per container; to go
+faster, scale it:
+
+```bash
+docker compose up -d --scale worker=3 worker
+```
+
+Watch host memory (`docker stats`) when scaling — each worker can use up to its
+`mem_limit`. The media queue is the slow part (libvips derivatives); the imports
+queue is mostly network wait.

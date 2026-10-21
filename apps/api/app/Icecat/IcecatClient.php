@@ -6,7 +6,9 @@ namespace App\Icecat;
 
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use RuntimeException;
+use Throwable;
 
 /**
  * Fetches a product's XML from the Icecat interface.
@@ -115,7 +117,24 @@ final class IcecatClient
     {
         $request = $this->http
             ->timeout((int) config('icecat.timeout', 45))
-            ->retry(2, 1500, throw: false)
+            // Retry with EXPONENTIAL backoff, and only on the errors worth
+            // retrying - a 429 (rate limit) or a 5xx/timeout. A 404 is a
+            // definitive "not in this tier" and must not be retried; the retry
+            // callback below returns false for it so the miss is fast. When the
+            // server sends Retry-After on a 429, honour it.
+            ->retry(3, function (int $attempt, Throwable $exception): int {
+                $response = $exception instanceof RequestException ? $exception->response : null;
+                $retryAfter = (int) ($response?->header('Retry-After') ?: 0);
+
+                return $retryAfter > 0
+                    ? min($retryAfter, 60) * 1000
+                    : (int) (min(2 ** $attempt, 30) * 1000);
+            }, function (Throwable $exception): bool {
+                $status = $exception instanceof RequestException ? (int) $exception->response->status() : 0;
+
+                // 429 and 5xx are transient; connection errors (status 0) too.
+                return $status === 429 || $status >= 500 || $status === 0;
+            }, throw: false)
             ->acceptJson() // harmless; the server returns XML regardless
             ->withHeaders(['Accept' => 'application/xml, text/xml, */*']);
 

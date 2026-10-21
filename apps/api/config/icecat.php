@@ -50,6 +50,11 @@ return [
 
     'timeout' => (int) env('ICECAT_TIMEOUT', 45),
 
+    // Maximum high-res images mirrored per product. Three is plenty for a
+    // product card plus a small gallery, and every image is 15 derivatives of
+    // CPU and storage - capping it keeps imports fast and the media store lean.
+    'max_images' => (int) env('ICECAT_MAX_IMAGES', 3),
+
     // Where the downloaded index is cached between runs, and how long before it
     // is considered stale and re-fetched.
     'index_cache' => storage_path('app/icecat/files.index.xml.gz'),
