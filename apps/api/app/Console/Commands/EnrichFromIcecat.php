@@ -460,7 +460,17 @@ final class EnrichFromIcecat extends Command
             return null;
         }
 
-        return (float) str_replace(',', '.', $m[0]);
+        $value = (float) str_replace(',', '.', $m[0]);
+
+        // value_numeric is DECIMAL(16,4) - twelve integer digits at most. A
+        // larger number is never a real range facet (it is an EAN or other code
+        // Icecat carries as a spec value) and would overflow the column, failing
+        // the whole product's spec write. Drop it; value_raw still holds it.
+        if (abs($value) >= 1e12) {
+            return null;
+        }
+
+        return $value;
     }
 
     private function countFeatures(IcecatDocument $document): int
