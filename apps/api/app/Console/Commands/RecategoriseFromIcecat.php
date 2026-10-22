@@ -73,7 +73,8 @@ final class RecategoriseFromIcecat extends Command
         $catCache = [];
         $fixed = 0;
         $unmapped = [];
-        $unmappedSample = [];
+        /** @var array<int, list<int>> $unmappedIds icecat_id samples per Catid */
+        $unmappedIds = [];
 
         foreach (IcecatIndex::stream('compress.zlib://'.$indexPath, [(int) $supplierId]) as $entry) {
             if (! $uncategorised->has($entry['product_id'])) {
@@ -85,7 +86,13 @@ final class RecategoriseFromIcecat extends Command
 
             if ($path === null) {
                 $unmapped[$catid] = ($unmapped[$catid] ?? 0) + 1;
-                $unmappedSample[$catid] ??= (string) ($entry['model_name'] ?? '');
+                // Keep a few product ids per Catid so the report can show their
+                // real DB names: the index's model_name is often an opaque
+                // configure-to-order code (e.g. "B91Q6AV") that identifies
+                // nothing, whereas our stored product name is the full title.
+                if (count($unmappedIds[$catid] ?? []) < 3) {
+                    $unmappedIds[$catid][] = $entry['product_id'];
+                }
 
                 continue;
             }
@@ -113,13 +120,27 @@ final class RecategoriseFromIcecat extends Command
 
         if ($unmapped !== []) {
             arsort($unmapped);
+
+            // Resolve the sampled ids to the real product names in one query.
+            $sampleIds = array_merge(...array_values(array_intersect_key(
+                $unmappedIds,
+                array_slice($unmapped, 0, 25, true),
+            )));
+            $names = Product::query()
+                ->whereIn('icecat_id', $sampleIds)
+                ->pluck('name', 'icecat_id');
+
             $rows = [];
             foreach (array_slice($unmapped, 0, 25, true) as $catid => $count) {
-                $rows[] = [$catid ?: '(none)', $count, Str::limit($unmappedSample[$catid] ?? '', 44)];
+                $samples = [];
+                foreach ($unmappedIds[$catid] ?? [] as $id) {
+                    $samples[] = Str::limit((string) ($names[$id] ?? $id), 48);
+                }
+                $rows[] = [$catid ?: '(none)', $count, implode("\n", $samples)];
             }
             $this->newLine();
             $this->warn('Unmapped Icecat Catids (add the useful ones to config/icecat.php category_map, then re-run):');
-            $this->table(['Catid', 'Products', 'Sample product'], $rows);
+            $this->table(['Catid', 'Products', 'Sample products (real names)'], $rows);
         }
 
         if (! $apply) {

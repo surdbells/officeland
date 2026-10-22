@@ -150,6 +150,15 @@ return [
         2926 => '/it-products/networking/switches-adapters/',         // cable (Thunderbolt/USB-C)
         1563 => '/it-products/storage-memory/external-hard-drives/',  // external optical drive
         978 => '/printers-consumables/ink-toner/drums-maintenance-kits/', // printer roller / maintenance kit
+
+        // Added from the HP recategorise survey (2026-10-22), identified by the
+        // real product name. Only Catids with a clear office-catalogue home are
+        // mapped; components (CPUs/GPUs/fans/carriers), industrial gear (3D
+        // printers, web presses, SitePrint) and opaque build-to-order codes are
+        // left uncategorised (draft/noindex) or excluded instead.
+        827 => '/it-products/computer-accessories/chargers-power-banks/', // AC power adapter (e.g. 330W Smart AC Adapter)
+        907 => '/office-supplies/office-machines/shredders/',          // paper shredder (e.g. One Shred 6CC)
+        971 => '/paper-notebooks/specialty-paper/paper-rolls/',        // large-format bond / plotter paper roll
     ],
 
     /*
