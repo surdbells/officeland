@@ -81,9 +81,12 @@ final class ZeptoMailApiTransport extends AbstractTransport
         $response = $this->http
             ->timeout($this->timeout)
             ->withHeaders([
-                // The scheme name is literally part of the value. `Bearer`
-                // here returns a 401 that reads like a bad token.
-                'Authorization' => 'zoho-enczapikey '.$this->token,
+                // The scheme name is literally part of the value AND
+                // case-sensitive: ZeptoMail wants exactly "Zoho-enczapikey"
+                // (capital Z). Lowercase, or `Bearer`, is rejected as
+                // TM_4001 "Invalid API Token" - a 401 that reads like a bad
+                // token even when the token is perfect.
+                'Authorization' => 'Zoho-enczapikey '.$this->token,
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
             ])

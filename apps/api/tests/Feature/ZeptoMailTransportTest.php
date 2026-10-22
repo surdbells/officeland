@@ -80,14 +80,16 @@ final class ZeptoMailTransportTest extends TestCase
     }
 
     /**
-     * The scheme name is part of the value. `Bearer` returns a 401 that reads
-     * exactly like a bad token, which is a slow thing to debug at go-live.
+     * The scheme name is part of the value and case-sensitive: ZeptoMail wants
+     * exactly "Zoho-enczapikey" (capital Z). Lowercase, or `Bearer`, returns a
+     * 401/TM_4001 that reads exactly like a bad token even when the token is
+     * correct - a slow thing to debug at go-live, as it was.
      */
     public function test_it_authenticates_with_the_zoho_enczapikey_prefix(): void
     {
         $request = $this->send($this->email());
 
-        $this->assertSame('zoho-enczapikey test-token', $request->header('Authorization')[0]);
+        $this->assertSame('Zoho-enczapikey test-token', $request->header('Authorization')[0]);
     }
 
     public function test_it_sends_the_sender_as_an_address_and_name(): void
