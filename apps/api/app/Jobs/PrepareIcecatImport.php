@@ -84,6 +84,7 @@ final class PrepareIcecatImport implements ShouldQueue
             static fn ($c): int => (int) trim((string) $c),
             is_array($options['catids'] ?? null) ? $options['catids'] : explode(',', (string) ($options['catids'] ?? '')),
         )));
+        $exclude = (array) config('icecat.exclude_catids');
 
         /** @var array<int, string> $bySupplier supplierId => brandKey */
         $bySupplier = [];
@@ -104,6 +105,11 @@ final class PrepareIcecatImport implements ShouldQueue
 
                 if ($limit > 0 && $queued >= $limit) {
                     break;
+                }
+
+                // Never import warranties, care packs or software licences.
+                if (in_array($entry['catid'], $exclude, true)) {
+                    continue;
                 }
 
                 if ($catids !== [] && ! in_array($entry['catid'], $catids, true)) {

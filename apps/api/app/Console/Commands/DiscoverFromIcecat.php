@@ -129,6 +129,10 @@ final class DiscoverFromIcecat extends Command
             // --limit counts only the products we would actually import. A product
             // with no catalogued date is excluded once --since is in play, since
             // its recency cannot be confirmed.
+            if (in_array($entry['catid'], (array) config('icecat.exclude_catids'), true)) {
+                continue;
+            }
+
             if ($catids !== [] && ! in_array($entry['catid'], $catids, true)) {
                 continue;
             }

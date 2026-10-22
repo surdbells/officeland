@@ -97,6 +97,10 @@ final class QueueIcecatImport extends Command
                 break;
             }
 
+            if (in_array($entry['catid'], (array) config('icecat.exclude_catids'), true)) {
+                continue;
+            }
+
             if ($catids !== [] && ! in_array($entry['catid'], $catids, true)) {
                 continue;
             }

@@ -136,5 +136,39 @@ return [
         375 => '/printers-consumables/ink-toner/toner-cartridges/',   // toner cartridge
         381 => '/printers-consumables/ink-toner/drums-maintenance-kits/', // imaging drum
         379 => '/printers-consumables/ink-toner/drums-maintenance-kits/', // maintenance kit
+
+        // Added from the HP survey (2026-10-22), identified by sample product.
+        304 => '/printers-consumables/printers/all-in-one-printers/', // LaserJet MFP (multifunction)
+        194 => '/it-products/computer-accessories/keyboards-mice/',   // keyboard + mouse combo
+        896 => '/it-products/computers/desktops-all-in-ones/',        // thin client (Elite t660)
+        159 => '/it-products/computers/desktops-all-in-ones/',        // Engage all-in-one POS
+        9482 => '/it-products/monitors-displays/monitors/',           // Engage touch display
+        152 => '/it-products/networking/switches-adapters/',          // docking station / port replicator
+        182 => '/it-products/networking/switches-adapters/',          // Wi-Fi / network card
+        175 => '/it-products/networking/switches-adapters/',          // USB-C to RJ45 adapter
+        8231 => '/it-products/networking/switches-adapters/',         // USB hub
+        2926 => '/it-products/networking/switches-adapters/',         // cable (Thunderbolt/USB-C)
+        1563 => '/it-products/storage-memory/external-hard-drives/',  // external optical drive
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Icecat Catids to NEVER import
+    |--------------------------------------------------------------------------
+    |
+    | A manufacturer's full index is not a catalogue of sellable goods. HP's, for
+    | example, is dominated by warranties, care packs and electronic software
+    | licences - things OfficeLand does not stock as products. Importing them
+    | buries the real catalogue (17k+ warranty SKUs on HP alone) and pollutes
+    | search. These Catids are skipped on import, and catalogue:prune-icecat
+    | removes any already imported. Identified from the HP survey (2026-10-22).
+    |
+    | @var list<int>
+    */
+    'exclude_catids' => [
+        2509, // HP Care Pack / warranty & support (e.g. N95986-251)
+        788,  // Warranty (e.g. "1/1/0 Warranty")
+        62,   // Software licence (E-LTU)
+        1546, // Software licence (CLD E-LTU)
     ],
 ];
