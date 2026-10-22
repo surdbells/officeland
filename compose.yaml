@@ -228,6 +228,60 @@ services:
     cpus: 2.0
     restart: unless-stopped
 
+  # Dedicated image-derivative worker.
+  #
+  # The general worker above drains imports,media,default in PRIORITY order, so a
+  # large import (tens of thousands of jobs on `imports`) starves the derivative
+  # jobs it dispatches onto `media` - the images generate only once the whole
+  # import finishes, leaving the catalogue full of broken pictures in the
+  # meantime. This worker consumes ONLY `media`, so derivatives are generated in
+  # parallel with the import rather than behind it. Scale it (--scale
+  # media-worker=N) to pour more cores into a big backfill.
+  media-worker:
+    build:
+      context: .
+      dockerfile: infra/docker/frankenphp/Dockerfile
+      target: ${BUILD_TARGET:-dev}
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_URL: ${APP_URL:-http://localhost:8095}
+      DB_CONNECTION: pgsql
+      DB_HOST: pgbouncer
+      DB_PORT: 6432
+      DB_DATABASE: ${DB_DATABASE:-officeland}
+      DB_USERNAME: ${DB_USERNAME:-officeland}
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      DB_DIRECT_HOST: postgres
+      DB_DIRECT_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CACHE_STORE: redis
+      QUEUE_CONNECTION: redis
+      SESSION_DRIVER: redis
+    volumes:
+      - ./apps/api:/app
+      - api_vendor:/app/vendor
+      - media:/app/storage-media
+    entrypoint:
+      - sh
+      - -c
+      - |
+        php artisan config:clear >/dev/null 2>&1 || true
+        composer dump-autoload --optimize --no-interaction --working-dir=/app >/dev/null 2>&1 || true
+        exec php artisan queue:work redis --queue=media \
+          --sleep=1 --tries=3 --backoff=30 --max-time=3600 --max-jobs=1000 --memory=448 --timeout=300
+    healthcheck:
+      disable: true
+    mem_limit: 1536m
+    cpus: 2.0
+    restart: unless-stopped
+
   render:
     build:
       context: .

@@ -41,7 +41,16 @@ final class GenerateMediaDerivatives implements ShouldQueue
     public function __construct(
         public readonly int $mediaId,
         public readonly bool $force = false,
-    ) {}
+    ) {
+        // Route to the media queue. This MUST be set here (or via the $queue
+        // property): Laravel's dispatcher reads $job->queue, it does NOT call a
+        // queue() method. The old queue() method below was dead code, so every
+        // derivative job silently fell to the 'default' queue - which the worker
+        // drains LAST, behind the whole imports backlog, so a bulk import left
+        // thousands of images without derivatives (broken on the storefront)
+        // while `queue:monitor media` showed an always-empty queue.
+        $this->onQueue((string) config('media.queue', 'media'));
+    }
 
     /** @return list<object> */
     public function middleware(): array
@@ -77,10 +86,5 @@ final class GenerateMediaDerivatives implements ShouldQueue
                 "{$result['failed']} derivative(s) failed for media {$media->uuid}"
             ));
         }
-    }
-
-    public function queue(): string
-    {
-        return (string) config('media.queue', 'media');
     }
 }
