@@ -76,10 +76,33 @@ final class ImageResource extends JsonResource
                 fn (): string => (string) $this->resource->getAttribute('pivot')?->role,
             ),
 
-            'src' => $fallback === null ? null : $this->url($fallback),
+            // A derivative when one exists; otherwise the ORIGINAL, so the image
+            // still renders while derivatives are generated. Derivative
+            // generation is a slow background job after a bulk import, and a null
+            // src renders as a broken image - the original is heavier and
+            // unoptimised but it is a real, correct picture. Self-healing: once a
+            // derivative exists fallbackDerivative() returns it and this is unused.
+            'src' => $fallback !== null ? $this->url($fallback) : $this->originalUrl(),
 
             'sources' => $this->sources($derivatives),
         ];
+    }
+
+    /**
+     * The original file's public URL, built the same way as a derivative's. Used
+     * only as the `src` fallback above; it is never put in a `<source>` srcset,
+     * because the original has no width descriptor and is the wrong thing for a
+     * browser to pick over a sized derivative.
+     */
+    private function originalUrl(): ?string
+    {
+        $path = (string) $this->path;
+
+        if ($path === '') {
+            return null;
+        }
+
+        return rtrim((string) config('media.public_prefix'), '/').'/'.ltrim($path, '/');
     }
 
     /**
