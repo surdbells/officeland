@@ -56,14 +56,26 @@ final class BackfillDerivatives extends Command
 
         $dispatched = 0;
 
+        // A progress bar so the run is visibly alive and bounded. --sync does the
+        // full 15-derivative encode inline per media and can grind for many
+        // minutes with no output otherwise, which looks hung; queuing is fast but
+        // the bar is harmless there too.
+        $target = $limit > 0 ? min($limit, $total) : $total;
+        $bar = $this->output->createProgressBar($target);
+        $bar->start();
+
         $query->orderBy('id')
             ->when($limit > 0, fn ($q) => $q->limit($limit))
             ->cursor()
-            ->each(function (Media $media) use ($force, $sync, &$dispatched): void {
+            ->each(function (Media $media) use ($force, $sync, &$dispatched, $bar): void {
                 $job = new GenerateMediaDerivatives($media->id, $force);
                 $sync ? dispatch_sync($job) : dispatch($job);
                 $dispatched++;
+                $bar->advance();
             });
+
+        $bar->finish();
+        $this->newLine(2);
 
         $verb = $sync ? 'Generated' : 'Queued';
         $this->info("{$verb} {$dispatched} job(s)".($sync ? '.' : ' on the media queue; the worker is building them now.'));
