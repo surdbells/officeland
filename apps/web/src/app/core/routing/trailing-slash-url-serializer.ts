@@ -1,5 +1,17 @@
 import { DefaultUrlSerializer, UrlTree } from '@angular/router';
 
+/** Split a URL into its path and the ?query / #fragment that follow it. */
+function splitPath(url: string): { path: string; rest: string } {
+  const queryAt = url.indexOf('?');
+  const hashAt = url.indexOf('#');
+
+  let cut = url.length;
+  if (queryAt !== -1) cut = Math.min(cut, queryAt);
+  if (hashAt !== -1) cut = Math.min(cut, hashAt);
+
+  return { path: url.slice(0, cut), rest: url.slice(cut) };
+}
+
 /**
  * Keeps the trailing slash on every internal URL (SEO_SPEC.md section 2).
  *
@@ -25,19 +37,33 @@ import { DefaultUrlSerializer, UrlTree } from '@angular/router';
  * Query strings and fragments are preserved: the slash belongs to the path.
  */
 export class TrailingSlashUrlSerializer extends DefaultUrlSerializer {
+  /**
+   * Strip ONE trailing slash from the path before matching.
+   *
+   * The routes are defined without trailing slashes (`p/:slug`, `c/...`), but
+   * every internal href carries one (serialize() below). Angular's default
+   * parser keeps the slash, so `/p/foo/` parses to a path the `p/:slug` route
+   * cannot match and the router falls through to the 404 - which is exactly
+   * what made every client-side navigation to a product (e.g. clicking a search
+   * result) show "page not found" while a direct load, served the prerendered
+   * file by Caddy, worked. Stripping it here lets the slashed URL match the
+   * slashless route; serialize() adds the slash back for the address bar.
+   */
+  override parse(url: string): UrlTree {
+    const { path, rest } = splitPath(url);
+
+    const normalised = path.length > 1 && path.endsWith('/')
+      ? path.slice(0, -1)
+      : path;
+
+    return super.parse(normalised + rest);
+  }
+
   override serialize(tree: UrlTree): string {
     const url = super.serialize(tree);
 
     // Split off ?query and #fragment; the slash is a property of the path.
-    const queryAt = url.indexOf('?');
-    const hashAt = url.indexOf('#');
-
-    let cut = url.length;
-    if (queryAt !== -1) cut = Math.min(cut, queryAt);
-    if (hashAt !== -1) cut = Math.min(cut, hashAt);
-
-    const path = url.slice(0, cut);
-    const rest = url.slice(cut);
+    const { path, rest } = splitPath(url);
 
     if (path === '' || path.endsWith('/')) {
       return url;
