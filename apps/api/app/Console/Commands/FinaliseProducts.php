@@ -69,20 +69,40 @@ final class FinaliseProducts extends Command
             }
         }
 
+        $base = Product::query()
+            ->when($brandId !== null, fn ($q) => $q->where('brand_id', $brandId));
+
+        $total = (clone $base)->count();
+
+        if ($total === 0) {
+            $this->info('No products to finalise'.($brandId !== null ? ' for this brand.' : '.'));
+
+            return self::SUCCESS;
+        }
+
+        // This grinds a description, meta and similarity check for every product
+        // in the brand - tens of thousands for HP - and used to print nothing
+        // until the end, which looks hung. A progress bar shows it is alive and
+        // how far it has to go.
+        $this->info("Finalising {$total} product(s)".($apply ? ($index ? ' (writing + indexing)…' : ' (writing)…') : ' (dry run)…'));
+        $bar = $this->output->createProgressBar($total);
+        $bar->start();
+
         $seen = 0;
 
-        Product::query()
-            ->when($brandId !== null, fn ($q) => $q->where('brand_id', $brandId))
+        $base
             ->with(['attributeValues.attribute', 'brand', 'primaryCategory'])
             ->orderBy('id')
-            ->chunkById((int) $this->option('chunk'), function ($products) use ($drafter, $minimums, $apply, $index, &$seen): void {
+            ->chunkById((int) $this->option('chunk'), function ($products) use ($drafter, $minimums, $apply, $index, &$seen, $bar): void {
                 foreach ($products as $product) {
                     $seen++;
                     $this->finalise($product, $drafter, $minimums, $apply, $index);
+                    $bar->advance();
                 }
             });
 
-        $this->newLine();
+        $bar->finish();
+        $this->newLine(2);
         $this->table(['Outcome', 'Products'], [
             [$apply ? 'Descriptions written' : 'Would describe', $this->described],
             [$apply ? 'Meta filled' : 'Would fill meta', $this->metaFilled],
