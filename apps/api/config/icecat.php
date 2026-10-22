@@ -149,6 +149,7 @@ return [
         8231 => '/it-products/networking/switches-adapters/',         // USB hub
         2926 => '/it-products/networking/switches-adapters/',         // cable (Thunderbolt/USB-C)
         1563 => '/it-products/storage-memory/external-hard-drives/',  // external optical drive
+        978 => '/printers-consumables/ink-toner/drums-maintenance-kits/', // printer roller / maintenance kit
     ],
 
     /*
@@ -170,5 +171,6 @@ return [
         788,  // Warranty (e.g. "1/1/0 Warranty")
         62,   // Software licence (E-LTU)
         1546, // Software licence (CLD E-LTU)
+        1504, // Software licence (e.g. "Zime Standard License")
     ],
 ];
