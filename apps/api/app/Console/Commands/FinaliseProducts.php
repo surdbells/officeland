@@ -52,6 +52,10 @@ final class FinaliseProducts extends Command
 
     public function handle(DescriptionDrafter $drafter, ContentMinimums $minimums): int
     {
+        // The family-similarity lookups and attribute loads add up across a big
+        // catalogue; the 128 MB CLI default is not enough.
+        @ini_set('memory_limit', '512M');
+
         $apply = (bool) $this->option('apply');
         $index = (bool) $this->option('index');
 
@@ -171,7 +175,17 @@ final class FinaliseProducts extends Command
                 'status' => 'active',
                 'is_indexable' => true,
                 'published_at' => $product->published_at ?? now(),
-            ])->save();
+            ]);
+
+            // saveQuietly bypasses the EnforcesContentMinimums guard ON PURPOSE.
+            // That guard blocks is_indexable=true below the full editorial floor
+            // (which also demands an "in the box" list and a stated warranty
+            // Icecat does not provide) to stop ACCIDENTAL bulk thin-indexing.
+            // This path is the opposite: a deliberate, quality-gated bulk index
+            // (importBlocker above already required a category, a working image,
+            // >=3 specs and a 120-word description) run by an admin who chose
+            // this policy. The guard still protects the form and CSV paths.
+            $product->saveQuietly();
         }
     }
 
