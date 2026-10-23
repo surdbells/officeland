@@ -31,7 +31,13 @@ return [
     |
     */
     'routing' => [
-        'default' => env('MAIL_SALES_ADDRESS', 'sales@officelandng.com'),
+        // The fallback inbox for quote notifications, from the environment.
+        // QUOTE_DEFAULT_RECIPIENTS is the intended knob; it falls back to the
+        // sales/reply-to address and then the From address so a notification
+        // always has somewhere to land, but never a hardcoded address.
+        'default' => env('QUOTE_DEFAULT_RECIPIENTS')
+            ?: env('MAIL_SALES_ADDRESS')
+            ?: env('MAIL_FROM_ADDRESS'),
 
         'categories' => [
             // '/office-furniture/' => 'furniture@officelandng.com',

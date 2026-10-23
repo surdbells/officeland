@@ -40,14 +40,12 @@ return [
     |
     */
     // The reply-to on a customer's quote receipt - a reply must reach whoever
-    // handles quotes. `?:` not env()'s 2nd arg: a PRESENT-but-empty env var
-    // (MAIL_SALES_ADDRESS= in .env) returns '', which would otherwise skip the
-    // default and put a blank reply-to on every quote email. Falls back to the
-    // From address (the real, verified, monitored inbox) rather than a guessed
-    // sales@ that may not exist.
-    'sales_address' => env('MAIL_SALES_ADDRESS')
-        ?: env('MAIL_FROM_ADDRESS')
-        ?: 'support@officelandng.com',
+    // handles quotes. From the environment only, no hardcoded address. `?:`
+    // rather than env()'s 2nd arg so a PRESENT-but-empty var (MAIL_SALES_ADDRESS=
+    // in .env) falls through to the From address instead of returning '' and
+    // putting a blank reply-to on every quote email (which the transport then
+    // omits rather than sending empty).
+    'sales_address' => env('MAIL_SALES_ADDRESS') ?: env('MAIL_FROM_ADDRESS'),
 
     /*
     |--------------------------------------------------------------------------
