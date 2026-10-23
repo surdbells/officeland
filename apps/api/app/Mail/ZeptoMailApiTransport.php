@@ -141,16 +141,24 @@ final class ZeptoMailApiTransport extends AbstractTransport
             'subject' => (string) $email->getSubject(),
         ];
 
-        if ($email->getCc() !== []) {
-            $payload['cc'] = $this->recipients($email->getCc());
+        // Build each optional recipient list and include it ONLY when it has a
+        // real address. recipients() drops blank addresses, so a reply-to built
+        // from an unset config value (an empty string) yields [] and is omitted
+        // rather than sent as an empty field - which ZeptoMail rejects with
+        // TM_3201 "Mandatory field found empty", failing the whole message.
+        $cc = $this->recipients($email->getCc());
+        if ($cc !== []) {
+            $payload['cc'] = $cc;
         }
 
-        if ($email->getBcc() !== []) {
-            $payload['bcc'] = $this->recipients($email->getBcc());
+        $bcc = $this->recipients($email->getBcc());
+        if ($bcc !== []) {
+            $payload['bcc'] = $bcc;
         }
 
-        if ($email->getReplyTo() !== []) {
-            $payload['reply_to'] = $this->recipients($email->getReplyTo());
+        $replyTo = $this->recipients($email->getReplyTo());
+        if ($replyTo !== []) {
+            $payload['reply_to'] = $replyTo;
         }
 
         $html = $email->getHtmlBody();
@@ -218,7 +226,16 @@ final class ZeptoMailApiTransport extends AbstractTransport
         $recipients = [];
 
         foreach ($addresses as $address) {
-            $entry = ['address' => $address->getAddress()];
+            $email = trim($address->getAddress());
+
+            // Drop a blank address. It reaches here when a reply-to / cc / bcc is
+            // built from an empty value; ZeptoMail rejects the whole message
+            // (TM_3201) if a recipient array carries an entry with no address.
+            if ($email === '') {
+                continue;
+            }
+
+            $entry = ['address' => $email];
 
             if ($address->getName() !== '') {
                 $entry['name'] = $address->getName();

@@ -39,7 +39,11 @@ return [
     | receipt. A customer replying to their receipt reaches a person.
     |
     */
-    'sales_address' => env('MAIL_SALES_ADDRESS', 'sales@officelandng.com'),
+    // `?:` not a 2nd arg to env(): an env var that is PRESENT but empty
+    // (MAIL_SALES_ADDRESS= in .env) returns '', which would skip env()'s default
+    // and put a blank reply-to on every quote email. The coalesce guarantees a
+    // real address.
+    'sales_address' => env('MAIL_SALES_ADDRESS') ?: 'sales@officelandng.com',
 
     /*
     |--------------------------------------------------------------------------
