@@ -159,6 +159,16 @@ return [
         827 => '/it-products/computer-accessories/chargers-power-banks/', // AC power adapter (e.g. 330W Smart AC Adapter)
         907 => '/office-supplies/office-machines/shredders/',          // paper shredder (e.g. One Shred 6CC)
         971 => '/paper-notebooks/specialty-paper/paper-rolls/',        // large-format bond / plotter paper roll
+
+        // Added from the ASUS recategorise survey (2026-10-23), by real name.
+        1062 => '/it-products/computers/desktops-all-in-ones/',       // NUC / mini PC
+        1508 => '/it-products/computers/workstations-servers/',       // rack server (ESC / RS series)
+        3982 => '/it-products/networking/routers-access-points/',     // wireless router
+        8775 => '/it-products/networking/routers-access-points/',     // Wi-Fi mesh / range extender / access point
+        4554 => '/office-furniture/seating/ergonomic-task-chairs/',   // gaming chair (ROG Destrier / Courser)
+        869 => '/it-products/computer-accessories/cables-adapters/',  // power cable
+        1399 => '/it-products/computer-accessories/chargers-power-banks/', // charger / charging dock
+        1654 => '/smart-tech/conferencing-av/video-bars/',            // video-conferencing room kit (Google Meet / Teams)
     ],
 
     /*
@@ -181,5 +191,19 @@ return [
         62,   // Software licence (E-LTU)
         1546, // Software licence (CLD E-LTU)
         1504, // Software licence (e.g. "Zime Standard License")
+
+        // Spare parts, repair components and merchandise - not sellable goods.
+        // Identified from the ASUS survey (2026-10-23); global, so they apply to
+        // every brand's import (e.g. 1909 also caught HP's HDD carriers).
+        4162, // monitor / display spare parts (boards, panels, PSUs)
+        2651, // mobile phone spare parts
+        8147, // all-in-one PC spare parts / accessories
+        1909, // computer case parts
+        1570, // game console parts / accessories
+        3625, // tablet spare parts / accessories
+        5303, // branded apparel (ROG sweatshirts, etc.)
+        1170, // Icecat "not categorized" / test bucket
+        1893, // smartphones (ROG Phone)
+        2837, // handheld game consoles (ROG Ally)
     ],
 ];
