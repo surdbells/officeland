@@ -131,7 +131,13 @@ final class ZeptoMailTransportTest extends TestCase
 
         $this->assertSame('cc@example.com', $body['cc'][0]['email_address']['address']);
         $this->assertSame('bcc@example.com', $body['bcc'][0]['email_address']['address']);
-        $this->assertSame('sales@officelandng.com', $body['reply_to'][0]['email_address']['address']);
+
+        // reply_to is FLAT {address, name} on the native endpoint - NOT wrapped
+        // in email_address like to/cc/bcc. Sending the wrapper is rejected with
+        // TM_3201 "reply_to: Mandatory field found empty", which is what broke
+        // every quote email (Mail::raw has no reply-to, so it was unaffected).
+        $this->assertSame('sales@officelandng.com', $body['reply_to'][0]['address']);
+        $this->assertArrayNotHasKey('email_address', $body['reply_to'][0]);
     }
 
     /**

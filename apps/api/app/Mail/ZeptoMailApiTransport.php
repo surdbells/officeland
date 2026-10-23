@@ -156,7 +156,12 @@ final class ZeptoMailApiTransport extends AbstractTransport
             $payload['bcc'] = $bcc;
         }
 
-        $replyTo = $this->recipients($email->getReplyTo());
+        // reply_to has a DIFFERENT shape from to/cc/bcc on the native endpoint:
+        // a flat {address, name}, not the {email_address: {...}} wrapper. Sending
+        // the wrapper makes ZeptoMail look for `address` at the top level, not
+        // find it, and reject the whole message with TM_3201 "reply_to:
+        // Mandatory field found empty" - even when the address is perfectly valid.
+        $replyTo = $this->replyToAddresses($email->getReplyTo());
         if ($replyTo !== []) {
             $payload['reply_to'] = $replyTo;
         }
@@ -247,6 +252,37 @@ final class ZeptoMailApiTransport extends AbstractTransport
         }
 
         return $recipients;
+    }
+
+    /**
+     * reply_to on the native endpoint is a flat array of {address, name} - NOT
+     * wrapped in an `email_address` object like to/cc/bcc. Blank addresses are
+     * dropped so an unset reply-to never produces an empty field.
+     *
+     * @param  array<int, Address>  $addresses
+     * @return list<array{address: string, name?: string}>
+     */
+    private function replyToAddresses(array $addresses): array
+    {
+        $out = [];
+
+        foreach ($addresses as $address) {
+            $email = trim($address->getAddress());
+
+            if ($email === '') {
+                continue;
+            }
+
+            $entry = ['address' => $email];
+
+            if ($address->getName() !== '') {
+                $entry['name'] = $address->getName();
+            }
+
+            $out[] = $entry;
+        }
+
+        return $out;
     }
 
     /**
