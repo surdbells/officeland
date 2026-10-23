@@ -205,5 +205,16 @@ return [
         1170, // Icecat "not categorized" / test bucket
         1893, // smartphones (ROG Phone)
         2837, // handheld game consoles (ROG Ally)
+
+        // Bare PC-building components - no home in an office/government catalogue
+        // and they would not rank for office searches (decision: 2026-10-23).
+        // Global; 170 and 921 also clear HP's GPUs and coolers.
+        164,  // motherboards
+        170,  // graphics cards (GPUs)
+        963,  // power supply units (PSUs)
+        921,  // CPU liquid coolers
+        237,  // PC cases / chassis
+        862,  // drive enclosures
+        204,  // mouse pads
     ],
 ];
