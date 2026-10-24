@@ -52,9 +52,20 @@ final class Category extends Model
         ];
     }
 
+    /**
+     * Addressed by the numeric id in routes, not by `path`.
+     *
+     * A category's path is "/filing-storage/", and its slashes cannot live in a
+     * single URL segment: used as the route key it turned every Filament admin
+     * URL into /admin/categories//filing-storage//edit, which 404s, so categories
+     * could not be edited at all. The storefront and API do NOT use route-model
+     * binding for categories - they look them up by path manually (see
+     * CategoryController and routes/api.php's `where('path', '.*')`), so keying
+     * routes by id here only affects the admin, which is exactly what we want.
+     */
     public function getRouteKeyName(): string
     {
-        return 'path';
+        return 'id';
     }
 
     /** @return BelongsTo<self, $this> */
