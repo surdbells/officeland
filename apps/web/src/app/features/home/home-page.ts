@@ -202,6 +202,8 @@ const MAJOR_CATEGORY_SOURCES: readonly {
           rotation is a browser-only enhancement that stops under reduced
           motion. The scrim is what keeps white type legible over any photo.
         -->
+        <!-- Hero split: 80% slides on the left, 20% two vertical banners on the right. -->
+        <div class="grid gap-4 lg:grid-cols-[4fr_1fr]">
         <div
           class="ol-herostage group relative isolate overflow-hidden rounded-3xl shadow-xl"
           aria-roledescription="carousel"
@@ -294,6 +296,45 @@ const MAJOR_CATEGORY_SOURCES: readonly {
                 </div>
               }
             </div>
+          </div>
+        </div>
+
+          <!--
+            Right 20%: two vertical banners, PVC on top and office furniture
+            below. Each is a real anchor to its department, its hero photograph
+            behind a scrim; missing photo falls back to the brand ground.
+          -->
+          <div class="grid gap-4 lg:grid-rows-2">
+            @for (banner of heroBanners(); track banner.url) {
+              <a
+                [routerLink]="banner.url"
+                class="ol-lift group relative isolate flex min-h-[11rem] flex-col justify-end overflow-hidden rounded-2xl bg-brand-700 p-5 text-white shadow-md"
+              >
+                @if (banner.image; as image) {
+                  <span class="absolute inset-0">
+                    <ol-image
+                      [image]="image"
+                      sizes="(min-width: 1024px) 20rem, 100vw"
+                      imgClass="h-full w-full object-cover"
+                    />
+                  </span>
+                }
+                <span
+                  aria-hidden="true"
+                  class="absolute inset-0 bg-gradient-to-t from-ink-900/85 via-ink-900/35 to-transparent"
+                ></span>
+                <div class="relative">
+                  <p class="text-xs font-semibold uppercase tracking-[0.1em] text-white/80">
+                    {{ banner.eyebrow }}
+                  </p>
+                  <h2 class="mt-0.5 font-heading text-lg font-semibold text-white">{{ banner.name }}</h2>
+                  <span class="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-white">
+                    {{ banner.tagline }}
+                    <ol-icon name="arrow-right" [size]="15" class="transition-transform group-hover:translate-x-0.5" />
+                  </span>
+                </div>
+              </a>
+            }
           </div>
         </div>
 
@@ -571,6 +612,54 @@ const MAJOR_CATEGORY_SOURCES: readonly {
                   <ol-skeleton shape="mx-1.5 mt-3 h-4 w-3/4 rounded bg-ink-100" />
                   <ol-skeleton shape="mx-1.5 mb-1.5 mt-2 h-3 w-1/2 rounded bg-ink-100" />
                 </div>
+              </li>
+            }
+          </ul>
+        </div>
+      </section>
+    }
+
+    <!--
+      Trusted brands: the whole roster as logo-and-name cards.
+
+      Every brand OfficeLand carries, ordered by how much live stock it has, so
+      a buyer sees their brand at a glance. A missing logo falls back to the
+      name's initials rather than a broken frame. Real anchors to each brand
+      hub; the rail scrolls by touch, wheel and keyboard.
+    -->
+    @if (brands().length) {
+      <section aria-labelledby="brands-heading" class="border-b border-ink-100 bg-white">
+        <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-10">
+          <div olReveal="fade" class="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p class="ol-eyebrow">Authorised &amp; stocked</p>
+              <h2 id="brands-heading" class="mt-1 text-2xl font-bold sm:text-3xl">Trusted brands</h2>
+            </div>
+            <a routerLink="/brands/" class="text-sm font-medium text-brand-600 hover:underline">
+              All brands
+            </a>
+          </div>
+
+          <ul class="ol-rail mt-6 flex snap-x gap-3 overflow-x-auto pb-2">
+            @for (brand of brands(); track brand.slug; let i = $index) {
+              <li class="w-32 shrink-0 snap-start" olReveal [olRevealDelay]="(i % 8) * 40">
+                <a
+                  [routerLink]="brand.url"
+                  class="ol-lift group flex h-full flex-col items-center gap-3 rounded-2xl border border-ink-100 bg-white p-4 text-center hover:border-brand-600"
+                >
+                  <span class="flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl bg-ink-50 p-2">
+                    @if (brand.logo; as logo) {
+                      <ol-image [image]="logo" sizes="64px" imgClass="h-full w-full object-contain" />
+                    } @else {
+                      <span class="font-heading text-lg font-bold text-brand-700" aria-hidden="true">
+                        {{ brandInitials(brand.name) }}
+                      </span>
+                    }
+                  </span>
+                  <span class="font-heading text-sm font-semibold text-ink-900 group-hover:text-brand-600">
+                    {{ brand.name }}
+                  </span>
+                </a>
               </li>
             }
           </ul>
@@ -1162,6 +1251,50 @@ export class HomePage {
 
   protected readonly departments = computed(() => this.navigation()?.departments ?? []);
 
+  /** Every brand, as logo-and-name cards (from /home, ordered by live stock). */
+  protected readonly brands = computed(() => this.home()?.brands ?? []);
+
+  /**
+   * The hero's right-column banners: PVC on top, office furniture below.
+   *
+   * Their photographs come from the two departments' hero images (navigation),
+   * but the links and labels are fixed so both banners render even before
+   * navigation resolves or if a department has no hero yet.
+   */
+  protected readonly heroBanners = computed(() => {
+    const find = (slug: string) => this.departments().find((d) => d.slug === slug) ?? null;
+    const pvc = find('pvc-doors-interiors');
+    const furniture = find('office-furniture');
+
+    return [
+      {
+        eyebrow: 'Doors · wardrobes · panels',
+        name: 'PVC doors & interiors',
+        tagline: 'Explore the range',
+        url: pvc?.url ?? '/c/pvc-doors-interiors/',
+        image: pvc?.hero ?? null,
+      },
+      {
+        eyebrow: 'Desks · chairs · storage',
+        name: 'Office furniture',
+        tagline: 'Shop furniture',
+        url: furniture?.url ?? '/c/office-furniture/',
+        image: furniture?.hero ?? null,
+      },
+    ];
+  });
+
+  /** The first one or two letters of a brand name, for a missing-logo fallback. */
+  protected brandInitials(name: string): string {
+    return name.replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase();
+  }
+
+  /** The last segment of a '/c/.../' URL, used as a stable track key. */
+  private slugFromUrl(url: string): string {
+    const parts = url.split('/').filter(Boolean);
+    return parts[parts.length - 1] ?? url;
+  }
+
   /**
    * True only in the window before navigation has resolved - undefined, not
    * null (null is the loaded-but-failed state the catchError yields). Drives
@@ -1315,9 +1448,32 @@ export class HomePage {
     { initialValue: [] as ShowcaseSection[] },
   );
 
-  protected readonly sections = computed(() =>
-    this.showcases().filter((section) => section.products.length > 0),
-  );
+  /**
+   * A product rail per department.
+   *
+   * Prefers the server-assembled /home department_rails - one per department
+   * with live, image-backed products and the department's square card image -
+   * and falls back to the per-department listing requests (showcases) when the
+   * curated payload is not yet loaded. Either way a department with no products
+   * yields no rail rather than an empty heading.
+   */
+  protected readonly sections = computed(() => {
+    const rails = this.home()?.department_rails ?? [];
+
+    if (rails.length > 0) {
+      return rails
+        .map((rail, index): ShowcaseSection => ({
+          name: rail.name,
+          slug: this.slugFromUrl(rail.url),
+          url: rail.url,
+          products: rail.products,
+          style: SHOWCASE_STYLES[index % SHOWCASE_STYLES.length],
+        }))
+        .filter((section) => section.products.length > 0);
+    }
+
+    return this.showcases().filter((section) => section.products.length > 0);
+  });
 
   /**
    * Products for the best-sellers band.

@@ -36,6 +36,8 @@ export type ApiError = components['schemas']['Error'];
 export type Home = components['schemas']['Home'];
 export type HeroSlide = components['schemas']['HeroSlide'];
 export type HomeCategoryTile = components['schemas']['HomeCategoryTile'];
+export type HomeBrand = components['schemas']['HomeBrand'];
+export type DepartmentRail = components['schemas']['DepartmentRail'];
 
 /**
  * A brand as the megamenu shows it.

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, NavigationSkipped, Router, RouterLink } from '@angular/router';
 import { filter } from 'rxjs';
@@ -6,6 +6,7 @@ import { Icon, type IconName } from '../../shared/icon';
 import { ResponsiveImage } from '../../shared/responsive-image';
 import { SiteSearch } from '../../shared/site-search';
 import { iconForCategory, iconForDepartment } from './category-icons';
+import { CatalogueApi, type ProductCard } from '../api/catalogue-api';
 import type { Announcement, Navigation, NavigationNode } from '../api/catalogue-api';
 
 /**
@@ -360,6 +361,40 @@ import type { Announcement, Navigation, NavigationNode } from '../api/catalogue-
                       </div>
                     }
                   </div>
+
+                  <!--
+                    Featured products for this department, lazy-loaded on open.
+
+                    Never in the prerendered HTML: the panel renders only on
+                    hover/focus (open() is null at build), so these add nothing
+                    to the navigation payload or the served page - the category
+                    links above are the crawl surface. Fetched once per
+                    department and cached, from the same listing endpoint the
+                    PLP uses.
+                  -->
+                  @if (activeProducts().length) {
+                    <div class="mt-7 border-t border-ink-100 pt-5">
+                      <h3 class="font-heading text-xs font-semibold uppercase tracking-[0.14em] text-ink-400">
+                        Featured in {{ active.name }}
+                      </h3>
+                      <ul class="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-6">
+                        @for (product of activeProducts(); track product.uuid) {
+                          <li>
+                            <a [routerLink]="product.url" class="group block" (click)="close()">
+                              <span class="block aspect-square overflow-hidden rounded-lg border border-ink-100 bg-ink-50">
+                                @if (product.image; as image) {
+                                  <ol-image [image]="image" sizes="8rem" imgClass="h-full w-full object-contain p-2" />
+                                }
+                              </span>
+                              <span class="mt-1.5 block truncate text-xs text-ink-600 group-hover:text-brand-600">
+                                {{ product.name }}
+                              </span>
+                            </a>
+                          </li>
+                        }
+                      </ul>
+                    </div>
+                  }
 
                   <div class="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-ink-100 pt-5">
                     <a
@@ -813,6 +848,15 @@ export class SiteHeader {
   readonly navigation = input<Navigation | null>(null);
   readonly quoteCount = input<number>(0);
 
+  private readonly api = inject(CatalogueApi);
+  private readonly destroyRef = inject(DestroyRef);
+
+  /** Featured products per department path, lazy-loaded when its panel opens. */
+  private readonly deptProducts = signal<Record<string, readonly ProductCard[]>>({});
+
+  /** Paths already fetched (or in flight), so each department loads once. */
+  private readonly deptProductsRequested = new Set<string>();
+
   protected readonly open = signal<string | null>(null);
   protected readonly announcementVisible = signal(true);
 
@@ -898,6 +942,31 @@ export class SiteHeader {
         this.sheet.set(null);
         this.expanded.set(null);
       });
+
+    // Lazy-load the open department's featured products. Runs only when a panel
+    // is open (hover/focus in the browser); open() is null during prerender, so
+    // this adds no build-time request and keeps the navigation payload lean.
+    effect(() => {
+      const dept = this.activeDepartment();
+      if (dept) this.loadDeptProducts(dept);
+    });
+  }
+
+  /** Fetch a department's featured products once, from the shared listing endpoint. */
+  private loadDeptProducts(dept: NavigationNode): void {
+    const path = dept.url.replace(/^\/c/, '');
+    if (this.deptProductsRequested.has(path)) return;
+    this.deptProductsRequested.add(path);
+
+    this.api
+      .categoryProducts(path, { perPage: 6 })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (listing) =>
+          this.deptProducts.update((map) => ({ ...map, [path]: listing.data })),
+        // Leave it absent and allow a later retry; the panel just shows no row.
+        error: () => this.deptProductsRequested.delete(path),
+      });
   }
 
   /** The glyph for a department, in the bar and in the panel rail. */
@@ -937,6 +1006,13 @@ export class SiteHeader {
     const match = this.departments().find((d) => d.slug === slug);
 
     return match && match.children.length > 0 ? match : null;
+  });
+
+  /** The open department's featured products, or empty while they load. */
+  protected readonly activeProducts = computed<readonly ProductCard[]>(() => {
+    const dept = this.activeDepartment();
+    if (!dept) return [];
+    return this.deptProducts()[dept.url.replace(/^\/c/, '')] ?? [];
   });
 
   /**
