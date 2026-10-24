@@ -106,7 +106,7 @@ final class ContentValue
     public function searchDemand(): array
     {
         /** @var list<object{query_normalised: string, occurrences: int|string, result_count: int|string}> $rows */
-        $rows = DB::table('search_query_log')
+        $rows = DB::table('search_queries_log')
             ->select(['query_normalised', 'occurrences', 'result_count'])
             ->orderByDesc('occurrences')
             ->limit(500)
