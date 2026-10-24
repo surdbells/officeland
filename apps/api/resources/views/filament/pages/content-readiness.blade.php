@@ -3,107 +3,95 @@
     $categoryQueue = $this->getCategoryQueue();
     $productQueue = $this->getProductQueue();
     $flagged = $this->getFlagged();
+
+    // Inline styles, not Tailwind utilities: Filament compiles its own CSS and
+    // purges classes it does not find in its own files, so utilities written in
+    // a custom page view (grid-cols, ring, rounded-xl) produce no styles and the
+    // page renders unstyled. Filament's own components (section, link, badge) are
+    // themed and dark-mode aware; everything else is inline so it always applies.
+    $muted = 'color:currentColor;opacity:.6;';
+    $row = 'display:flex;align-items:baseline;justify-content:space-between;gap:1rem;padding:.6rem 0;border-top:1px solid rgba(120,120,120,.18);';
 @endphp
 
 <x-filament-panels::page>
     {{-- The four numbers that decide whether launch is a scheduling problem. --}}
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div style="display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));">
         @foreach ([
             ['Categories without an intro', $totals['categories_short'], $totals['categories_total'], 'These block whole subtrees'],
             ['Drafts awaiting a person', $totals['products_awaiting_approval'], $totals['products_total'], 'Generated, never read'],
             ['Flagged as near-duplicate', $totals['products_flagged'], $totals['products_total'], 'Approve or rewrite'],
             ['Products indexable', $totals['products_indexable'], $totals['products_total'], 'Cleared every minimum'],
         ] as [$label, $value, $outOf, $hint])
-            <div class="fi-section rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ $label }}</p>
-                <p class="mt-1 text-2xl font-semibold tabular-nums">
-                    {{ number_format($value) }}<span class="text-base font-normal text-gray-400"> / {{ number_format($outOf) }}</span>
-                </p>
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $hint }}</p>
-            </div>
+            <x-filament::section>
+                <div style="{{ $muted }}font-size:.8125rem;">{{ $label }}</div>
+                <div style="margin-top:.25rem;font-size:1.6rem;font-weight:600;font-variant-numeric:tabular-nums;">
+                    {{ number_format($value) }}<span style="{{ $muted }}font-size:1rem;font-weight:400;"> / {{ number_format($outOf) }}</span>
+                </div>
+                <div style="{{ $muted }}margin-top:.25rem;font-size:.75rem;">{{ $hint }}</div>
+            </x-filament::section>
         @endforeach
     </div>
 
-    {{-- Categories first: 124 intros are a week, and they unlock the taxonomy. --}}
-    <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
-        <div class="p-6">
-            <h3 class="text-base font-semibold">Write these category intros first</h3>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                150–300 words of genuine buying context. A category cannot be indexed without one.
-            </p>
+    {{-- Categories first: the intros are a week's work and unlock the taxonomy. --}}
+    <x-filament::section>
+        <x-slot name="heading">Write these category intros first</x-slot>
+        <x-slot name="description">150–300 words of genuine buying context. A category cannot be indexed without one.</x-slot>
 
-            @if ($categoryQueue === [])
-                <p class="mt-4 text-sm text-success-600">Every category has an intro.</p>
-            @else
-                <ul class="mt-4 divide-y divide-gray-100 text-sm dark:divide-white/10">
-                    @foreach ($categoryQueue as $row)
-                        <li class="flex items-baseline justify-between gap-4 py-2">
-                            <a
-                                href="{{ \App\Filament\Resources\Categories\CategoryResource::getUrl('edit', ['record' => $row['category']]) }}"
-                                class="font-medium text-primary-600 hover:underline dark:text-primary-400"
-                            >{{ $row['category']->name }}</a>
-                            <span class="shrink-0 font-mono text-xs text-gray-400">{{ $row['category']->path }}</span>
-                            <span class="shrink-0 text-warning-600">{{ $row['readiness'] }}</span>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
-        </div>
-    </div>
+        @if ($categoryQueue === [])
+            <x-filament::badge color="success">Every category has an intro.</x-filament::badge>
+        @else
+            <ul style="display:flex;flex-direction:column;">
+                @foreach ($categoryQueue as $item)
+                    <li style="{{ $row }}">
+                        <x-filament::link :href="\App\Filament\Resources\Categories\CategoryResource::getUrl('edit', ['record' => $item['category']])">
+                            {{ $item['category']->name }}
+                        </x-filament::link>
+                        <span style="{{ $muted }}flex:1;font-family:ui-monospace,monospace;font-size:.75rem;text-align:right;">{{ $item['category']->path }}</span>
+                        <x-filament::badge color="warning">{{ $item['readiness'] }}</x-filament::badge>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+    </x-filament::section>
 
-    {{-- Near-duplicates: the §14.3 defect, caught. --}}
+    {{-- Near-duplicates: the similarity gate's catch. --}}
     @if ($flagged !== [])
-        <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
-            <div class="p-6">
-                <h3 class="text-base font-semibold text-danger-600">Reads like another product</h3>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Compared within the product's own family, with the name and codes removed first —
-                    so a high score here means the prose really is the same, not that the products are similar.
-                    Genuine variants do happen: approve them.
-                </p>
+        <x-filament::section>
+            <x-slot name="heading">Reads like another product</x-slot>
+            <x-slot name="description">Compared within the product's own family, with the name and codes removed first, so a high score means the prose really is the same. Genuine variants happen — approve them.</x-slot>
 
-                <ul class="mt-4 divide-y divide-gray-100 text-sm dark:divide-white/10">
-                    @foreach ($flagged as $product)
-                        <li class="flex items-baseline justify-between gap-4 py-2">
-                            <a
-                                href="{{ \App\Filament\Resources\Products\ProductResource::getUrl('edit', ['record' => $product]) }}"
-                                class="font-medium text-primary-600 hover:underline dark:text-primary-400"
-                            >{{ $product->name }}</a>
-                            <span class="text-gray-500">
-                                like {{ $product->descriptionSimilarTo?->name ?? 'another product' }}
-                            </span>
-                            <span class="shrink-0 font-mono tabular-nums text-danger-600">
-                                {{ number_format((float) $product->description_similarity * 100, 1) }}%
-                            </span>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
-        </div>
+            <ul style="display:flex;flex-direction:column;">
+                @foreach ($flagged as $product)
+                    <li style="{{ $row }}">
+                        <x-filament::link :href="\App\Filament\Resources\Products\ProductResource::getUrl('edit', ['record' => $product])">
+                            {{ $product->name }}
+                        </x-filament::link>
+                        <span style="{{ $muted }}flex:1;text-align:right;font-size:.8125rem;">like {{ $product->descriptionSimilarTo?->name ?? 'another product' }}</span>
+                        <x-filament::badge color="danger">{{ number_format((float) $product->description_similarity * 100, 1) }}%</x-filament::badge>
+                    </li>
+                @endforeach
+            </ul>
+        </x-filament::section>
     @endif
 
-    <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
-        <div class="p-6">
-            <h3 class="text-base font-semibold">Products that cannot be indexed yet</h3>
-            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Active products only — a draft product is withheld from Google by being a draft, not by its description.
-            </p>
+    {{-- Products blocked from indexing, most valuable first. --}}
+    <x-filament::section>
+        <x-slot name="heading">Products that cannot be indexed yet</x-slot>
+        <x-slot name="description">Active products only — a draft is withheld from Google by being a draft, not by its description.</x-slot>
 
-            @if ($productQueue === [])
-                <p class="mt-4 text-sm text-success-600">Every active product clears the content floor.</p>
-            @else
-                <ul class="mt-4 divide-y divide-gray-100 text-sm dark:divide-white/10">
-                    @foreach ($productQueue as $row)
-                        <li class="flex items-baseline justify-between gap-4 py-2">
-                            <a
-                                href="{{ \App\Filament\Resources\Products\ProductResource::getUrl('edit', ['record' => $row['product']]) }}"
-                                class="font-medium text-primary-600 hover:underline dark:text-primary-400"
-                            >{{ $row['product']->name }}</a>
-                            <span class="shrink-0 text-warning-600">{{ $row['readiness'] }}</span>
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
-        </div>
-    </div>
+        @if ($productQueue === [])
+            <x-filament::badge color="success">Every active product clears the content floor.</x-filament::badge>
+        @else
+            <ul style="display:flex;flex-direction:column;">
+                @foreach ($productQueue as $item)
+                    <li style="{{ $row }}">
+                        <x-filament::link :href="\App\Filament\Resources\Products\ProductResource::getUrl('edit', ['record' => $item['product']])">
+                            {{ $item['product']->name }}
+                        </x-filament::link>
+                        <x-filament::badge color="warning">{{ $item['readiness'] }}</x-filament::badge>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+    </x-filament::section>
 </x-filament-panels::page>
