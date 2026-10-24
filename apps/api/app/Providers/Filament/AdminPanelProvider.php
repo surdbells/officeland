@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers\Filament;
 
+use App\Filament\InitialsAvatarProvider;
 use App\Http\Middleware\RestrictAdminByIp;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
@@ -54,6 +55,9 @@ final class AdminPanelProvider extends PanelProvider
                     ->regenerableRecoveryCodes(),
             ])
             ->brandName('OfficeLand')
+            // Local initials avatar, not ui-avatars.com: the external request is
+            // blocked by the admin CSP (renders broken) and leaks names.
+            ->defaultAvatarProvider(InitialsAvatarProvider::class)
             ->colors([
                 // Section 15.3 brand blue. Pending verification against the
                 // real logo files (open question Q17).
