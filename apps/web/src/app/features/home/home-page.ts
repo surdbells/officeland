@@ -573,8 +573,8 @@ const MAJOR_CATEGORY_SOURCES: readonly {
                   class="ol-lift group block h-full overflow-hidden rounded-2xl border border-ink-100 bg-[#f6f3ee] p-2.5"
                 >
                   <div class="ol-zoom-frame aspect-square w-full overflow-hidden rounded-xl bg-[#f1ece3]">
-                    @if (department.hero; as hero) {
-                      <ol-image [image]="hero" sizes="13rem" imgClass="h-full w-full object-cover" />
+                    @if (department.card ?? department.hero; as image) {
+                      <ol-image [image]="image" sizes="13rem" imgClass="h-full w-full object-cover" />
                     } @else {
                       <span class="flex h-full items-center justify-center p-4 text-center font-heading text-sm font-semibold text-brand-700" aria-hidden="true">
                         {{ department.name }}

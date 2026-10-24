@@ -79,6 +79,14 @@ export interface NavigationNode {
    * navigation payload rides on every page and 170 heroes would bloat it.
    */
   readonly hero?: Image | null;
+
+  /**
+   * The department's SQUARE card image, for the "shop by department" grid tiles
+   * and the megamenu - a 1:1 crop, distinct from the horizontal hero. Departments
+   * only, null until uploaded; a tile falls back to the hero, then to its
+   * lettered placeholder.
+   */
+  readonly card?: Image | null;
 }
 
 /**

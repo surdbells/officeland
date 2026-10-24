@@ -49,7 +49,7 @@ final class NavigationController extends Controller
             $categories = Category::query()
                 ->orderBy('depth')
                 ->orderBy('sort_order')
-                ->get(['id', 'uuid', 'parent_id', 'name', 'slug', 'path', 'depth', 'product_count_cached', 'hero_media_id']);
+                ->get(['id', 'uuid', 'parent_id', 'name', 'slug', 'path', 'depth', 'product_count_cached', 'hero_media_id', 'card_media_id']);
 
             return [
                 'departments' => $this->tree(
@@ -57,6 +57,7 @@ final class NavigationController extends Controller
                     null,
                     $this->brandsByDepartment(),
                     $this->departmentHeroes($categories),
+                    $this->departmentCards($categories),
                 ),
                 // Global chrome, not a department: the site-wide banner the
                 // header renders. Rides on the navigation payload because every
@@ -79,7 +80,7 @@ final class NavigationController extends Controller
      * @param  array<int, array<string, mixed>>  $heroes
      * @return list<array<string, mixed>>
      */
-    private function tree(Collection $all, ?int $parentId, array $brands = [], array $heroes = []): array
+    private function tree(Collection $all, ?int $parentId, array $brands = [], array $heroes = [], array $cards = []): array
     {
         $nodes = [];
 
@@ -90,7 +91,7 @@ final class NavigationController extends Controller
                 'url' => $category->url(),
                 'depth' => $category->depth,
                 'product_count' => $category->product_count_cached,
-                'children' => $this->tree($all, $category->id, $brands, $heroes),
+                'children' => $this->tree($all, $category->id, $brands, $heroes, $cards),
             ];
 
             // Only departments carry a brands row and a hero image: the panel
@@ -101,6 +102,7 @@ final class NavigationController extends Controller
             if ($category->depth === 1) {
                 $node['brands'] = $brands[$category->path] ?? [];
                 $node['hero'] = $heroes[$category->hero_media_id] ?? null;
+                $node['card'] = $cards[$category->card_media_id] ?? null;
             }
 
             $nodes[] = $node;
@@ -150,6 +152,25 @@ final class NavigationController extends Controller
         $ids = array_values(array_unique(array_map(
             static fn ($value): int => (int) $value,
             array_filter($all->where('depth', 1)->pluck('hero_media_id')->all()),
+        )));
+
+        return $this->logos($ids);
+    }
+
+    /**
+     * Department SQUARE card images, keyed by media id - the 1:1 crop the
+     * "shop by department" grid tiles and the megamenu prefer over the wide
+     * hero. Nine images at most, shaped like every other image on the site.
+     *
+     * @param  Collection<int, Category>  $all
+     * @return array<int, array<string, mixed>>
+     */
+    private function departmentCards(Collection $all): array
+    {
+        /** @var list<int> $ids */
+        $ids = array_values(array_unique(array_map(
+            static fn ($value): int => (int) $value,
+            array_filter($all->where('depth', 1)->pluck('card_media_id')->all()),
         )));
 
         return $this->logos($ids);
