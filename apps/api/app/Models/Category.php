@@ -95,6 +95,19 @@ final class Category extends Model
         return $this->belongsTo(Media::class, 'hero_media_id');
     }
 
+    /**
+     * The category's SQUARE card image, for the homepage department cards and
+     * the megamenu. Distinct from heroMedia (the horizontal page banner): a 1:1
+     * crop, so a department card is not a letterboxed wide photo. Nullable; the
+     * storefront falls back to heroMedia, then to a typographic tile.
+     *
+     * @return BelongsTo<Media, $this>
+     */
+    public function cardMedia(): BelongsTo
+    {
+        return $this->belongsTo(Media::class, 'card_media_id');
+    }
+
     /** @return HasMany<self, $this> */
     public function children(): HasMany
     {

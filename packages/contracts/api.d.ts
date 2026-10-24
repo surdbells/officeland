@@ -259,12 +259,37 @@ export interface components {
             product_count: number;
             image?: components["schemas"]["Image"] | null;
         };
-        /** @description Editorial content for the homepage. Every section is optional: an empty array means the storefront keeps its built-in derived behaviour for that section. */
+        /** @description One brand card in the homepage brand rail - the whole roster, ordered by live product count. */
+        HomeBrand: {
+            /** @example HP */
+            name: string;
+            /** @example hp */
+            slug: string;
+            /** @example /brands/hp/ */
+            url: string;
+            product_count: number;
+            logo?: components["schemas"]["Image"] | null;
+        };
+        /** @description A homepage product rail for one department: its square card image and a row of live products from its subtree. */
+        DepartmentRail: {
+            /** @example IT Products */
+            name: string;
+            /** @example /c/it-products/ */
+            url: string;
+            product_count: number;
+            image?: components["schemas"]["Image"] | null;
+            products: components["schemas"]["ProductCard"][];
+        };
+        /** @description Editorial content for the homepage. Curated sections (hero, category picks, product picks) are optional and empty-by-default; brands and department rails are derived from live inventory. */
         Home: {
             hero_slides: components["schemas"]["HeroSlide"][];
             category_picks: components["schemas"]["HomeCategoryTile"][];
             /** @description The curated "best sellers" band. Empty means the storefront fills the band from the catalogue instead. */
             product_picks: components["schemas"]["ProductCard"][];
+            /** @description Every brand as a logo-and-name card, ordered by live product count. */
+            brands: components["schemas"]["HomeBrand"][];
+            /** @description One product rail per department that has live products. */
+            department_rails: components["schemas"]["DepartmentRail"][];
         };
         /** @description Specifications arrive already grouped from the source (Icecat CategoryFeatureGroup). */
         SpecificationGroup: {

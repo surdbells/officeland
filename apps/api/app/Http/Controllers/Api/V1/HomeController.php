@@ -7,10 +7,14 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ImageResource;
 use App\Http\Resources\ProductCardResource;
+use App\Models\Brand;
+use App\Models\Category;
 use App\Models\HeroSlide;
 use App\Models\HomepageCategoryPick;
 use App\Models\HomepageProductPick;
 use App\Models\Media;
+use App\Models\Product;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
 
@@ -36,6 +40,9 @@ use OpenApi\Attributes as OA;
  */
 final class HomeController extends Controller
 {
+    /** Products shown in each department rail on the homepage. */
+    private const RAIL_SIZE = 12;
+
     #[OA\Get(
         path: '/api/v1/home',
         operationId: 'getHome',
@@ -58,7 +65,87 @@ final class HomeController extends Controller
             'hero_slides' => $this->heroSlides(),
             'category_picks' => $this->categoryPicks(),
             'product_picks' => $this->productPicks(),
+            'brands' => $this->brands(),
+            'department_rails' => $this->departmentRails(),
         ]]);
+    }
+
+    /**
+     * Every brand, as a card with its logo and name.
+     *
+     * The homepage brand rail represents the whole roster, not a curated few,
+     * so a buyer can see at a glance that OfficeLand carries their brand.
+     * Ordered by how much the brand actually contributes (live product count),
+     * then by name, so the brands with real depth lead. logo_media_id is shaped
+     * like every other image; a brand without a logo yet falls back to its name.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function brands(): array
+    {
+        return Brand::query()
+            ->with('logoMedia.derivatives')
+            ->orderByDesc('product_count_cached')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Brand $brand): array => [
+                'name' => $brand->name,
+                'slug' => $brand->slug,
+                'url' => $brand->url(),
+                'product_count' => (int) $brand->product_count_cached,
+                'logo' => $this->image($brand->logoMedia),
+            ])
+            ->all();
+    }
+
+    /**
+     * A product rail for every department that has live products.
+     *
+     * One rail per depth-1 category, each carrying the department's square card
+     * image and up to RAIL_SIZE active, image-backed products from anywhere in
+     * its subtree (newest first). A department with no live product yields no
+     * rail rather than an empty one - honest mid-import, and self-correcting as
+     * products land. Nine small queries, run once per build (D-009), not per
+     * visitor.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function departmentRails(): array
+    {
+        $departments = Category::query()
+            ->where('depth', 1)
+            ->orderBy('sort_order')
+            ->with(['cardMedia.derivatives', 'heroMedia.derivatives'])
+            ->get();
+
+        $rails = [];
+
+        foreach ($departments as $department) {
+            $products = Product::query()
+                ->active()
+                // A rail of broken images is worse than no rail: only products
+                // whose primary image has generated derivatives qualify.
+                ->whereHas('media', fn (Builder $q) => $q->whereHas('derivatives'))
+                ->whereHas('categories', fn (Builder $q) => $q->where('path', 'like', $department->path.'%'))
+                ->with(['brand', 'media.derivatives', 'attributeValues.attribute'])
+                ->latest('id')
+                ->limit(self::RAIL_SIZE)
+                ->get();
+
+            if ($products->isEmpty()) {
+                continue;
+            }
+
+            $rails[] = [
+                'name' => $department->name,
+                'url' => $department->url(),
+                'product_count' => (int) $department->product_count_cached,
+                'image' => $this->image($department->cardMedia ?? $department->heroMedia),
+                'products' => ProductCardResource::collection($products)->resolve(),
+            ];
+        }
+
+        return $rails;
     }
 
     /**

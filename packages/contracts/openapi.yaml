@@ -471,12 +471,67 @@ components:
             -
               type: 'null'
       type: object
+    HomeBrand:
+      description: 'One brand card in the homepage brand rail - the whole roster, ordered by live product count.'
+      required:
+        - name
+        - slug
+        - url
+        - product_count
+      properties:
+        name:
+          type: string
+          example: HP
+        slug:
+          type: string
+          example: hp
+        url:
+          type: string
+          example: /brands/hp/
+        product_count:
+          type: integer
+        logo:
+          oneOf:
+            -
+              $ref: '#/components/schemas/Image'
+            -
+              type: 'null'
+      type: object
+    DepartmentRail:
+      description: 'A homepage product rail for one department: its square card image and a row of live products from its subtree.'
+      required:
+        - name
+        - url
+        - product_count
+        - products
+      properties:
+        name:
+          type: string
+          example: 'IT Products'
+        url:
+          type: string
+          example: /c/it-products/
+        product_count:
+          type: integer
+        image:
+          oneOf:
+            -
+              $ref: '#/components/schemas/Image'
+            -
+              type: 'null'
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductCard'
+      type: object
     Home:
-      description: 'Editorial content for the homepage. Every section is optional: an empty array means the storefront keeps its built-in derived behaviour for that section.'
+      description: 'Editorial content for the homepage. Curated sections (hero, category picks, product picks) are optional and empty-by-default; brands and department rails are derived from live inventory.'
       required:
         - hero_slides
         - category_picks
         - product_picks
+        - brands
+        - department_rails
       properties:
         hero_slides:
           type: array
@@ -491,6 +546,16 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ProductCard'
+        brands:
+          description: 'Every brand as a logo-and-name card, ordered by live product count.'
+          type: array
+          items:
+            $ref: '#/components/schemas/HomeBrand'
+        department_rails:
+          description: 'One product rail per department that has live products.'
+          type: array
+          items:
+            $ref: '#/components/schemas/DepartmentRail'
       type: object
     SpecificationGroup:
       description: 'Specifications arrive already grouped from the source (Icecat CategoryFeatureGroup).'

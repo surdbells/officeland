@@ -107,11 +107,19 @@ final class CategoryForm
                         ]),
 
                     Section::make('Hero image')
-                        ->description('Use the "Set hero image" button at the top of the page to upload or replace it.')
+                        ->description('Horizontal banner for the category page and featured homepage heroes. Use the "Set hero image" button at the top of the page.')
                         ->schema([
                             Placeholder::make('hero_preview')
                                 ->hiddenLabel()
                                 ->content(fn (?Category $record): HtmlString => self::heroPreview($record)),
+                        ]),
+
+                    Section::make('Card image')
+                        ->description('Square crop for the homepage department cards and the megamenu. Use the "Set card image" button at the top of the page.')
+                        ->schema([
+                            Placeholder::make('card_preview')
+                                ->hiddenLabel()
+                                ->content(fn (?Category $record): HtmlString => self::cardPreview($record)),
                         ]),
                 ]),
 
@@ -158,6 +166,21 @@ final class CategoryForm
         return new HtmlString(
             '<img src="'.e($media->previewUrl()).'" alt="" '
             .'style="max-height:140px;max-width:320px;object-fit:cover;border:1px solid #e5e7eb;border-radius:6px">'
+        );
+    }
+
+    /** Renders the current square card image, or a hint when none is set. */
+    private static function cardPreview(?Category $record): HtmlString
+    {
+        $media = $record?->cardMedia;
+
+        if ($media === null) {
+            return new HtmlString('<span style="color:#6b7280">No card image set yet. The storefront falls back to the hero image.</span>');
+        }
+
+        return new HtmlString(
+            '<img src="'.e($media->previewUrl()).'" alt="" '
+            .'style="height:140px;width:140px;object-fit:cover;border:1px solid #e5e7eb;border-radius:6px">'
         );
     }
 

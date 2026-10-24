@@ -256,9 +256,35 @@ use OpenApi\Attributes as OA;
     type: 'object',
 )]
 #[OA\Schema(
+    schema: 'HomeBrand',
+    description: 'One brand card in the homepage brand rail - the whole roster, ordered by live product count.',
+    required: ['name', 'slug', 'url', 'product_count'],
+    properties: [
+        new OA\Property(property: 'name', type: 'string', example: 'HP'),
+        new OA\Property(property: 'slug', type: 'string', example: 'hp'),
+        new OA\Property(property: 'url', type: 'string', example: '/brands/hp/'),
+        new OA\Property(property: 'product_count', type: 'integer'),
+        new OA\Property(property: 'logo', ref: '#/components/schemas/Image', nullable: true),
+    ],
+    type: 'object',
+)]
+#[OA\Schema(
+    schema: 'DepartmentRail',
+    description: 'A homepage product rail for one department: its square card image and a row of live products from its subtree.',
+    required: ['name', 'url', 'product_count', 'products'],
+    properties: [
+        new OA\Property(property: 'name', type: 'string', example: 'IT Products'),
+        new OA\Property(property: 'url', type: 'string', example: '/c/it-products/'),
+        new OA\Property(property: 'product_count', type: 'integer'),
+        new OA\Property(property: 'image', ref: '#/components/schemas/Image', nullable: true),
+        new OA\Property(property: 'products', type: 'array', items: new OA\Items(ref: '#/components/schemas/ProductCard')),
+    ],
+    type: 'object',
+)]
+#[OA\Schema(
     schema: 'Home',
-    description: 'Editorial content for the homepage. Every section is optional: an empty array means the storefront keeps its built-in derived behaviour for that section.',
-    required: ['hero_slides', 'category_picks', 'product_picks'],
+    description: 'Editorial content for the homepage. Curated sections (hero, category picks, product picks) are optional and empty-by-default; brands and department rails are derived from live inventory.',
+    required: ['hero_slides', 'category_picks', 'product_picks', 'brands', 'department_rails'],
     properties: [
         new OA\Property(property: 'hero_slides', type: 'array', items: new OA\Items(ref: '#/components/schemas/HeroSlide')),
         new OA\Property(property: 'category_picks', type: 'array', items: new OA\Items(ref: '#/components/schemas/HomeCategoryTile')),
@@ -267,6 +293,18 @@ use OpenApi\Attributes as OA;
             description: 'The curated "best sellers" band. Empty means the storefront fills the band from the catalogue instead.',
             type: 'array',
             items: new OA\Items(ref: '#/components/schemas/ProductCard'),
+        ),
+        new OA\Property(
+            property: 'brands',
+            description: 'Every brand as a logo-and-name card, ordered by live product count.',
+            type: 'array',
+            items: new OA\Items(ref: '#/components/schemas/HomeBrand'),
+        ),
+        new OA\Property(
+            property: 'department_rails',
+            description: 'One product rail per department that has live products.',
+            type: 'array',
+            items: new OA\Items(ref: '#/components/schemas/DepartmentRail'),
         ),
     ],
     type: 'object',
