@@ -46,6 +46,10 @@ return [
         // and filtered by supplier for auto-discovery. ~3.9 GB uncompressed, so
         // it is never loaded whole.
         'index' => env('ICECAT_INDEX_URL', 'https://data.icecat.biz/export/freexml/EN/files.index.xml.gz'),
+        // The suppliers reference: every brand Icecat knows, each with its logo
+        // URLs. Tier-independent, so it carries logos the per-product <Supplier>
+        // element omits on the open tier. Used to give brands their real logo.
+        'suppliers_list' => env('ICECAT_SUPPLIERS_URL', 'https://data.icecat.biz/export/freexml/refs/SuppliersList.xml.gz'),
     ],
 
     'timeout' => (int) env('ICECAT_TIMEOUT', 45),
@@ -59,6 +63,11 @@ return [
     // is considered stale and re-fetched.
     'index_cache' => storage_path('app/icecat/files.index.xml.gz'),
     'index_ttl_hours' => (int) env('ICECAT_INDEX_TTL_HOURS', 24),
+
+    // Where the suppliers reference is cached. It is small and changes rarely,
+    // so it is kept a week before a re-fetch.
+    'suppliers_cache' => storage_path('app/icecat/SuppliersList.xml.gz'),
+    'suppliers_ttl_hours' => (int) env('ICECAT_SUPPLIERS_TTL_HOURS', 168),
 
     /*
     |--------------------------------------------------------------------------
