@@ -53,6 +53,14 @@ RUN install-php-extensions \
         fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
+# php-vips binds libvips through FFI at RUNTIME. PHP's ffi.enable defaults to
+# "preload", which allows FFI in the CLI SAPI (queue workers and artisan imports)
+# but BLOCKS it in every other SAPI - so the same image ingest + derivative code
+# that runs fine on the worker throws "Unable to open library 'libvips.so.42'"
+# and 500s inside the Octane (FrankenPHP) web process, e.g. on an admin image
+# upload. Enabling FFI for all SAPIs is required for php-vips under Octane.
+RUN printf "ffi.enable=1\n" > "$PHP_INI_DIR/conf.d/zz-officeland-ffi.ini"
+
 # libvips42 alone can READ avif but not WRITE it: heifsave fails with
 # "Unsupported compression" unless an AV1 encoder is present. AVIF is the first
 # entry in the <picture> fallback chain and roughly 3.5x smaller than JPEG at

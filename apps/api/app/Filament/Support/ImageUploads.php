@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Support;
 
-use App\Media\DerivativeGenerator;
+use App\Jobs\GenerateMediaDerivatives;
 use App\Media\MediaIngestor;
 use App\Models\Media;
 use Illuminate\Support\Facades\Storage;
@@ -21,8 +21,15 @@ use Illuminate\Support\Facades\Storage;
 final class ImageUploads
 {
     /**
-     * Ingest a file the FileUpload component wrote to the 'local' disk, generate
-     * its derivatives, and return the Media. The temp upload is always removed.
+     * Ingest a file the FileUpload component wrote to the 'local' disk, queue its
+     * derivatives, and return the Media. The temp upload is always removed.
+     *
+     * Derivatives are QUEUED, not generated inline: this runs inside the admin
+     * (Octane) web process, and driving libvips through FFI in that persistent
+     * worker is both slow for the request and fragile - it was crashing the
+     * upload with a 500. The dedicated media queue worker generates them off the
+     * request path (exactly as every import does), and the storefront's <picture>
+     * falls back to the original until they land, so the image is usable at once.
      *
      * @param  array{file: string, alt_text: string}  $data
      */
@@ -37,7 +44,7 @@ final class ImageUploads
                 'source' => 'manual',
             ]);
 
-            app(DerivativeGenerator::class)->generate($media);
+            GenerateMediaDerivatives::dispatch($media->id);
 
             return $media;
         } finally {
