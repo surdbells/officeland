@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Content\ProductSpecs;
 use App\Jobs\GenerateMediaDerivatives;
 use App\Media\MediaIngestor;
 use App\Models\Category;
@@ -124,12 +125,18 @@ final class ImportKangaro extends Command
                             'name' => $name,
                             'short_description' => $this->shortDescription($name),
                             'description_html' => '<p>'.e($this->description($name, $category['noun'])).'</p>',
+                            // A template blurb is machine copy: stamp it so the
+                            // spec-driven DescriptionDrafter may replace it and so
+                            // the readiness gate holds it until it is approved.
+                            'description_generated_at' => now(),
                             'primary_category_id' => $categoryIds[$category['path']],
                             'availability' => 'lead_time',
                         ],
                     );
                     $product->categories()->syncWithoutDetaching([$categoryIds[$category['path']] => ['sort_order' => 0]]);
                     $exists ? $updated++ : $created++;
+
+                    ProductSpecs::set($product, $this->specsFrom($record, $category['noun']));
 
                     if (! $product->media()->exists()) {
                         $image = self::BASE.'/Assets/Thumbnail/'.rawurlencode($sku).'.png';
@@ -180,6 +187,40 @@ final class ImportKangaro extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * The real specifications Kangaro returns for a product, as a label => value
+     * map. Only the fields that are genuine specs are taken; IDs, colour hex,
+     * the image and the marketing DESCRIPTION are left out.
+     *
+     * @param  array<string, mixed>  $record
+     * @return array<string, string>
+     */
+    private function specsFrom(array $record, string $noun): array
+    {
+        $map = [
+            'Type' => 'SUBCATEGORYNAME',
+            'Material' => 'MATERIAL',
+            'Stapling capacity' => 'STAPLINGCAPACITY',
+            'Throat depth' => 'THROATDEPTH',
+            'Stapling style' => 'STAPLINGSTYLES',
+            'Clinch type' => 'CLINCHTYPE',
+            'Tacking' => 'TACKING',
+            'Special features' => 'SPECIALFEATURES',
+            'Packing' => 'PACKINGDETAILS',
+            'Carton quantity' => 'CARTONQTY',
+        ];
+
+        $specs = ['Brand' => 'Kangaro', 'Category' => $noun];
+        foreach ($map as $label => $key) {
+            $value = trim((string) ($record[$key] ?? ''));
+            if ($value !== '') {
+                $specs[$label] = $value;
+            }
+        }
+
+        return $specs;
     }
 
     /** A model code like "HD-45" reads as a product with its category noun. */
