@@ -169,6 +169,43 @@ return [
         869 => '/it-products/computer-accessories/cables-adapters/',  // power cable
         1399 => '/it-products/computer-accessories/chargers-power-banks/', // charger / charging dock
         1654 => '/smart-tech/conferencing-av/video-bars/',            // video-conferencing room kit (Google Meet / Teams)
+
+        // Added from the 13-brand survey (2026-10-25): Apple, Dell, Fellowes,
+        // Logitech, Rexel, TP-Link, Canon, Havit, JBL, Epson, Belkin, Lenovo,
+        // Leitz - identified by the real product names.
+        897 => '/it-products/computers/tablets/',                     // tablets (Lenovo Tab / Idea Tab)
+        219 => '/it-products/storage-memory/ssds-internal-drives/',   // internal hard drives
+        911 => '/it-products/storage-memory/',                        // memory modules (RAM)
+        1557 => '/smart-tech/security-surveillance/cctv-cameras/',    // IP security cameras (TP-Link Tapo)
+        909 => '/it-products/networking/routers-access-points/',      // wireless access points (Omada EAP)
+        2049 => '/it-products/networking/routers-access-points/',     // Wi-Fi range extenders
+        1869 => '/it-products/networking/switches-adapters/',         // network transceiver modules (SFP)
+        1675 => '/printers-consumables/printers/',                    // POS / dot-matrix printers
+        228 => '/printers-consumables/printers/',                     // dot-matrix POS printers
+        234 => '/printers-consumables/printers/inkjet-printers/',     // inkjet printers (EcoTank)
+        229 => '/printers-consumables/printers/',                     // label printers (ColorWorks)
+        7408 => '/printers-consumables/ink-toner/ink-cartridges/',    // ink refills / cartridges
+        2595 => '/printers-consumables/ink-toner/drums-maintenance-kits/', // cleaning / maintenance sets
+        1010 => '/office-supplies/labelling-identification/labels/',  // label media rolls
+        714 => '/paper-notebooks/specialty-paper/photo-paper/',       // fine-art / photo paper
+        859 => '/it-products/monitors-displays/projectors-screens/',  // projector filters / accessories
+        575 => '/smart-tech/cameras-imaging/digital-cameras/',        // cameras (Canon EOS)
+        588 => '/smart-tech/cameras-imaging/camera-accessories/',     // camera lenses (Canon RF)
+        706 => '/paper-notebooks/notebooks-pads/',                    // notebooks (Leitz)
+        477 => '/filing-storage/files-folders/ring-binders/',         // ring binders (Leitz)
+        484 => '/filing-storage/files-folders/document-files-boxes/', // flap / document folders
+        942 => '/it-products/computer-accessories/stands-mounts/',    // monitor mounts / stands
+        2813 => '/it-products/computer-accessories/keyboards-mice/',  // folio / pogo-pin keyboards
+        2774 => '/it-products/computer-accessories/laptop-bags-cases/', // tablet folio cases
+        210 => '/it-products/computers/workstations-servers/',        // disk arrays (PowerVault)
+        932 => '/it-products/computers/workstations-servers/',        // storage servers (PowerStore)
+        814 => '/it-products/computer-accessories/chargers-power-banks/', // laptop batteries
+        1151 => '/it-products/computer-accessories/cables-adapters/', // power extensions
+        203 => '/it-products/computer-accessories/',                  // stylus pens
+        943 => '/it-products/computer-accessories/',                  // display privacy filters
+        1041 => '/it-products/computer-accessories/',                 // wrist rests (Fellowes)
+        1870 => '/smart-tech/conferencing-av/',                       // soundbars (JBL / Dell)
+        1081 => '/smart-tech/conferencing-av/',                       // commercial loudspeakers (JBL)
     ],
 
     /*
@@ -216,5 +253,11 @@ return [
         237,  // PC cases / chassis
         862,  // drive enclosures
         204,  // mouse pads
+
+        // 13-brand survey (2026-10-25): components, licences and non-office goods.
+        989,  // bare server processors (Xeon)
+        803,  // software licences (Absolute, Omada Cloud)
+        7,    // operating-system / software licences (Dell)
+        2426, // travel / cosmetic pouches (Leitz) - not office
     ],
 ];
