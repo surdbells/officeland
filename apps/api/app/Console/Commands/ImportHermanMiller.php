@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Content\ProductSpecs;
 use App\Jobs\GenerateMediaDerivatives;
 use App\Media\MediaIngestor;
 use App\Models\Category;
@@ -335,12 +336,21 @@ final class ImportHermanMiller extends Command
                         'name' => $name,
                         'short_description' => $this->shortDescription($name),
                         'description_html' => '<p>'.e($this->description($name)).'</p>',
+                        // A template blurb is machine copy: stamp it so the
+                        // spec-driven DescriptionDrafter may replace it and so the
+                        // readiness gate holds it until it is approved.
+                        'description_generated_at' => now(),
                         'primary_category_id' => $categoryIds[$path],
                         'availability' => 'lead_time',
                     ],
                 );
                 $product->categories()->syncWithoutDetaching([$categoryIds[$path] => ['sort_order' => 0]]);
                 $exists ? $updated++ : $created++;
+
+                // Record the product's real, factual specs (type, brand, size,
+                // configuration options) so each draft clears the content-
+                // readiness floor of three specs. Never HM's marketing prose.
+                ProductSpecs::set($product, $this->specsFrom($pdp));
 
                 if (! $product->media()->exists()) {
                     $clean = strtok($image, '?');
@@ -443,7 +453,7 @@ final class ImportHermanMiller extends Command
      * Product/ProductGroup block, so the caller can count that gap. Returns null
      * only when the page has no breadcrumb at all.
      *
-     * @return array{name: string, image: string, crumbs: list<string>}|null
+     * @return array{name: string, image: string, crumbs: list<string>, brand: string, options: array<string, string>, colours: string, details: array<string, string>}|null
      */
     private function parsePdp(string $url): ?array
     {
@@ -459,6 +469,11 @@ final class ImportHermanMiller extends Command
         $name = '';
         $image = '';
         $crumbs = [];
+        $brand = '';
+        /** @var array<string, array<string, true>> $options  option name => set of distinct values */
+        $options = [];
+        /** @var array<string, true> $colours */
+        $colours = [];
 
         foreach ($scripts[1] as $json) {
             $data = json_decode(trim($json), true);
@@ -482,6 +497,29 @@ final class ImportHermanMiller extends Command
                         }
                     }
                 }
+
+                // Brand is carried on the group/variant node as {name: ...}.
+                if ($brand === '') {
+                    $b = $node['brand'] ?? null;
+                    $brand = trim((string) (is_array($b) ? ($b['name'] ?? '') : (is_string($b) ? $b : '')));
+                }
+
+                // The ProductGroup's variants each carry the configuration facts
+                // (Arms, Tilt, Back Support, Base, Seat Style, Caster, ...) as
+                // schema.org PropertyValue pairs, plus a colour. Aggregate the
+                // distinct values across every variant so the product records the
+                // real options it ships in, not one configuration.
+                foreach ($this->propertyPairs($node['additionalProperty'] ?? null) as [$pn, $pv]) {
+                    $options[$pn][$pv] = true;
+                }
+                $colour = $node['color'] ?? null;
+                if (is_string($colour) && $colour !== '') {
+                    // "Graphite, Black" (seat, frame) -> the leading colour name.
+                    $lead = trim((string) strtok($colour, ','));
+                    if ($lead !== '') {
+                        $colours[$lead] = true;
+                    }
+                }
             }
         }
 
@@ -489,7 +527,149 @@ final class ImportHermanMiller extends Command
             return null;
         }
 
-        return ['name' => $name, 'image' => $image, 'crumbs' => $crumbs];
+        /** @var array<string, string> $optionStrings */
+        $optionStrings = [];
+        foreach ($options as $pn => $set) {
+            $optionStrings[$pn] = Str::limit(implode(', ', array_slice(array_keys($set), 0, 8)), 200, '');
+        }
+
+        return [
+            'name' => $name,
+            'image' => $image,
+            'crumbs' => $crumbs,
+            'brand' => $brand,
+            'options' => $optionStrings,
+            'colours' => Str::limit(implode(', ', array_slice(array_keys($colours), 0, 10)), 200, ''),
+            'details' => $this->htmlSpecs($html),
+        ];
+    }
+
+    /**
+     * Normalise a schema.org additionalProperty (a single PropertyValue or a
+     * list of them) to a list of [name, value] string pairs, blanks dropped.
+     *
+     * @return list<array{0: string, 1: string}>
+     */
+    private function propertyPairs(mixed $prop): array
+    {
+        if (! is_array($prop)) {
+            return [];
+        }
+        // A single {name, value} object vs a list of them.
+        $list = isset($prop['name']) ? [$prop] : $prop;
+
+        $out = [];
+        foreach ($list as $pv) {
+            if (! is_array($pv)) {
+                continue;
+            }
+            $n = trim((string) ($pv['name'] ?? ''));
+            $v = trim((string) ($pv['value'] ?? ''));
+            if ($n !== '' && $v !== '') {
+                $out[] = [$n, $v];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Factual specs rendered server-side into the SFCC PDP summary as a
+     * definition list (<dt>label</dt><dd>value</dd>) and the detailed dimension
+     * list. Only whitelisted, genuinely factual labels are kept (brand,
+     * collection, dimensions, weight, assembly, warranty, and the ergonomic
+     * seat-height / weight-capacity measures); marketing blurbs and icon-only
+     * "lifestyle" rows are ignored.
+     *
+     * @return array<string, string>
+     */
+    private function htmlSpecs(string $html): array
+    {
+        $decode = static fn (string $s): string => trim(preg_replace('/\s+/', ' ',
+            strip_tags(html_entity_decode($s, ENT_QUOTES | ENT_HTML5, 'UTF-8'))) ?? '');
+
+        // dt => canonical spec label.
+        $wanted = [
+            'Brand' => 'Brand',
+            'Collection' => 'Collection',
+            'General Dimensions' => 'Dimensions',
+            'Product Weight' => 'Weight',
+            'Assembly' => 'Assembly',
+            'Warranty' => 'Warranty',
+        ];
+
+        $out = [];
+        if (preg_match_all('#<dt>\s*(.*?)\s*</dt>\s*<dd[^>]*>(.*?)</dd>#s', $html, $pairs, PREG_SET_ORDER)) {
+            foreach ($pairs as $pair) {
+                $label = $decode($pair[1]);
+                if (! isset($wanted[$label]) || isset($out[$wanted[$label]])) {
+                    continue;
+                }
+                $value = $decode($pair[2]);
+                if ($label === 'Warranty') {
+                    // Drop the boilerplate tail ("Terms and conditions ... Learn more").
+                    $value = trim((string) preg_split('/\s*Terms and conditions/i', $value)[0]);
+                }
+                if ($value !== '') {
+                    $out[$wanted[$label]] = Str::limit($value, 240, '');
+                }
+            }
+        }
+
+        // The detailed dimension block adds ergonomic measures (seat height,
+        // weight capacity) that the one-line General Dimensions summary omits.
+        if (preg_match('#<ul[^>]*dimension-body[^>]*>(.*?)</ul>#s', $html, $ul)
+            && preg_match_all('#<li[^>]*>(.*?)</li>#s', $ul[1], $lis)) {
+            $ergonomic = ['Seat Height' => 'Seat height', 'Weight Capacity' => 'Weight capacity'];
+            foreach ($lis[1] as $li) {
+                // e.g. "Seat Height (in): 18 1/2" or "Weight Capacity (lbs): 300".
+                if (preg_match('/^(.*?)\s*\(([^)]*)\)\s*:\s*(.+)$/', $decode($li), $m)) {
+                    $label = trim($m[1]);
+                    if (isset($ergonomic[$label]) && ! isset($out[$ergonomic[$label]])) {
+                        $out[$ergonomic[$label]] = Str::limit(trim($m[3]).' '.trim($m[2]), 60, '');
+                    }
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Assemble the product's factual spec map from the parsed PDP. Order matters:
+     * most identifying facts first. Blank values are dropped by ProductSpecs.
+     *
+     * @param  array{name: string, image: string, crumbs: list<string>, brand: string, options: array<string, string>, colours: string, details: array<string, string>}  $pdp
+     * @return array<string, string>
+     */
+    private function specsFrom(array $pdp): array
+    {
+        $details = $pdp['details'];
+
+        $specs = [
+            // Breadcrumb leaf is the product type (e.g. "Side Chairs").
+            'Type' => $this->tidyName((string) end($pdp['crumbs'])),
+            'Brand' => $pdp['brand'] !== '' ? $pdp['brand'] : 'Herman Miller',
+            'Collection' => $details['Collection'] ?? '',
+            'Dimensions' => $details['Dimensions'] ?? '',
+            'Seat height' => $details['Seat height'] ?? '',
+            'Weight capacity' => $details['Weight capacity'] ?? '',
+            'Weight' => $details['Weight'] ?? '',
+        ];
+
+        // Configuration facts from the variants (Arms, Tilt, Back Support, Base,
+        // Seat Style, Caster, ...). Each becomes a shared, filterable facet.
+        foreach ($pdp['options'] as $name => $value) {
+            $specs[$name] = $value;
+        }
+
+        if ($pdp['colours'] !== '') {
+            $specs['Colour options'] = $pdp['colours'];
+        }
+        $specs['Assembly'] = $details['Assembly'] ?? '';
+        $specs['Warranty'] = $details['Warranty'] ?? '';
+
+        return $specs;
     }
 
     /**

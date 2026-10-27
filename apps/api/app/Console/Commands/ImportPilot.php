@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Content\ProductSpecs;
 use App\Jobs\GenerateMediaDerivatives;
 use App\Media\MediaIngestor;
 use App\Models\Category;
@@ -163,12 +164,18 @@ final class ImportPilot extends Command
                         'name' => $name,
                         'short_description' => $this->shortDescription($name),
                         'description_html' => '<p>'.e($this->description($name)).'</p>',
+                        // The blurb above is a template, not sourced copy: stamp it
+                        // so the spec-driven DescriptionDrafter may replace it and so
+                        // the readiness gate holds it until it is approved.
+                        'description_generated_at' => now(),
                         'primary_category_id' => $categoryIds[$path],
                         'availability' => 'lead_time',
                     ],
                 );
                 $product->categories()->syncWithoutDetaching([$categoryIds[$path] => ['sort_order' => 0]]);
                 $exists ? $updated++ : $created++;
+
+                ProductSpecs::set($product, $this->specsFrom($html, $name, $url));
 
                 if (! $product->media()->exists()) {
                     $clean = strtok($image, '?');
@@ -346,6 +353,133 @@ final class ImportPilot extends Command
     private function categoryFor(string $name): string
     {
         return Str::contains(Str::lower($name), ['pintor', 'marker']) ? self::MARKERS : self::PENS;
+    }
+
+    /**
+     * The product's real specifications as a [label => value] map, taken from the
+     * PDP. Brand + Type + Range are always known (the URL section is a truthful
+     * source of the writing-instrument type); tip size, ink colours, nib sizes,
+     * body material and refillable/retractable are added only when the product's
+     * own copy states them. Site chrome (the mega-menu's category words) is
+     * stripped first so a nav link like "Erasable pens" never reads as a fact.
+     *
+     * @return array<string, string>
+     */
+    private function specsFrom(string $html, string $name, string $url): array
+    {
+        $path = parse_url($url, PHP_URL_PATH) ?: $url;
+        $segments = array_values(array_filter(explode('/', $path)));
+        $section = $segments[1] ?? '';
+        $leaf = end($segments) ?: $section;
+
+        $specs = ['Brand' => 'Pilot'];
+
+        $type = $this->typeFor($section, (string) $leaf);
+        if ($type !== '') {
+            $specs['Type'] = $type;
+        }
+
+        // Range/series: for a family section (/our-products/frixion/<leaf>) the
+        // section names the family; for a single-level product the section IS the
+        // product, so the name is the range.
+        $specs['Range'] = in_array($section, ['frixion', 'pintor', 'capless'], true) && $leaf !== $section
+            ? Str::title(str_replace('-', ' ', $section))
+            : $name;
+
+        $text = $this->visibleText($html);
+
+        // Tip / line width, e.g. "a smooth 0.7mm tip".
+        if (preg_match('/(\d+(?:[.,]\d+)?)\s*mm\b/i', $text, $m)) {
+            $specs['Tip size'] = str_replace(',', '.', $m[1]).' mm';
+        }
+
+        // Ink colours, as genuinely phrased: "Available in black and blue ink" or
+        // "Available in four colors: black, blue, green, and red.".
+        $colours = '';
+        if (preg_match('/available in\s+([a-z][a-z,\s]*?(?:\s+and\s+[a-z]+)?)\s+ink\b/i', $text, $m)) {
+            $colours = $m[1];
+        } elseif (preg_match('/available in\s+[a-z0-9]+\s+colou?rs?\s*:\s*([a-z][a-z,\s]*?(?:\s+and\s+[a-z]+)?)\s*[.<]/i', $text, $m)) {
+            $colours = $m[1];
+        }
+        $colours = $this->normaliseList($colours);
+        if ($colours !== '') {
+            $specs['Ink colours'] = $colours;
+        }
+
+        // Nib sizes (fine writing): "available in 4 nib sizes: soft fine, ...".
+        if (preg_match('/available in\s+[a-z0-9]+\s+nib sizes?\s*:\s*([a-z][a-z,\s]*?(?:\s+and\s+[a-z]+)?)\s*[.<]/i', $text, $m)) {
+            $nib = $this->normaliseList($m[1]);
+            if ($nib !== '') {
+                $specs['Nib sizes'] = $nib;
+            }
+        }
+
+        // Body material, e.g. "lacquered steel barrel", "aluminium body".
+        if (preg_match('/\b((?:lacquered\s+)?(?:stainless\s+)?(?:steel|aluminium|aluminum|brass|resin|metal|plastic|wood|ebonite|acrylic))\s+(?:barrel|body)\b/i', $text, $m)) {
+            $specs['Body material'] = Str::ucfirst(Str::lower(trim($m[1])));
+        }
+
+        if (preg_match('/\brefillable\b/i', $text)) {
+            $specs['Refillable'] = 'Yes';
+        }
+        if (preg_match('/\bretractable\b/i', $text)) {
+            $specs['Retractable'] = 'Yes';
+        }
+
+        return $specs;
+    }
+
+    /**
+     * The writing-instrument type implied by the URL section (and, for inks, the
+     * leaf). The section is navigation Pilot itself assigns, so it is a truthful
+     * source of the product type even when the page copy is pure marketing.
+     */
+    private function typeFor(string $section, string $leaf): string
+    {
+        if ($leaf === 'iroshizuku-inks') {
+            return 'Fountain pen ink';
+        }
+
+        return [
+            'ballpoint-pens' => 'Ballpoint pen',
+            'gel-ink-pens' => 'Gel ink pen',
+            'liquid-ink-pens' => 'Liquid ink rollerball pen',
+            'markers' => 'Marker',
+            'pintor' => 'Paint marker',
+            'frixion' => 'Erasable gel ink pen',
+            'capless' => 'Fountain pen (retractable)',
+            'refills' => 'Refill',
+            'fine-writing' => 'Fountain pen',
+        ][$section] ?? '';
+    }
+
+    /**
+     * Visible page text with site chrome removed, for the factual parse. The
+     * mega-menu, header and footer carry category words (e.g. "Erasable pens")
+     * that must not be mistaken for this product's own specification.
+     */
+    private function visibleText(string $html): string
+    {
+        foreach (['script', 'style', 'header', 'nav', 'footer'] as $tag) {
+            $html = preg_replace('#<'.$tag.'\b[^>]*>.*?</'.$tag.'>#is', ' ', $html) ?? $html;
+        }
+        $text = preg_replace('#<[^>]+>#', ' ', $html) ?? $html;
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5);
+
+        return trim(preg_replace('#\s+#', ' ', $text) ?? $text);
+    }
+
+    /** Tidy a parsed comma/and-separated list; drop implausibly long captures. */
+    private function normaliseList(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '' || mb_strlen($value) > 120) {
+            return '';
+        }
+        $value = preg_replace('/\s*,\s*/', ', ', $value) ?? $value;
+        $value = preg_replace('/\s+/', ' ', $value) ?? $value;
+
+        return Str::ucfirst($value);
     }
 
     private function shortDescription(string $name): string

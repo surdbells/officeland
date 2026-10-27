@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Content\ProductSpecs;
 use App\Jobs\GenerateMediaDerivatives;
 use App\Media\MediaIngestor;
 use App\Models\Category;
@@ -162,12 +163,20 @@ final class ImportMgStationery extends Command
                                 'name' => $item['name'],
                                 'short_description' => $this->shortDescription($item['name']),
                                 'description_html' => '<p>'.e($this->description($item['name'])).'</p>',
+                                // A template blurb is machine copy: stamp it so the
+                                // spec-driven DescriptionDrafter may replace it and so
+                                // the readiness gate holds it until it is approved.
+                                'description_generated_at' => now(),
                                 'primary_category_id' => $categoryIds[$path],
                                 'availability' => 'lead_time',
                             ],
                         );
                         $product->categories()->syncWithoutDetaching([$categoryIds[$path] => ['sort_order' => 0]]);
                         $exists ? $updated++ : $created++;
+
+                        // Record real specs from the product's PDP (one fetch each):
+                        // brand, type, model code and any characteristics table.
+                        ProductSpecs::set($product, $this->specsFor($item['name'], $item['url']));
 
                         if (! $product->media()->exists()) {
                             $tmp = tempnam(sys_get_temp_dir(), 'mg').'.'.(pathinfo($item['image'], PATHINFO_EXTENSION) ?: 'jpg');
@@ -222,10 +231,11 @@ final class ImportMgStationery extends Command
     }
 
     /**
-     * Products on one HikaShop listing page: name (from the image title) and the
-     * full-size image URL (the listing links a 400x400 thumbnail).
+     * Products on one HikaShop listing page: name (from the image title), the
+     * full-size image URL (the listing links a 400x400 thumbnail) and the PDP
+     * URL (the tile anchor wraps the image). The PDP is where the real specs are.
      *
-     * @return list<array{name: string, image: string}>
+     * @return list<array{name: string, image: string, url: string}>
      */
     private function scrapePage(string $category, int $start): array
     {
@@ -242,12 +252,22 @@ final class ImportMgStationery extends Command
             return [];
         }
 
-        if (! preg_match_all('#<img\b[^>]*class="[^"]*hikashop_product_listing_image[^"]*"[^>]*>#i', $html, $tags)) {
+        // Each tile is an anchor to the product page wrapping its listing image;
+        // capture the href and the img tag together so name, photo and PDP stay
+        // paired (pairing by position would drift when a tile is malformed).
+        if (! preg_match_all(
+            '#<a\b[^>]*\bhref="([^"]*/product/[^"]+)"[^>]*>\s*(<img\b[^>]*class="[^"]*hikashop_product_listing_image[^"]*"[^>]*>)#is',
+            $html,
+            $tiles,
+            PREG_SET_ORDER,
+        )) {
             return [];
         }
 
         $out = [];
-        foreach ($tags[0] as $tag) {
+        foreach ($tiles as $tile) {
+            $pdp = $tile[1];
+            $tag = $tile[2];
             if (! preg_match('#\btitle="([^"]*)"#i', $tag, $tm)) {
                 continue;
             }
@@ -280,10 +300,174 @@ final class ImportMgStationery extends Command
                 $image = self::BASE.$image;
             }
 
-            $out[] = ['name' => $name, 'image' => $image];
+            if (str_starts_with($pdp, '//')) {
+                $pdp = 'https:'.$pdp;
+            } elseif (str_starts_with($pdp, '/')) {
+                $pdp = self::BASE.$pdp;
+            }
+
+            $out[] = ['name' => $name, 'image' => $image, 'url' => $pdp];
         }
 
         return $out;
+    }
+
+    /**
+     * The real specifications for a product. HikaShop has no brand/manufacturer
+     * field, so brand is read from the name prefix and the type from the PDP
+     * URL's category segment; the PDP is then fetched once for its product code
+     * (SKU) and characteristics table (e.g. the colour options). Pack size, point
+     * size and dimensions the site bakes into the product name are added last so
+     * they never displace a real on-page value.
+     *
+     * @return array<string, string>
+     */
+    private function specsFor(string $name, string $url): array
+    {
+        $specs = [];
+
+        if (($brand = $this->brandFrom($name)) !== null) {
+            $specs['Brand'] = $brand;
+        }
+        if (($type = $this->typeFromUrl($url)) !== null) {
+            $specs['Type'] = $type;
+        }
+
+        $html = Http::timeout(30)
+            ->withHeaders(['User-Agent' => 'Mozilla/5.0 (compatible; OfficeLandImporter/1.0)'])
+            ->retry(2, 1500, throw: false)
+            ->get($url)
+            ->body();
+
+        if ($html !== '') {
+            if (preg_match('#id="hikashop_product_code_main"[^>]*>([^<]+)<#i', $html, $m)) {
+                $code = trim(html_entity_decode($m[1], ENT_QUOTES));
+                if ($code !== '') {
+                    $specs['Model'] = $code;
+                }
+            }
+
+            foreach ($this->characteristics($html) as $label => $value) {
+                $specs[$label] = $value;
+            }
+        }
+
+        // Union: keep on-page values, add name-derived cues that don't collide.
+        return $specs + $this->specsFromName($name);
+    }
+
+    /** The brand read from a known leading token of the product name, or null. */
+    private function brandFrom(string $name): ?string
+    {
+        $upper = mb_strtoupper(ltrim($name));
+
+        // Canonical brand => uppercase name prefixes this wholesaler ships under.
+        $brands = [
+            'M&G' => ['M&G', 'M & G'],
+            'Maped' => ['MAPED'],
+            'Deli' => ['DELI'],
+            'Faber-Castell' => ['FABER-CASTELL', 'FABER CASTELL'],
+            'Stabilo' => ['STABILO'],
+            'Staedtler' => ['STAEDTLER'],
+            'Pilot' => ['PILOT'],
+            'Pentel' => ['PENTEL'],
+            'Zebra' => ['ZEBRA'],
+            'Casio' => ['CASIO'],
+            'Kangaro' => ['KANGARO'],
+        ];
+
+        foreach ($brands as $canonical => $prefixes) {
+            foreach ($prefixes as $prefix) {
+                if ($upper === $prefix || str_starts_with($upper, $prefix.' ')) {
+                    return $canonical;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /** The product type from the category segment of a PDP URL (…/{type}/product/…). */
+    private function typeFromUrl(string $url): ?string
+    {
+        if (! preg_match('#/([^/]+)/product/#', $url, $m)) {
+            return null;
+        }
+
+        $type = trim(preg_replace('/\s+/', ' ', str_replace('-', ' ', $m[1])) ?? '');
+
+        return $type === '' ? null : Str::title($type);
+    }
+
+    /**
+     * The HikaShop characteristics table as a [label => value] map. A variant row
+     * is a <select>, so its option labels are gathered (e.g. "Blue, Red, Black");
+     * a plain row takes its cell text.
+     *
+     * @return array<string, string>
+     */
+    private function characteristics(string $html): array
+    {
+        if (! preg_match('#<table[^>]*class="[^"]*hikashop_product_characteristics_table[^"]*"[^>]*>(.*?)</table>#is', $html, $tm)) {
+            return [];
+        }
+
+        $out = [];
+        if (preg_match_all('#<tr[^>]*>\s*<td>(.*?)</td>\s*<td>(.*?)</td>\s*</tr>#is', $tm[1], $rows, PREG_SET_ORDER)) {
+            foreach ($rows as $row) {
+                $label = trim(html_entity_decode(strip_tags($row[1]), ENT_QUOTES));
+
+                if (preg_match_all('#<option[^>]*>(.*?)</option>#is', $row[2], $opts)) {
+                    $values = array_values(array_unique(array_filter(array_map(
+                        static fn (string $o): string => trim(html_entity_decode(strip_tags($o), ENT_QUOTES)),
+                        $opts[1],
+                    ))));
+                    $value = implode(', ', $values);
+                } else {
+                    $value = trim(html_entity_decode(strip_tags($row[2]), ENT_QUOTES));
+                }
+
+                if ($label !== '' && $value !== '') {
+                    // "Color" -> "Colour" to match the house spelling used elsewhere.
+                    $out[Str::title(mb_strtolower($label) === 'color' ? 'Colour' : $label)] = $value;
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Pack size, colour count, dimensions, volume and writing-point size that the
+     * site encodes inside the product name (e.g. "48'S/BOX", "( 25ML )", "0.5").
+     *
+     * @return array<string, string>
+     */
+    private function specsFromName(string $name): array
+    {
+        $specs = [];
+
+        if (preg_match("#(\d+)\s*(?:'S|PCS)\s*/\s*(BOX|SET|CARD|PKT|PACK)#i", $name, $m)) {
+            $specs['Pack quantity'] = $m[1].' pcs/'.mb_strtolower($m[2]);
+        }
+
+        if (preg_match('#(\d+)\s*COLOU?RS#i', $name, $m)) {
+            $specs['Colours'] = $m[1];
+        }
+
+        if (preg_match('#(\d+(?:\.\d+)?\s*(?:X|\*)\s*\d+(?:\.\d+)?(?:\s*(?:X|\*)\s*\d+(?:\.\d+)?)?\s*MM)#i', $name, $m)) {
+            $specs['Dimensions'] = trim(preg_replace('/\s+/', ' ', $m[1]) ?? $m[1]);
+        }
+
+        if (preg_match('#(\d+(?:\.\d+)?)\s*ML\b#i', $name, $m)) {
+            $specs['Volume'] = $m[1].' ml';
+        }
+
+        if (preg_match('#(?<![\d.])(0\.\d|1\.0)(?![\d.])#', $name, $m)) {
+            $specs['Point size'] = $m[1].' mm';
+        }
+
+        return $specs;
     }
 
     private function categoryFor(string $name): string

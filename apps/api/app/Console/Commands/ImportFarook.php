@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Content\ProductSpecs;
 use App\Jobs\GenerateMediaDerivatives;
 use App\Media\MediaIngestor;
 use App\Models\Category;
@@ -220,12 +221,18 @@ final class ImportFarook extends Command
                             'name' => $item['name'],
                             'short_description' => $this->shortDescription($item['name']),
                             'description_html' => '<p>'.e($this->description($item['name'])).'</p>',
+                            // Template blurb is machine copy: stamp it so the
+                            // spec-driven DescriptionDrafter may replace it and
+                            // the readiness gate holds it until it is approved.
+                            'description_generated_at' => now(),
                             'primary_category_id' => $categoryIds[$path],
                             'availability' => 'lead_time',
                         ],
                     );
                     $product->categories()->syncWithoutDetaching([$categoryIds[$path] => ['sort_order' => 0]]);
                     $exists ? $updated++ : $created++;
+
+                    ProductSpecs::set($product, $this->specsFor($item, $path));
 
                     if (! $product->media()->exists()) {
                         $clean = strtok($item['image'], '?');
@@ -284,7 +291,7 @@ final class ImportFarook extends Command
      * Products on one storefront category page, from its schema.org ItemList
      * JSON-LD (name, primary image, canonical URL).
      *
-     * @return list<array{name: string, image: string, slug: string}>
+     * @return list<array{name: string, image: string, slug: string, url: string}>
      */
     private function scrapeCategory(string $slug): array
     {
@@ -332,6 +339,7 @@ final class ImportFarook extends Command
                     'name' => $this->tidyName($name),
                     'image' => $image,
                     'slug' => $slugKey,
+                    'url' => $url,
                 ];
             }
         }
@@ -357,7 +365,7 @@ final class ImportFarook extends Command
                     continue;
                 }
                 $seen[$slugKey] = true;
-                $out[] = ['name' => $this->tidyName($name), 'image' => $image, 'slug' => $slugKey];
+                $out[] = ['name' => $this->tidyName($name), 'image' => $image, 'slug' => $slugKey, 'url' => ''];
             }
         }
 
@@ -397,6 +405,207 @@ final class ImportFarook extends Command
     private function tidyName(string $name): string
     {
         return trim(preg_replace('/\s+-\s+(?=[A-Z0-9-]*\d)[A-Z0-9][A-Z0-9-]{3,}$/', '', $name));
+    }
+
+    /**
+     * Real specifications for a product, as a label => value map for
+     * ProductSpecs. Three are always available from the listing itself - Brand
+     * (read from the product name, falling back to the storefront house brand),
+     * the confirmed OfficeLand leaf Category, and the SKU - which clears the
+     * content-readiness floor on its own. The product's detail page is then
+     * fetched for the authoritative SKU and whatever structured attributes it
+     * publishes (Type, Colour, Material, Weight, pack size, size), so a pen ends
+     * up distinguishable from its siblings. A failed/thin PDP simply leaves the
+     * three listing specs, enriched by any pack size read from the name.
+     *
+     * @param  array{name: string, image: string, slug: string, url: string}  $item
+     * @return array<string, string>
+     */
+    private function specsFor(array $item, string $path): array
+    {
+        $pdp = $item['url'] !== '' ? $this->fetchPdpSpecs($item['url']) : [];
+
+        $sku = trim((string) ($pdp['sku'] ?? '')) ?: $this->skuFromSlug($item['slug']);
+
+        $specs = [
+            'Brand' => $this->brandFor($item['name'], (string) ($pdp['brand'] ?? '')),
+            'Category' => $this->humanizeCategory($path),
+        ];
+        if ($sku !== '') {
+            $specs['SKU'] = $sku;
+        }
+
+        // Structured attributes the PDP publishes (already label => value).
+        foreach (($pdp['attributes'] ?? []) as $label => $value) {
+            $specs[$label] = $value;
+        }
+
+        // Pack size is usually in the name ("Pack of 5", "12-Piece", "100
+        // Sheets") when the PDP did not spell it out; keep the PDP's own value.
+        if (! isset($specs['Pack size']) && ($pack = $this->packFromName($item['name'])) !== null) {
+            $specs['Pack size'] = $pack;
+        }
+
+        return $specs;
+    }
+
+    /**
+     * Fetch a product's detail page and read its authoritative SKU/brand from
+     * the Product JSON-LD and its structured specs from the SEO meta
+     * description, which the storefront renders server-side as "Label : value"
+     * runs (e.g. "Type : Liquid Glue Weight : 40ml Number of Pieces : 36"). Only
+     * labelled, space-delimited pairs are taken, so marketing prose and the
+     * name-echo descriptions yield nothing rather than junk.
+     *
+     * @return array{sku?: string, brand?: string, attributes?: array<string, string>}
+     */
+    private function fetchPdpSpecs(string $url): array
+    {
+        try {
+            $html = Http::timeout(20)->retry(1, 1000, throw: false)
+                ->withHeaders(['User-Agent' => 'Mozilla/5.0 (compatible; OfficeLandBot/1.0)'])
+                ->get($url)
+                ->body();
+        } catch (\Throwable) {
+            return [];
+        }
+
+        if ($html === '') {
+            return [];
+        }
+
+        $out = [];
+
+        if (preg_match_all('#<script type="application/ld\+json">(.*?)</script>#s', $html, $scripts)) {
+            foreach ($scripts[1] as $json) {
+                $data = json_decode(trim($json), true);
+                if (! is_array($data)) {
+                    continue;
+                }
+                foreach ($this->findProducts($data) as $product) {
+                    if (($sku = trim((string) ($product['sku'] ?? ''))) !== '') {
+                        $out['sku'] = $sku;
+                    }
+                    $brand = $product['brand'] ?? null;
+                    $name = is_array($brand) ? ($brand['name'] ?? '') : $brand;
+                    if (($name = trim((string) $name)) !== '') {
+                        $out['brand'] = $name;
+                    }
+                    break 2;
+                }
+            }
+        }
+
+        if (preg_match('#<meta name="description" content="([^"]*)"#i', $html, $m)) {
+            $attributes = $this->specsFromMeta(html_entity_decode($m[1], ENT_QUOTES));
+            if ($attributes !== []) {
+                $out['attributes'] = $attributes;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Parse a storefront meta description into a label => value map. Labels must
+     * be from the known set and delimited with a spaced colon (" : "), so the
+     * genuine spec runs are picked up while prose such as "designSize:9X7 ..."
+     * and plain name echoes are ignored. Values are capped to a spec-like length.
+     *
+     * @return array<string, string>
+     */
+    private function specsFromMeta(string $desc): array
+    {
+        $labels = 'Number of Pieces|Pack ?Size|Type|Colou?r|Material|Weight|Capacity|Dimensions|Size';
+        if (! preg_match_all('/('.$labels.')\s+:\s+/i', $desc, $m, PREG_OFFSET_CAPTURE)) {
+            return [];
+        }
+
+        $canonical = [
+            'number of pieces' => 'Pack size',
+            'pack size' => 'Pack size',
+            'packsize' => 'Pack size',
+            'color' => 'Colour',
+            'colour' => 'Colour',
+            'dimensions' => 'Size',
+            'size' => 'Size',
+            'type' => 'Type',
+            'material' => 'Material',
+            'weight' => 'Weight',
+            'capacity' => 'Capacity',
+        ];
+
+        $out = [];
+        $count = count($m[0]);
+        for ($i = 0; $i < $count; $i++) {
+            $raw = mb_strtolower(preg_replace('/\s+/', ' ', trim($m[1][$i][0])));
+            $label = $canonical[$raw] ?? null;
+            $start = $m[0][$i][1] + strlen($m[0][$i][0]);
+            $end = ($i + 1 < $count) ? $m[0][$i + 1][1] : strlen($desc);
+            $value = trim(substr($desc, $start, $end - $start));
+
+            if ($label !== null && $value !== '' && mb_strlen($value) <= 60 && ! isset($out[$label])) {
+                $out[$label] = $value;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * The product's own brand, read from the name against the brands Farook
+     * carries; otherwise the brand the PDP declared, otherwise the house brand.
+     * (The storefront's JSON-LD brand is always "FIS", its own house label, even
+     * on third-party lines, so the name is the more truthful source.)
+     */
+    private function brandFor(string $name, string $pdpBrand): string
+    {
+        $brands = [
+            'Faber-Castell', 'Faber Castell', 'Artline', 'Maped', 'Pentel', 'Pilot',
+            'Deli', 'Casio', 'Stabilo', 'Staedtler', 'Pentonic', 'Uni-Ball', 'Uniball',
+            'Sharpie', 'Bic', 'Kores', 'Pritt', 'Nataraj', 'Camlin', 'Doms', 'FIS',
+        ];
+
+        $lower = mb_strtolower($name);
+        foreach ($brands as $brand) {
+            if (str_contains($lower, mb_strtolower($brand))) {
+                return $brand;
+            }
+        }
+
+        return $pdpBrand !== '' ? $pdpBrand : 'FIS';
+    }
+
+    /** A pack/quantity spec read from the product name, or null. */
+    private function packFromName(string $name): ?string
+    {
+        if (preg_match('/\b(\d{1,4})\s*-?\s*(?:piece|pieces|pcs|pack|pc)\b/i', $name, $m)) {
+            return $m[1].' pieces';
+        }
+        if (preg_match('/\b(?:pack|set|box)\s+of\s+(\d{1,4})\b/i', $name, $m)) {
+            return 'Pack of '.$m[1];
+        }
+        if (preg_match('/\b(\d{1,4})\s*(?:sheets|leaves)\b/i', $name, $m)) {
+            return $m[1].' sheets';
+        }
+
+        return null;
+    }
+
+    /** "/office-supplies/writing/markers-highlighters/" => "Markers Highlighters". */
+    private function humanizeCategory(string $path): string
+    {
+        $leaf = basename(rtrim($path, '/'));
+
+        return (string) Str::of($leaf)->replace('-', ' ')->title();
+    }
+
+    /** Fallback SKU when the PDP is unavailable: the storefront slug's tail. */
+    private function skuFromSlug(string $slug): string
+    {
+        $parts = explode('-', $slug);
+
+        return strtoupper((string) end($parts));
     }
 
     private function categoryFor(string $name): string

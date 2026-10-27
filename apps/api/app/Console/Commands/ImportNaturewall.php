@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Content\ProductSpecs;
 use App\Jobs\GenerateMediaDerivatives;
 use App\Media\MediaIngestor;
 use App\Models\Category;
@@ -120,12 +121,18 @@ final class ImportNaturewall extends Command
                             'name' => $title,
                             'short_description' => $this->shortDescription($title),
                             'description_html' => '<p>'.e($this->description($title)).'</p>',
+                            // A template blurb is machine copy: stamp it so the
+                            // spec-driven DescriptionDrafter may replace it and so
+                            // the readiness gate holds it until it is approved.
+                            'description_generated_at' => now(),
                             'primary_category_id' => $categoryIds[$path],
                             'availability' => 'lead_time',
                         ],
                     );
                     $product->categories()->syncWithoutDetaching([$categoryIds[$path] => ['sort_order' => 0]]);
                     $exists ? $updated++ : $created++;
+
+                    ProductSpecs::set($product, $this->specsFrom($item));
 
                     if (! $product->media()->exists()) {
                         $clean = strtok($image, '?');
@@ -176,6 +183,93 @@ final class ImportNaturewall extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * The real specifications carried in a Shopify products.json record, as a
+     * label => value map. Only structured, truthful facts are taken - vendor,
+     * product type, the product line, the manufacturer code, the panel's material
+     * and its genuine options (size, finish). The body_html is marketing prose,
+     * so nothing is copied from it. Shopify's "Title / Default Title" placeholder
+     * option is skipped, as is the colour_* tag (it carries the felt backing's
+     * colour, not the panel's).
+     *
+     * @param  array<string, mixed>  $item
+     * @return array<string, string>
+     */
+    private function specsFrom(array $item): array
+    {
+        $title = trim((string) ($item['title'] ?? ''));
+        $type = trim((string) ($item['product_type'] ?? ''));
+        $tags = array_map(fn ($t): string => (string) $t, (array) ($item['tags'] ?? []));
+
+        $specs = [
+            'Brand' => trim((string) ($item['vendor'] ?? '')),
+            'Type' => $type,
+            'Range' => $this->rangeOf($title.' '.$type),
+            'Material' => $this->materialOf($title.' '.$type),
+        ];
+
+        // Manufacturer code, with the per-variant size suffix (e.g. -1.2M) dropped
+        // so it reads as one product-level code rather than a single size.
+        $sku = trim((string) ($item['variants'][0]['sku'] ?? ''));
+        $sku = preg_replace('/-\d+(?:\.\d+)?m$/i', '', $sku) ?? $sku;
+        if ($sku !== '') {
+            $specs['Manufacturer code'] = $sku;
+        }
+
+        // Genuine options become specs; Shopify's placeholder option is skipped.
+        foreach (($item['options'] ?? []) as $option) {
+            $name = trim((string) ($option['name'] ?? ''));
+            $values = array_values(array_filter(
+                array_map(fn ($v): string => trim((string) $v), (array) ($option['values'] ?? [])),
+                fn (string $v): bool => $v !== '' && Str::lower($v) !== 'default title',
+            ));
+
+            if ($name === '' || Str::lower($name) === 'title' || $values === []) {
+                continue;
+            }
+            $specs[$name] = implode(', ', $values);
+        }
+
+        // Truthful facts carried in the tag list. Options already set win.
+        foreach ($tags as $tag) {
+            if (Str::startsWith($tag, 'finish_') && ! isset($specs['Finish'])) {
+                $specs['Finish'] = Str::title(str_replace(['_', '-'], ' ', Str::after($tag, 'finish_')));
+            } elseif (Str::startsWith($tag, 'felt_colour_') && ! isset($specs['Felt colour'])) {
+                $specs['Felt colour'] = trim(Str::after($tag, 'felt_colour_'));
+            }
+        }
+        if (Str::contains(Str::lower($title.' '.$type.' '.implode(' ', $tags)), 'acoustic')) {
+            $specs['Acoustic'] = 'Yes';
+        }
+
+        return $specs;
+    }
+
+    /** The Naturewall product line a title/type belongs to, or '' if none. */
+    private function rangeOf(string $text): string
+    {
+        foreach (['WoodWall', 'SlatWall', 'Arborelle', 'Legacy'] as $range) {
+            if (Str::contains($text, $range, ignoreCase: true)) {
+                return $range;
+            }
+        }
+
+        return '';
+    }
+
+    /** The panel material, inferred only from explicit keywords, or '' if none. */
+    private function materialOf(string $text): string
+    {
+        $t = Str::lower($text);
+
+        return match (true) {
+            Str::contains($t, 'wood veneer') => 'Real wood veneer',
+            Str::contains($t, 'mdf') => 'MDF (paintable)',
+            Str::contains($t, 'wood') => 'Wood',
+            default => '',
+        };
     }
 
     private function categoryFor(string $title, string $type): string
