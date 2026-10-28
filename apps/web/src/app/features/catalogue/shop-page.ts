@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of, switchMap } from 'rxjs';
@@ -6,7 +6,7 @@ import { CatalogueApi } from '../../core/api/catalogue-api';
 import { SeoService } from '../../core/seo/seo.service';
 import { EMPTY_LISTING, readFilters } from '../../shared/listing-state';
 import { FacetRail } from '../../shared/facet-rail';
-import { Icon } from '../../shared/icon';
+import { FilterSheet } from '../../shared/filter-sheet';
 import { Pagination } from '../../shared/pagination';
 import { ProductCard } from '../../shared/product-card';
 
@@ -54,31 +54,55 @@ import { ProductCard } from '../../shared/product-card';
   selector: 'ol-shop-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, FacetRail, Icon, Pagination, ProductCard],
+  imports: [RouterLink, FacetRail, FilterSheet, Pagination, ProductCard],
   template: `
-    <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8">
-      <nav aria-label="Breadcrumb" class="text-sm text-ink-600">
+    <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-6 sm:py-8">
+      <!-- Page header: a quiet breadcrumb, a title that steps down a size on a
+           phone, and an intro that reads a notch smaller there so the products
+           start higher. The same treatment belongs on every listing page. -->
+      <nav aria-label="Breadcrumb" class="text-xs text-ink-500">
         <ol class="flex flex-wrap items-center gap-1.5">
           <li><a routerLink="/" class="hover:text-brand-600">Home</a></li>
-          <li aria-hidden="true">/</li>
-          <li aria-current="page" class="text-ink-900">Shop</li>
+          <li aria-hidden="true" class="text-ink-300">/</li>
+          <li aria-current="page" class="font-medium text-ink-700">Shop</li>
         </ol>
       </nav>
 
-      <h1 class="mt-4 font-heading text-3xl font-bold">Shop the catalogue</h1>
-      <p class="mt-3 max-w-3xl text-ink-600">
+      <h1 class="mt-2.5 font-heading text-2xl font-bold tracking-tight sm:text-3xl">Shop the catalogue</h1>
+      <p class="mt-2 max-w-3xl text-sm leading-relaxed text-ink-600 sm:text-base">
         Everything we list, filterable by brand and specification. If you are
         working from a requisition list, send it to us instead -
         <a routerLink="/quote/" class="text-brand-600 hover:underline">we quote from a schedule</a>
         and we supply far more than appears here.
       </p>
 
-      <div class="mt-8 grid gap-8 lg:grid-cols-[18rem_1fr]">
+      <div class="mt-6 grid gap-8 sm:mt-8 lg:grid-cols-[18rem_1fr]">
         <!--
-          Grid first in the DOM, left-hand column at desktop via CSS "order".
-          Stacked on a phone, the products are what follows the heading.
+          Desktop: an always-open rail in the left column. Mobile: the rail is
+          hidden and the filter+sort sheet (above the grid) takes its place, so
+          the products still lead on a phone.
         -->
+        <div class="hidden lg:order-1 lg:block">
+          <ol-facet-rail
+            [facets]="listing().facets"
+            [selected]="selectedFilters()"
+            basePath="/shop/"
+            [preserved]="preservedParams()"
+            layout="rail"
+          />
+        </div>
+
         <section aria-labelledby="products-heading" class="lg:order-2">
+          <ol-filter-sheet
+            class="mb-4 block lg:hidden"
+            [facets]="listing().facets"
+            [selected]="selectedFilters()"
+            basePath="/shop/"
+            [preserved]="preservedParams()"
+            [total]="listing().meta.total"
+            [sort]="currentSort()"
+          />
+
           <div class="flex flex-wrap items-baseline justify-between gap-3 border-b border-ink-100 pb-3">
             <h2 id="products-heading" class="font-heading text-lg font-semibold">
               Products
@@ -117,44 +141,6 @@ import { ProductCard } from '../../shared/product-card';
             </p>
           }
         </section>
-
-        <!--
-          The rail is a disclosure on small screens and always-open above lg.
-          A filter rail that cannot be collapsed on a phone pushes the products
-          off the first two screens, which is the same as not having them.
-        -->
-        <div class="lg:order-1">
-          <button
-            type="button"
-            class="flex w-full items-center justify-between gap-2 rounded-xl border border-ink-200 px-4 py-3 text-sm font-semibold lg:hidden"
-            [attr.aria-expanded]="filtersOpen()"
-            aria-controls="shop-filters"
-            (click)="filtersOpen.set(!filtersOpen())"
-          >
-            <span class="flex items-center gap-2">
-              <ol-icon name="funnel" [size]="18" class="text-brand-600" />
-              Filters
-              @if (filterCount() > 0) {
-                <span class="rounded-full bg-brand-600 px-2 text-xs text-white">{{ filterCount() }}</span>
-              }
-            </span>
-            <ol-icon [name]="filtersOpen() ? 'chevron-down' : 'chevron-right'" [size]="16" />
-          </button>
-
-          <div
-            id="shop-filters"
-            class="mt-4 lg:mt-0 lg:block"
-            [class.hidden]="!filtersOpen()"
-          >
-            <ol-facet-rail
-              [facets]="listing().facets"
-              [selected]="selectedFilters()"
-              basePath="/shop/"
-              [preserved]="preservedParams()"
-              layout="rail"
-            />
-          </div>
-        </div>
       </div>
     </div>
   `,
@@ -164,11 +150,12 @@ export class ShopPage {
   private readonly api = inject(CatalogueApi);
   private readonly seo = inject(SeoService);
 
-  protected readonly filtersOpen = signal(false);
-
   private readonly queryParams = toSignal(this.route.queryParamMap, {
     initialValue: null,
   });
+
+  /** Active sort, for the sheet's tick; mirrors the API default of 'newest'. */
+  protected readonly currentSort = computed(() => this.queryParams()?.get('sort') ?? 'newest');
 
   protected readonly selectedFilters = computed<Record<string, readonly string[]>>(() => {
     const params = this.queryParams();
