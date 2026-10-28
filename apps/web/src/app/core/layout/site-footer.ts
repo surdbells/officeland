@@ -45,7 +45,7 @@ import { RouterLink } from '@angular/router';
         this is the last chance to turn a browse into a quote.
       -->
       <div class="border-b border-white/10">
-        <div class="mx-auto flex max-w-(--container-page) flex-col items-start justify-between gap-6 px-(--spacing-gutter) py-12 lg:flex-row lg:items-center">
+        <div class="mx-auto flex max-w-(--container-page) flex-col items-start justify-between gap-5 px-(--spacing-gutter) py-8 lg:flex-row lg:items-center lg:py-12">
           <div>
             <p class="font-heading text-xs font-semibold uppercase tracking-[0.16em] text-accent-400">Bulk &amp; tender supply</p>
             <h2 class="mt-2 text-2xl font-bold text-white sm:text-3xl">Supplying a school, ministry or head office?</h2>
@@ -70,9 +70,14 @@ import { RouterLink } from '@angular/router';
         </div>
       </div>
 
-      <!-- Band 2: the link surface (legacy defect 4K). -->
-      <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-12">
-        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-6">
+      <!-- Band 2: the link surface (legacy defect 4K).
+
+           Two columns on a phone, not one: stacked in a single column this band
+           is ~35 links tall and buries the legal line under a long scroll. Two
+           columns halve that height while every link stays a full-width tap
+           target within its column. -->
+      <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-10 lg:py-12">
+        <div class="grid grid-cols-2 gap-x-6 gap-y-9 md:grid-cols-2 lg:grid-cols-6">
           <!--
             Brand column, the reference footer's first column: identity, what
             the business is, and the one certification that qualifies it for a
@@ -80,7 +85,7 @@ import { RouterLink } from '@angular/router';
             arrive (Q17) - a broken link is worse than none, and these feed
             Organization.sameAs.
           -->
-          <div class="md:col-span-2">
+          <div class="col-span-2 lg:col-span-2">
             <p class="font-heading text-xl font-extrabold tracking-tight text-white">OFFICE LAND LTD</p>
             <p class="mt-1 font-heading text-xs font-semibold uppercase tracking-[0.14em] text-white/50">
               Office furniture &middot; IT products &middot; Stationery

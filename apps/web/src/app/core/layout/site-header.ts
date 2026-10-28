@@ -44,26 +44,24 @@ import type { Announcement, Navigation, NavigationNode } from '../api/catalogue-
          outside <header>, so as a plain div its text belonged to no landmark
          and was skipped entirely by screen-reader landmark navigation. Caught
          by the axe-core gate (Phase 13c). -->
-    @if (announcementVisible()) {
+    <!-- Only a curated announcement shows here. The standing "quotes answered
+         in a day" promise was removed: it is static chrome that pushed the
+         masthead and the first content down a line on every page, worst on a
+         phone where that line is scarcest. The service promises live in the
+         footer and the hero instead. -->
+    @if (announcementVisible() && announcement(); as a) {
       <section aria-label="Service announcement" class="text-sm" [class]="announcementClass()">
         <div class="mx-auto flex max-w-(--container-page) items-center justify-between gap-4 px-(--spacing-gutter) py-2">
-          @if (announcement(); as a) {
-            <!-- Admin-curated banner. One line; an optional link makes the
-                 whole thing actionable without a second element. -->
-            <p class="truncate">
-              {{ a.message }}
-              @if (a.url) {
-                @if (isExternal(a.url)) {
-                  <a [href]="a.url" rel="noopener" class="ml-2 font-semibold underline underline-offset-2">{{ a.link_label || 'Learn more' }}</a>
-                } @else {
-                  <a [routerLink]="a.url" class="ml-2 font-semibold underline underline-offset-2">{{ a.link_label || 'Learn more' }}</a>
-                }
+          <p class="truncate">
+            {{ a.message }}
+            @if (a.url) {
+              @if (isExternal(a.url)) {
+                <a [href]="a.url" rel="noopener" class="ml-2 font-semibold underline underline-offset-2">{{ a.link_label || 'Learn more' }}</a>
+              } @else {
+                <a [routerLink]="a.url" class="ml-2 font-semibold underline underline-offset-2">{{ a.link_label || 'Learn more' }}</a>
               }
-            </p>
-          } @else {
-            <!-- The standing service promise, shown when nothing is curated. -->
-            <p class="truncate">Quotes answered within 1 business day · Nationwide delivery &amp; installation</p>
-          }
+            }
+          </p>
           <button
             type="button"
             class="shrink-0 rounded px-2 py-1 opacity-70 hover:opacity-100"
@@ -100,7 +98,10 @@ import type { Announcement, Navigation, NavigationNode } from '../api/catalogue-
           button both work before hydration; the suggestion list is layered
           on top of something that already functioned.
         -->
-        <ol-site-search class="hidden flex-1 md:block" inputId="site-search" />
+        <!-- Visible on every width now. It used to be desktop-only, which left
+             a phone with no search in the header at all; search is the primary
+             way a buyer finds a specific product, so it leads the sticky bar. -->
+        <ol-site-search class="flex-1" inputId="site-search" />
 
         <div class="ml-auto flex shrink-0 items-center gap-3">
           <!-- Section 23.1: WhatsApp converts better than a phone number in
@@ -118,9 +119,13 @@ import type { Announcement, Navigation, NavigationNode } from '../api/catalogue-
             WhatsApp us
           </a>
 
+          <!-- Desktop only. On a phone the bottom tab bar already carries Quote
+               with its count, so a second one in the header was a duplicate of
+               the single most prominent action; hiding it also gives the search
+               field the full width of the sticky bar. -->
           <a
             routerLink="/quote/"
-            class="flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700"
+            class="hidden items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 md:flex"
           >
             <ol-icon name="file-text" [size]="17" />
             Quote
