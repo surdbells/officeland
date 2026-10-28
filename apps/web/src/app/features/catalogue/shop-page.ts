@@ -112,7 +112,7 @@ import { ProductCard } from '../../shared/product-card';
           </div>
 
           @if (listing().data.length) {
-            <ul class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <ul class="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               @for (product of listing().data; track product.uuid) {
                 <li class="h-full">
                   <ol-product-card [product]="product" [headingLevel]="3" />

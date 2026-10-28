@@ -74,7 +74,7 @@ import { ProductCardSkeleton } from '../../shared/product-card-skeleton';
         <!-- Search in flight. A grid of card skeletons so results do not pop in
              over a blank gap. noindex page, so no crawler concern either way. -->
         <ul
-          class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          class="mt-8 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
           aria-busy="true"
           aria-label="Searching"
         >
@@ -95,7 +95,7 @@ import { ProductCardSkeleton } from '../../shared/product-card-skeleton';
           <section aria-labelledby="results-heading" class="mt-8">
             <h2 id="results-heading" class="sr-only">Results</h2>
 
-            <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <ul class="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               @for (product of listing().data; track product.uuid) {
                 <li class="h-full"><ol-product-card [product]="product" [headingLevel]="3" /></li>
               }

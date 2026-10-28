@@ -69,7 +69,7 @@ import { ProductCardSkeleton } from '../../shared/product-card-skeleton';
             <ol-skeleton shape="h-8 w-28 rounded-full bg-ink-100" />
           }
         </div>
-        <ul class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <ul class="mt-8 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           @for (card of skeletonCards; track card) {
             <li class="h-full"><ol-product-card-skeleton /></li>
           }
@@ -262,7 +262,7 @@ import { ProductCardSkeleton } from '../../shared/product-card-skeleton';
             </div>
 
             @if (listing().data.length) {
-              <ul class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <ul class="mt-4 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 @for (product of listing().data; track product.uuid) {
                   <li class="h-full">
                     <ol-product-card [product]="product" [headingLevel]="3" />

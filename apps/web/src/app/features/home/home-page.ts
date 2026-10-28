@@ -1488,7 +1488,7 @@ export class HomePage {
   // which is the loading state the band's skeleton renders. Once resolved it is
   // the product list (empty on failure, via catchError), never undefined again.
   private readonly derivedBestSellers = toSignal(
-    this.api.catalogue({ perPage: 12 }).pipe(
+    this.api.catalogue({ perPage: 10 }).pipe(
       catchError(() => of(EMPTY_LISTING)),
       map((listing) => listing.data),
     ),
@@ -1521,7 +1521,7 @@ export class HomePage {
   private readonly derivedMajorCategories = toSignal(
     forkJoin(
       MAJOR_CATEGORY_SOURCES.map((source) =>
-        this.api.categoryProducts(source.path, { perPage: 12 }).pipe(
+        this.api.categoryProducts(source.path, { perPage: 10 }).pipe(
           catchError(() => of(EMPTY_LISTING)),
           map((listing): MajorCategory => {
             const withImage = listing.data.filter((product) => product.image);
