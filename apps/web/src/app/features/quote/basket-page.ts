@@ -23,7 +23,7 @@ import type { BasketLine } from '../../core/api/catalogue-api';
   imports: [RouterLink],
   template: `
     <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8">
-      <h1 class="font-heading text-3xl font-bold">Your quote request</h1>
+      <h1 class="font-heading text-2xl font-bold sm:text-3xl">Your quote request</h1>
 
       @if (store.error(); as message) {
         <p role="alert" class="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -43,84 +43,96 @@ import type { BasketLine } from '../../core/api/catalogue-api';
           {{ store.unitCount() }} unit{{ store.unitCount() === 1 ? '' : 's' }}
         </p>
 
-        <table class="mt-6 w-full text-sm">
-          <caption class="sr-only">Items in your quote request</caption>
-          <thead>
-            <tr class="border-b border-ink-200 text-left">
-              <th scope="col" class="py-2">Item</th>
-              <th scope="col" class="py-2 w-32">Quantity</th>
-              <th scope="col" class="py-2">Note</th>
-              <th scope="col" class="py-2 w-24"><span class="sr-only">Actions</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (line of store.lines(); track line.id) {
-              <tr class="border-b border-ink-100 align-top">
-                <td class="py-3">
-                  @if (line.url) {
-                    <a [routerLink]="line.url" class="font-medium hover:text-brand-600">{{ line.name }}</a>
-                  } @else {
-                    <span class="font-medium">{{ line.name }}</span>
-                    <span class="ml-2 rounded bg-ink-100 px-2 py-0.5 text-xs text-ink-600">Not in catalogue</span>
-                  }
+        <!--
+          A table on desktop, stacked cards on a phone. A real <table> forces
+          the long product name into a sliver of a column and squeezes the two
+          inputs beside it - unreadable at 375px. This is one CSS grid instead:
+          a single column on mobile (name, then a labelled quantity and note,
+          then remove) and a four-column row at md. Column headers show only
+          where the row layout needs them; on mobile each field carries its own
+          visible label, because there is no header row to read across.
+        -->
+        <div
+          class="mt-6 hidden grid-cols-[1fr_8rem_1fr_6rem] gap-x-6 border-b border-ink-200 pb-2 text-xs font-semibold uppercase tracking-wide text-ink-500 md:grid"
+          aria-hidden="true"
+        >
+          <span>Item</span>
+          <span>Quantity</span>
+          <span>Note</span>
+          <span></span>
+        </div>
 
-                  <div class="mt-1 text-xs text-ink-400">
-                    @if (line.brand) { <span>{{ line.brand }}</span> }
-                    @if (line.mpn) { <span> &middot; {{ line.mpn }}</span> }
-                    @if (line.availability) { <span> &middot; {{ availability(line) }}</span> }
-                  </div>
-                </td>
+        <ul class="divide-y divide-ink-100 text-sm">
+          @for (line of store.lines(); track line.id) {
+            <li class="grid grid-cols-1 gap-x-6 gap-y-3 py-4 md:grid-cols-[1fr_8rem_1fr_6rem] md:items-start md:py-3">
+              <div class="min-w-0">
+                @if (line.url) {
+                  <a [routerLink]="line.url" class="font-medium hover:text-brand-600">{{ line.name }}</a>
+                } @else {
+                  <span class="font-medium">{{ line.name }}</span>
+                  <span class="ml-2 rounded bg-ink-100 px-2 py-0.5 text-xs text-ink-600">Not in catalogue</span>
+                }
 
-                <td class="py-3">
-                  <label class="sr-only" [attr.for]="'qty-' + line.id">
-                    Quantity for {{ line.name }}
-                  </label>
-                  <input
-                    [id]="'qty-' + line.id"
-                    type="number"
-                    inputmode="numeric"
-                    class="w-24 rounded border border-ink-200 px-2 py-1"
-                    [value]="line.qty"
-                    [attr.min]="line.min_order_qty ?? 1"
-                    [attr.step]="line.qty_step ?? 1"
-                    (change)="onQuantity(line, $event)"
-                  />
-                  @if (line.quantity_note) {
-                    <p class="mt-1 text-xs text-ink-400">{{ line.quantity_note }}</p>
-                  }
-                </td>
+                <div class="mt-1 text-xs text-ink-400">
+                  @if (line.brand) { <span>{{ line.brand }}</span> }
+                  @if (line.mpn) { <span> &middot; {{ line.mpn }}</span> }
+                  @if (line.availability) { <span> &middot; {{ availability(line) }}</span> }
+                </div>
+              </div>
 
-                <td class="py-3">
-                  <label class="sr-only" [attr.for]="'note-' + line.id">
-                    Note for {{ line.name }}
-                  </label>
-                  <input
-                    [id]="'note-' + line.id"
-                    type="text"
-                    maxlength="500"
-                    placeholder="Colour, finish, delivery&hellip;"
-                    class="w-full rounded border border-ink-200 px-2 py-1"
-                    [value]="line.note ?? ''"
-                    (change)="onNote(line, $event)"
-                  />
-                </td>
+              <div>
+                <label [attr.for]="'qty-' + line.id" class="mb-1 block text-xs font-medium text-ink-500 md:sr-only">
+                  Quantity
+                </label>
+                <input
+                  [id]="'qty-' + line.id"
+                  type="number"
+                  inputmode="numeric"
+                  class="w-24 rounded border border-ink-200 px-3 py-2"
+                  [value]="line.qty"
+                  [attr.min]="line.min_order_qty ?? 1"
+                  [attr.step]="line.qty_step ?? 1"
+                  [attr.aria-label]="'Quantity for ' + line.name"
+                  (change)="onQuantity(line, $event)"
+                />
+                @if (line.quantity_note) {
+                  <p class="mt-1 text-xs text-ink-400">{{ line.quantity_note }}</p>
+                }
+              </div>
 
-                <td class="py-3 text-right">
-                  <button
-                    type="button"
-                    class="text-sm text-ink-600 underline hover:text-red-700"
-                    (click)="store.remove(line)"
-                  >Remove</button>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+              <div class="min-w-0">
+                <label [attr.for]="'note-' + line.id" class="mb-1 block text-xs font-medium text-ink-500 md:sr-only">
+                  Note
+                </label>
+                <input
+                  [id]="'note-' + line.id"
+                  type="text"
+                  maxlength="500"
+                  placeholder="Colour, finish, delivery&hellip;"
+                  class="w-full rounded border border-ink-200 px-3 py-2"
+                  [value]="line.note ?? ''"
+                  [attr.aria-label]="'Note for ' + line.name"
+                  (change)="onNote(line, $event)"
+                />
+              </div>
 
-        <div class="mt-4 flex flex-wrap items-center gap-3">
+              <div class="md:text-right">
+                <button
+                  type="button"
+                  class="text-sm font-medium text-ink-600 underline hover:text-red-700"
+                  (click)="store.remove(line)"
+                >Remove</button>
+              </div>
+            </li>
+          }
+        </ul>
+
+        <!-- Stacked and full-width on a phone so the primary action is a clear
+             thumb target, a row on desktop. -->
+        <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <a
             routerLink="/quote/request/"
-            class="rounded-lg bg-brand-600 px-6 py-3 font-semibold text-white hover:bg-brand-700"
+            class="rounded-lg bg-brand-600 px-6 py-3 text-center font-semibold text-white hover:bg-brand-700"
           >Request a quote</a>
 
           <!--
@@ -131,12 +143,12 @@ import type { BasketLine } from '../../core/api/catalogue-api';
           <a
             [href]="csvHref()"
             download="officeland-quote-request.csv"
-            class="rounded-lg border border-ink-200 px-4 py-3 text-sm font-medium hover:border-brand-600"
+            class="rounded-lg border border-ink-200 px-4 py-3 text-center text-sm font-medium hover:border-brand-600"
           >Download as CSV</a>
 
           <button
             type="button"
-            class="text-sm text-ink-600 underline hover:text-red-700"
+            class="py-1 text-sm text-ink-600 underline hover:text-red-700 sm:py-0"
             (click)="store.clear()"
           >Empty the list</button>
         </div>
