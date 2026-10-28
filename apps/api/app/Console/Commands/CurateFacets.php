@@ -52,7 +52,16 @@ final class CurateFacets extends Command
 
         // Cardinality and coverage per attribute, counted over the ACTIVE
         // catalogue only - a facet exists to filter what is actually listed.
-        $stats = DB::table('attributes as a')
+        //
+        // This is a count(distinct) over the whole spec table and legitimately
+        // runs longer than the request-path statement_timeout (set on the role
+        // for the storefront's protection). Curation is maintenance, not a web
+        // request, so it runs on the DIRECT connection - the same one migrations
+        // use - with a generous bound of its own instead of the web guardrail.
+        $analysis = DB::connection('pgsql_direct');
+        $analysis->statement("SET statement_timeout = '120s'");
+
+        $stats = $analysis->table('attributes as a')
             ->join('product_attribute_values as pav', 'pav.attribute_id', '=', 'a.id')
             ->join('products as p', function ($join): void {
                 $join->on('p.id', '=', 'pav.product_id')->where('p.status', '=', 'active');
