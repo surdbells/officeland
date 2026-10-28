@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { Icon } from '../../shared/icon';
 import { RouterLink } from '@angular/router';
 
@@ -72,12 +72,12 @@ import { RouterLink } from '@angular/router';
 
       <!-- Band 2: the link surface (legacy defect 4K).
 
-           Two columns on a phone, not one: stacked in a single column this band
-           is ~35 links tall and buries the legal line under a long scroll. Two
-           columns halve that height while every link stays a full-width tap
-           target within its column. -->
-      <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-10 lg:py-12">
-        <div class="grid grid-cols-2 gap-x-6 gap-y-9 md:grid-cols-2 lg:grid-cols-6">
+           On a phone the three link columns collapse into accordions (closed by
+           default), so this band is a short stack of tappable headings instead
+           of ~35 links to scroll past to reach the legal line. On desktop the
+           accordions are always open and lay out as the six-column footer. -->
+      <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8 lg:py-12">
+        <div class="grid grid-cols-1 gap-y-3 lg:grid-cols-6 lg:gap-8">
           <!--
             Brand column, the reference footer's first column: identity, what
             the business is, and the one certification that qualifies it for a
@@ -85,7 +85,7 @@ import { RouterLink } from '@angular/router';
             arrive (Q17) - a broken link is worse than none, and these feed
             Organization.sameAs.
           -->
-          <div class="col-span-2 lg:col-span-2">
+          <div class="pb-2 lg:col-span-2 lg:pb-0">
             <p class="font-heading text-xl font-extrabold tracking-tight text-white">OFFICE LAND LTD</p>
             <p class="mt-1 font-heading text-xs font-semibold uppercase tracking-[0.14em] text-white/50">
               Office furniture &middot; IT products &middot; Stationery
@@ -101,9 +101,20 @@ import { RouterLink } from '@angular/router';
             </p>
           </div>
 
-          <nav aria-labelledby="footer-shop">
-            <h2 id="footer-shop" class="font-heading text-sm font-semibold uppercase tracking-wide text-white">Shop</h2>
-            <ul class="mt-4 space-y-2.5 text-sm">
+          <nav aria-labelledby="footer-shop" class="border-t border-white/10 pt-3 lg:border-0 lg:pt-0">
+            <h2 id="footer-shop">
+              <button
+                type="button"
+                class="flex w-full items-center justify-between py-1 font-heading text-sm font-semibold uppercase tracking-wide text-white lg:pointer-events-none lg:py-0"
+                [attr.aria-expanded]="isOpen('shop')"
+                aria-controls="footer-shop-list"
+                (click)="toggle('shop')"
+              >
+                Shop
+                <ol-icon name="chevron-down" [size]="18" class="text-white/50 transition-transform lg:hidden" [class.rotate-180]="isOpen('shop')" />
+              </button>
+            </h2>
+            <ul id="footer-shop-list" class="mt-3 space-y-2.5 text-sm lg:mt-4 lg:block" [class.hidden]="!isOpen('shop')">
               <li><a routerLink="/c/office-furniture/" class="text-white/70 hover:text-white">Office furniture</a></li>
               <li><a routerLink="/c/it-products/" class="text-white/70 hover:text-white">IT products</a></li>
               <li><a routerLink="/c/smart-tech/" class="text-white/70 hover:text-white">Smart tech</a></li>
@@ -116,9 +127,20 @@ import { RouterLink } from '@angular/router';
             </ul>
           </nav>
 
-          <nav aria-labelledby="footer-help">
-            <h2 id="footer-help" class="font-heading text-sm font-semibold uppercase tracking-wide text-white">Help &amp; support</h2>
-            <ul class="mt-4 space-y-2.5 text-sm">
+          <nav aria-labelledby="footer-help" class="border-t border-white/10 pt-3 lg:border-0 lg:pt-0">
+            <h2 id="footer-help">
+              <button
+                type="button"
+                class="flex w-full items-center justify-between py-1 font-heading text-sm font-semibold uppercase tracking-wide text-white lg:pointer-events-none lg:py-0"
+                [attr.aria-expanded]="isOpen('help')"
+                aria-controls="footer-help-list"
+                (click)="toggle('help')"
+              >
+                Help &amp; support
+                <ol-icon name="chevron-down" [size]="18" class="text-white/50 transition-transform lg:hidden" [class.rotate-180]="isOpen('help')" />
+              </button>
+            </h2>
+            <ul id="footer-help-list" class="mt-3 space-y-2.5 text-sm lg:mt-4 lg:block" [class.hidden]="!isOpen('help')">
               <li><a routerLink="/delivery/" class="text-white/70 hover:text-white">Delivery &amp; lead times</a></li>
               <li><a routerLink="/quote/track/" class="text-white/70 hover:text-white">Track my quote</a></li>
               <li><a routerLink="/returns/" class="text-white/70 hover:text-white">Returns</a></li>
@@ -128,9 +150,20 @@ import { RouterLink } from '@angular/router';
             </ul>
           </nav>
 
-          <nav aria-labelledby="footer-company">
-            <h2 id="footer-company" class="font-heading text-sm font-semibold uppercase tracking-wide text-white">Company</h2>
-            <ul class="mt-4 space-y-2.5 text-sm">
+          <nav aria-labelledby="footer-company" class="border-t border-white/10 pt-3 lg:border-0 lg:pt-0">
+            <h2 id="footer-company">
+              <button
+                type="button"
+                class="flex w-full items-center justify-between py-1 font-heading text-sm font-semibold uppercase tracking-wide text-white lg:pointer-events-none lg:py-0"
+                [attr.aria-expanded]="isOpen('company')"
+                aria-controls="footer-company-list"
+                (click)="toggle('company')"
+              >
+                Company
+                <ol-icon name="chevron-down" [size]="18" class="text-white/50 transition-transform lg:hidden" [class.rotate-180]="isOpen('company')" />
+              </button>
+            </h2>
+            <ul id="footer-company-list" class="mt-3 space-y-2.5 text-sm lg:mt-4 lg:block" [class.hidden]="!isOpen('company')">
               <li><a routerLink="/about/" class="text-white/70 hover:text-white">About OfficeLand</a></li>
               <li><a routerLink="/locations/" class="text-white/70 hover:text-white">Showrooms</a></li>
               <li><a routerLink="/bulk-supply/" class="text-white/70 hover:text-white">Bulk &amp; tender supply</a></li>
@@ -142,9 +175,9 @@ import { RouterLink } from '@angular/router';
             </ul>
           </nav>
 
-          <div>
+          <div class="border-t border-white/10 pt-3 lg:border-0 lg:pt-0">
             <h2 class="font-heading text-sm font-semibold uppercase tracking-wide text-white">Contact</h2>
-            <address class="mt-4 space-y-3 text-sm not-italic">
+            <address class="mt-3 space-y-3 text-sm not-italic lg:mt-4">
               <p class="flex items-start gap-2.5">
                 <ol-icon name="map-pin" [size]="18" class="mt-0.5 text-white/50" />
                 <span class="text-white/70">Century 21 Mall, 14B Idowu Martins Street,<br />Victoria Island, Lagos</span>
@@ -216,4 +249,23 @@ export class SiteFooter {
   // Static per render. Under D-009 pages are prerendered, so this is the year
   // at build time - which is why a full rebuild is part of the deploy routine.
   protected readonly year = new Date().getFullYear();
+
+  /**
+   * Which link columns are expanded on mobile. Closed by default so the footer
+   * is a short stack of headings on a phone; ignored at lg, where CSS forces
+   * every list open (lg:block) and the toggle is inert (lg:pointer-events-none).
+   * Prerendered closed, which is correct: the links are still in the DOM for a
+   * crawler, just visually collapsed.
+   */
+  private readonly openSections = signal<ReadonlySet<string>>(new Set());
+
+  protected isOpen(id: string): boolean {
+    return this.openSections().has(id);
+  }
+
+  protected toggle(id: string): void {
+    const next = new Set(this.openSections());
+    next.has(id) ? next.delete(id) : next.add(id);
+    this.openSections.set(next);
+  }
 }
