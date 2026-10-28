@@ -66,7 +66,13 @@ final class ProductSpecs
                         'uuid' => (string) Str::uuid(),
                         'name' => $spec['name'],
                         'data_type' => self::numericOf($spec['value']) !== null ? 'numeric' : 'string',
-                        'is_filterable' => true,
+                        // New spec attributes are NOT filterable by default: the
+                        // storefront computes one live aggregate per filterable
+                        // attribute per listing, so minting a facet per spec name
+                        // (manufacturer code, carton quantity, ...) melts the PLP
+                        // at scale. `catalogue:curate-facets` promotes only the
+                        // low-cardinality, well-covered ones to filterable.
+                        'is_filterable' => false,
                         'display_order' => $order,
                     ],
                 );

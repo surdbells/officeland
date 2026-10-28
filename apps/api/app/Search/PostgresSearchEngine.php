@@ -9,6 +9,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -41,6 +42,14 @@ final class PostgresSearchEngine implements SearchEngine
      * half the catalogue for a three-character typo.
      */
     private const TRIGRAM_THRESHOLD = 0.35;
+
+    /**
+     * A cache generation counter. The facet payload for a broad listing is
+     * cached under a key that embeds this number; `catalogue:curate-facets`
+     * increments it to invalidate every cached payload at once when the set of
+     * facets changes. See facets().
+     */
+    public const FACET_CACHE_GENERATION_KEY = 'facets:generation';
 
     public function __construct(private readonly SynonymExpander $synonyms) {}
 
@@ -362,9 +371,36 @@ final class PostgresSearchEngine implements SearchEngine
      * after choosing one - counting with all filters applied would show every
      * unselected value as zero, and counting with none would offer dead ends.
      *
+     * The computation is one aggregate per filterable attribute over the scoped
+     * set, so an unfiltered listing (homepage, a category rail, a brand hub) is
+     * the heaviest case AND the most repeated. Those - the ones with no
+     * attribute filter - are cached under a generation-stamped key, keyed only
+     * by category and brand so the key space stays bounded (Redis runs
+     * noeviction here). A listing that DOES carry attribute filters is scoped
+     * small and has an unbounded key space, so it is computed live.
+     * `catalogue:curate-facets` bumps the generation to invalidate the cache.
+     *
      * @return list<FacetGroup>
      */
     private function facets(SearchQuery $query): array
+    {
+        if ($query->filters !== []) {
+            return $this->computeFacets($query);
+        }
+
+        $generation = (int) Cache::get(self::FACET_CACHE_GENERATION_KEY, 0);
+        $key = 'facets:'.$generation.':'.md5(serialize([$query->categoryId, $query->brandId]));
+
+        return Cache::remember($key, now()->addMinutes(10), fn (): array => $this->computeFacets($query));
+    }
+
+    /**
+     * The live facet computation behind facets(), one aggregate per filterable
+     * attribute. Kept separate so facets() can cache the broad cases.
+     *
+     * @return list<FacetGroup>
+     */
+    private function computeFacets(SearchQuery $query): array
     {
         $filterable = Attribute::query()
             ->filterable()
