@@ -290,7 +290,19 @@ final class PostgresSearchEngine implements SearchEngine
             if ($category instanceof Category) {
                 // A department listing includes its whole subtree.
                 $ids = Category::query()->subtreeOf($category->path)->pluck('id');
-                $builder->whereHas('categories', fn (Builder $q) => $q->whereIn('categories.id', $ids));
+
+                // Filter on the product's primary category rather than pivot
+                // membership. The pivot form - whereHas('categories', ...) with
+                // ORDER BY + LIMIT - has no supporting index, so for a narrow
+                // category at catalogue scale the planner scans a long way to
+                // collect a page (the count() and items() each ~15s, together
+                // past the 30s request limit - the homepage fires one per
+                // department rail). This uses products_active_idx
+                // (primary_category_id, published_at DESC) WHERE status='active'.
+                // Products carry a single category here, so primary == membership
+                // for all but rare cross-listings, which show on their own
+                // department's page.
+                $builder->whereIn('primary_category_id', $ids);
             }
         }
 
