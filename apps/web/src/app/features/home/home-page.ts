@@ -1510,7 +1510,7 @@ export class HomePage {
   /**
    * The "Shop by category" grid - the legacy site's major categories.
    *
-   * One listing request per category (perPage 6, so a product with an image is
+   * One listing request per category (perPage 12, so a product with an image is
    * almost always in the first page even when the newest few are image-less),
    * taking the first image for the tile and the subtree total for the count.
    * forkJoin so they resolve together; a failing category yields an empty
@@ -1521,7 +1521,7 @@ export class HomePage {
   private readonly derivedMajorCategories = toSignal(
     forkJoin(
       MAJOR_CATEGORY_SOURCES.map((source) =>
-        this.api.categoryProducts(source.path, { perPage: 48 }).pipe(
+        this.api.categoryProducts(source.path, { perPage: 12 }).pipe(
           catchError(() => of(EMPTY_LISTING)),
           map((listing): MajorCategory => {
             const withImage = listing.data.filter((product) => product.image);

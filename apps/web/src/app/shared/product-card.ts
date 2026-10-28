@@ -42,7 +42,7 @@ import { BasketStore } from '../core/quotes/basket-store';
     >
       <a
         [routerLink]="product().url"
-        class="ol-zoom-frame mb-3 block aspect-square rounded-md"
+        class="ol-zoom-frame ol-contain mb-3 block aspect-square rounded-md"
         tabindex="-1"
         aria-hidden="true"
       >

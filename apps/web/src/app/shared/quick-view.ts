@@ -64,7 +64,7 @@ import { BasketStore } from '../core/quotes/basket-store';
           </button>
 
           <div class="grid gap-0 overflow-y-auto sm:grid-cols-2">
-            <div class="ol-zoom-frame aspect-square bg-ink-50 sm:aspect-auto">
+            <div class="ol-zoom-frame ol-contain aspect-square bg-ink-50 sm:aspect-auto">
               <ol-image [image]="p.image ?? null" sizes="(min-width: 640px) 24rem, 100vw" />
             </div>
 

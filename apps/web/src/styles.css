@@ -374,6 +374,14 @@
   will-change: transform;
 }
 
+/* Product photography must be shown whole: a buyer decides on the entire
+   object, so a video bar or a chair must not be cropped to fill a square. The
+   cover-crop above is for editorial and location photographs; a product frame
+   opts into `ol-contain` and still zooms on hover. */
+.ol-zoom-frame.ol-contain img {
+  object-fit: contain;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .group:hover .ol-zoom-frame img {
     transform: scale(1.06);
