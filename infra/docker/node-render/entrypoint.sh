@@ -42,6 +42,12 @@ fi
 # Build beside the live tree, then swap by rename once it is proven complete.
 log "building storefront"
 rm -rf dist.staging
+# Clear the Angular/esbuild build cache before every build. The cache lives on
+# the bind-mounted source tree, and on 2026-10-28 a warm-but-stale cache emitted
+# a byte-identical bundle after a real source change, so a deploy silently
+# republished the previous build. Correctness is worth the few seconds a cold
+# cache costs on an infrequent deploy.
+rm -rf .angular/cache
 if npm run build -- --output-path dist.staging/web && [ -f dist.staging/web/server/server.mjs ]; then
     # The live bundle is replaced only now, by rename, so it is never the
     # half-written output of an in-progress build.
