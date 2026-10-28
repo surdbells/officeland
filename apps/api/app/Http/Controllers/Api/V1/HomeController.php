@@ -121,14 +121,26 @@ final class HomeController extends Controller
         $rails = [];
 
         foreach ($departments as $department) {
+            // Filter on primary_category_id (a product's own department) rather
+            // than category membership through the pivot. The pivot form -
+            // whereHas('categories', path LIKE ...) + ORDER BY ... LIMIT - has no
+            // supporting index, so at catalogue scale the planner scans a long
+            // way to collect a dozen rows; nine of those per homepage summed past
+            // the request time limit. This form uses the partial index
+            // products_active_idx (primary_category_id, published_at DESC) WHERE
+            // status='active', and a product's primary category IS its department.
+            $subtreeIds = Category::query()->subtreeOf($department->path)->pluck('id');
+
             $products = Product::query()
                 ->active()
+                ->whereIn('primary_category_id', $subtreeIds)
                 // A rail of broken images is worse than no rail: only products
-                // whose primary image has generated derivatives qualify.
+                // whose primary image has generated derivatives qualify. Active
+                // products almost always have one (publishing requires it), so
+                // this EXISTS is cheap here.
                 ->whereHas('media', fn (Builder $q) => $q->whereHas('derivatives'))
-                ->whereHas('categories', fn (Builder $q) => $q->where('path', 'like', $department->path.'%'))
                 ->with(['brand', 'media.derivatives', 'attributeValues.attribute'])
-                ->latest('id')
+                ->latest('published_at')
                 ->limit(self::RAIL_SIZE)
                 ->get();
 
