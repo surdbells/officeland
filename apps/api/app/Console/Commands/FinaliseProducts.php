@@ -8,6 +8,7 @@ use App\Content\ContentMinimums;
 use App\Content\DescriptionDrafter;
 use App\Models\Brand;
 use App\Models\Product;
+use App\Observers\InvalidatesRenderedRoutes;
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
 
@@ -90,16 +91,23 @@ final class FinaliseProducts extends Command
 
         $seen = 0;
 
-        $base
-            ->with(['attributeValues.attribute', 'brand', 'primaryCategory'])
-            ->orderBy('id')
-            ->chunkById((int) $this->option('chunk'), function ($products) use ($drafter, $minimums, $apply, $index, &$seen, $bar): void {
-                foreach ($products as $product) {
-                    $seen++;
-                    $this->finalise($product, $drafter, $minimums, $apply, $index);
-                    $bar->advance();
-                }
-            });
+        // Suppress per-save render invalidation for the whole run. At this
+        // scale a route-enqueue per published product floods the render queue
+        // (52k products -> ~90k routes) and the drain stampedes the API. The
+        // published pages are rebuilt deliberately by `render:full` afterwards
+        // (see the notice below), not route-by-route from here.
+        InvalidatesRenderedRoutes::withoutInvalidation(function () use ($base, $drafter, $minimums, $apply, $index, &$seen, $bar): void {
+            $base
+                ->with(['attributeValues.attribute', 'brand', 'primaryCategory'])
+                ->orderBy('id')
+                ->chunkById((int) $this->option('chunk'), function ($products) use ($drafter, $minimums, $apply, $index, &$seen, $bar): void {
+                    foreach ($products as $product) {
+                        $seen++;
+                        $this->finalise($product, $drafter, $minimums, $apply, $index);
+                        $bar->advance();
+                    }
+                });
+        });
 
         $bar->finish();
         $this->newLine(2);
@@ -119,6 +127,17 @@ final class FinaliseProducts extends Command
                 $rows[] = [$reason, $count];
             }
             $this->table(['Blocker', 'Products'], $rows);
+        }
+
+        if ($apply && $index && $this->indexed > 0) {
+            $this->newLine();
+            $this->warn(sprintf(
+                'Published %d product(s). Their static pages are NOT rendered yet - render '.
+                'invalidation is suppressed during bulk finalise so the render queue is not '.
+                'flooded. Rebuild deliberately (throttled by --chunk):',
+                $this->indexed,
+            ));
+            $this->line('  php artisan render:full');
         }
 
         if (! $apply) {
