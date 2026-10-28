@@ -28,8 +28,17 @@ final class RecountCatalogue extends Command
 
     public function handle(): int
     {
+        // The category recount is a subtree self-join with COUNT(DISTINCT) over
+        // every active product - a set-based maintenance query that legitimately
+        // runs longer than the request-path statement_timeout set on the role.
+        // Run on the DIRECT (unpooled) connection, with its own generous bound,
+        // so the nightly schedule cannot be killed by the storefront's guardrail
+        // (and fail silently, leaving every cached count stale).
+        $db = DB::connection('pgsql_direct');
+        $db->statement("SET statement_timeout = '120s'");
+
         $this->info('Recounting categories (subtree, active products)…');
-        DB::statement(<<<'SQL'
+        $db->statement(<<<'SQL'
             UPDATE categories AS c
             SET product_count_cached = COALESCE(counted.total, 0)
             FROM (
@@ -48,8 +57,8 @@ final class RecountCatalogue extends Command
         $this->info('Recounting brands (active products)…');
         // Reset first so a brand whose last active product was removed drops to
         // zero; the join below only touches brands that still have one.
-        DB::table('brands')->update(['product_count_cached' => 0]);
-        DB::statement(<<<'SQL'
+        $db->table('brands')->update(['product_count_cached' => 0]);
+        $db->statement(<<<'SQL'
             UPDATE brands AS b
             SET product_count_cached = counted.total
             FROM (
