@@ -47,6 +47,13 @@ final class RenderFullBuild extends Command
         StaticSite $site,
         RouteManifest $manifest,
     ): int {
+        // A full build makes one HTTP call to the worker per route - tens of
+        // thousands of them - and Guzzle's response and stream objects pile up
+        // as uncollected reference cycles, exhausting the 128 MB CLI default
+        // around route 120 (seen 2026-10-29). Give it headroom; the chunk loop
+        // below collects cycles each pass so memory stays flat across the build.
+        @ini_set('memory_limit', '1024M');
+
         // The same service the /render/manifest endpoint exposes. Asking
         // this application for a list it can compute in-process would add a
         // network hop and a second place for the two to disagree.
@@ -82,6 +89,11 @@ final class RenderFullBuild extends Command
             $failures += $result->failures;
 
             $bar->advance(count($chunk));
+
+            // Release the chunk's Guzzle response/stream cycles now, rather than
+            // letting them accumulate until PHP's automatic collector runs (or
+            // the process OOMs first). This is what keeps a 70k-route build flat.
+            gc_collect_cycles();
         }
 
         $bar->finish();
