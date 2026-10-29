@@ -24,6 +24,10 @@ final class RenderSitemaps extends Command
 
     public function handle(SitemapGenerator $generator): int
     {
+        // Building the index holds every indexable URL in memory to chunk and
+        // write it; the 128 MB CLI default is not enough at catalogue scale.
+        @ini_set('memory_limit', '512M');
+
         $written = $generator->generate();
 
         $total = 0;

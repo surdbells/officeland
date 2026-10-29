@@ -168,17 +168,24 @@ final class SitemapGenerator
      */
     private function productChunks(): array
     {
-        $urls = Product::query()
-            ->indexable()
-            ->orderBy('slug')
-            ->get(['slug', 'updated_at'])
-            ->map(fn (Product $product): array => [
+        // cursor(), not get(): the catalogue runs to tens of thousands of
+        // products, and hydrating every one as a full model at once exhausts the
+        // CLI memory limit (render:sitemaps OOM'd on 2026-10-28). Streaming one
+        // lightweight model at a time keeps only the small URL array in memory.
+        $urls = [];
+
+        foreach (
+            Product::query()
+                ->indexable()
+                ->orderBy('slug')
+                ->select(['slug', 'updated_at'])
+                ->cursor() as $product
+        ) {
+            $urls[] = [
                 'loc' => '/p/'.$product->slug.'/',
                 'lastmod' => $this->timestamp($product->updated_at),
-            ])
-            ->all();
-
-        $urls = array_values($urls);
+            ];
+        }
 
         // One empty file rather than none: /sitemap-products.xml is referenced
         // by the index and by RouteResolver, and a 404 there is a reported
