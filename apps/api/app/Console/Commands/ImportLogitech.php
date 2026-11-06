@@ -7,6 +7,7 @@ namespace App\Console\Commands;
 use App\Content\ProductSpecs;
 use App\Jobs\GenerateMediaDerivatives;
 use App\Media\MediaIngestor;
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Console\Command;
@@ -151,6 +152,15 @@ final class ImportLogitech extends Command
             $categoryIds[$path] = (int) $id;
         }
 
+        // Every product here is Logitech, so the brand is set at import rather
+        // than left to backfill-brands to infer from the name.
+        $brandId = $apply
+            ? (int) Brand::query()->firstOrCreate(
+                ['slug' => 'logitech'],
+                ['uuid' => (string) Str::uuid(), 'name' => 'Logitech'],
+            )->id
+            : null;
+
         $slugs = $this->productSlugs();
         if ($slugs === []) {
             $this->error('No product URLs found in the Logitech sitemap.');
@@ -237,6 +247,7 @@ final class ImportLogitech extends Command
                     ['slug' => $productSlug],
                     [
                         'name' => $name,
+                        'brand_id' => $brandId,
                         'mpn' => $mpn ?: null,
                         'short_description' => $this->shortDescription($name),
                         'description_html' => '<p>'.e($this->description($name, $mapKey)).'</p>',
