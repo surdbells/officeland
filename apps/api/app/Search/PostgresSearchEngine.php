@@ -414,6 +414,19 @@ final class PostgresSearchEngine implements SearchEngine
      */
     private function computeFacets(SearchQuery $query): array
     {
+        // No attribute filter is selected: every facet shares one scope, so the
+        // whole sidebar is a single aggregate rather than one query per
+        // attribute. The per-attribute form ran one count(distinct) query per
+        // filterable attribute over the active set - 24 of them at ~1.5s each
+        // (~36s) tripped the request limit and 500'd the PLP - and this is the
+        // broad, most-repeated, cached case, so it is the one worth collapsing.
+        if ($query->filters === []) {
+            return $this->computeFacetsUnfiltered($query);
+        }
+
+        // Filtered: each facet is counted with the OTHER selected filters applied
+        // but not its own, so the scopes genuinely differ and this stays one
+        // query per attribute - but the scoped set is small, so it is cheap.
         $filterable = Attribute::query()
             ->filterable()
             ->orderByDesc('display_order')
@@ -466,6 +479,75 @@ final class PostgresSearchEngine implements SearchEngine
                 label: $attribute->name,
                 values: $values,
                 indexable: $attribute->is_indexable_facet,
+            );
+        }
+
+        return $groups;
+    }
+
+    /**
+     * Every facet for a listing with no attribute filter selected, in one
+     * aggregate. One scan of the spec rows for filterable attributes, scoped to
+     * the active set once, grouped by attribute and value - instead of a
+     * separate query per attribute. Curated facets are low-cardinality, so the
+     * result is at most a few hundred rows however large the catalogue.
+     *
+     * @return list<FacetGroup>
+     */
+    private function computeFacetsUnfiltered(SearchQuery $query): array
+    {
+        $scoped = $this->baseQuery($query);
+
+        $rows = DB::table('product_attribute_values as pav')
+            ->join('attributes as a', 'a.id', '=', 'pav.attribute_id')
+            ->where('a.is_filterable', true)
+            ->whereIn('pav.product_id', $scoped->select('products.id'))
+            ->groupBy('a.code', 'a.name', 'a.is_indexable_facet', 'a.display_order', 'pav.value_raw')
+            ->get([
+                'a.code',
+                'a.name',
+                'a.is_indexable_facet',
+                'a.display_order',
+                'pav.value_raw',
+                DB::raw('max(pav.value_presentation) as value_presentation'),
+                DB::raw('count(distinct pav.product_id) as total'),
+            ]);
+
+        // Fold the flat rows back into one group per attribute.
+        $byCode = [];
+        foreach ($rows as $row) {
+            $code = (string) $row->code;
+            $byCode[$code]['order'] ??= (int) $row->display_order;
+            $byCode[$code]['name'] ??= (string) $row->name;
+            $byCode[$code]['indexable'] ??= (bool) $row->is_indexable_facet;
+            $byCode[$code]['values'][] = [
+                'value' => (string) $row->value_raw,
+                'label' => (string) ($row->value_presentation ?: $row->value_raw),
+                'count' => (int) $row->total,
+                'selected' => false,
+            ];
+        }
+
+        // Attribute display order desc, as the per-attribute path produced.
+        uasort($byCode, static fn (array $a, array $b): int => $b['order'] <=> $a['order']);
+
+        $groups = [];
+        foreach ($byCode as $code => $data) {
+            $values = $data['values'];
+            // Most-common value first, capped - the same shape the old query's
+            // ORDER BY count DESC LIMIT 50 produced.
+            usort($values, static fn (array $x, array $y): int => $y['count'] <=> $x['count']);
+            $values = array_slice($values, 0, 50);
+
+            if ($values === []) {
+                continue;
+            }
+
+            $groups[] = new FacetGroup(
+                code: (string) $code,
+                label: $data['name'],
+                values: array_values($values),
+                indexable: $data['indexable'],
             );
         }
 
