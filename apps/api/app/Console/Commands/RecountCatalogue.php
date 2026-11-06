@@ -35,7 +35,10 @@ final class RecountCatalogue extends Command
         // so the nightly schedule cannot be killed by the storefront's guardrail
         // (and fail silently, leaving every cached count stale).
         $db = DB::connection('pgsql_direct');
-        $db->statement("SET statement_timeout = '120s'");
+        // unprepared() so the SET applies to the session: statement() routes
+        // through the prepared protocol where the raise did not stick, leaving
+        // the role's 20s default in force (see CurateFacets).
+        $db->unprepared("SET statement_timeout = '300s'");
 
         $this->info('Recounting categories (subtree, active products)…');
         $db->statement(<<<'SQL'

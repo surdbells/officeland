@@ -59,7 +59,12 @@ final class CurateFacets extends Command
         // request, so it runs on the DIRECT connection - the same one migrations
         // use - with a generous bound of its own instead of the web guardrail.
         $analysis = DB::connection('pgsql_direct');
-        $analysis->statement("SET statement_timeout = '120s'");
+        // unprepared(), not statement(): a SET sent through the prepared/extended
+        // protocol did not reliably raise the session timeout, so the role's 20s
+        // default still cancelled this aggregate. unprepared() runs it as a simple
+        // query, which applies to the session. Generous bound for a one-off
+        // count(distinct) over the whole spec table.
+        $analysis->unprepared("SET statement_timeout = '600s'");
 
         $stats = $analysis->table('attributes as a')
             ->join('product_attribute_values as pav', 'pav.attribute_id', '=', 'a.id')
