@@ -37,9 +37,10 @@ final class CurateFacets extends Command
 {
     protected $signature = 'catalogue:curate-facets
         {--apply : Write is_filterable. Without this it only reports.}
-        {--max=24 : Keep at most this many facets (the most-covered win).}
+        {--max=24 : Keep at most this many facets.}
         {--min-products=8 : An attribute must cover at least this many active products.}
-        {--max-values=40 : An attribute with more distinct values than this is too high-cardinality to be a facet.}';
+        {--max-values=40 : An attribute with more distinct values than this is too high-cardinality to be a facet.}
+        {--max-coverage=0.4 : Exclude attributes present on more than this fraction of active products - a filter nearly every product matches does not narrow anything and is the most expensive to count.}';
 
     protected $description = 'Promote only low-cardinality, well-covered attributes to filterable facets';
 
@@ -49,6 +50,7 @@ final class CurateFacets extends Command
         $max = max(1, (int) $this->option('max'));
         $minProducts = max(1, (int) $this->option('min-products'));
         $maxValues = max(2, (int) $this->option('max-values'));
+        $maxCoverage = (float) $this->option('max-coverage');
 
         // Cardinality and coverage per attribute, counted over the ACTIVE
         // catalogue only - a facet exists to filter what is actually listed.
@@ -81,8 +83,23 @@ final class CurateFacets extends Command
             ])
             ->get();
 
+        // A facet present on nearly the whole catalogue ("Internal memory" on
+        // every computer) does not help a buyer narrow anything, and its
+        // count(distinct) over tens of thousands of rows is the most expensive
+        // query the PLP can run - 24 of those 500'd the listing. Cap coverage so
+        // curation prefers distinguishing, cheaper facets (colour, type,
+        // connectivity) over universal specs.
+        $activeTotal = (int) $analysis->table('products')
+            ->where('status', 'active')
+            ->whereNull('deleted_at')
+            ->count();
+        $coverageCap = ($activeTotal > 0 && $maxCoverage > 0.0 && $maxCoverage < 1.0)
+            ? (int) round($maxCoverage * $activeTotal)
+            : PHP_INT_MAX;
+
         $eligible = $stats
             ->filter(fn ($row): bool => (int) $row->product_count >= $minProducts
+                && (int) $row->product_count <= $coverageCap
                 && (int) $row->distinct_values >= 2
                 && (int) $row->distinct_values <= $maxValues)
             ->sortByDesc(fn ($row): int => (int) $row->product_count)
@@ -108,6 +125,7 @@ final class CurateFacets extends Command
         }
 
         $this->newLine();
+        $this->line('Coverage cap: '.($coverageCap === PHP_INT_MAX ? 'none' : number_format($coverageCap).' of '.number_format($activeTotal).' active products').'.');
         $this->line(($apply ? 'Kept filterable' : 'Would keep filterable').': '.count($keepIds).' facet(s).');
         $this->table(
             ['Code', 'Name', 'Values', 'Active products'],
