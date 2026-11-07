@@ -9,6 +9,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -396,14 +397,41 @@ final class PostgresSearchEngine implements SearchEngine
      */
     private function facets(SearchQuery $query): array
     {
+        // A filtered listing is scoped small, so its facets are computed live.
         if ($query->filters !== []) {
             return $this->computeFacets($query);
         }
 
-        $generation = (int) Cache::get(self::FACET_CACHE_GENERATION_KEY, 0);
-        $key = 'facets:'.$generation.':'.md5(serialize([$query->categoryId, $query->brandId]));
+        // The broad cases (homepage, a category, a brand) are counted over the
+        // whole active catalogue and are far too expensive for the request path -
+        // computing them here is what repeatedly 500'd the PLP. They are
+        // PRE-COMPUTED into the cache by catalogue:warm-facets (off the request
+        // path, with no web time limit); the request only READS. A cold key shows
+        // no sidebar rather than a timeout, and the warmer fills it.
+        return Cache::get($this->facetCacheKey($query)) ?? [];
+    }
 
-        return Cache::remember($key, now()->addMinutes(10), fn (): array => $this->computeFacets($query));
+    private function facetCacheKey(SearchQuery $query): string
+    {
+        $generation = (int) Cache::get(self::FACET_CACHE_GENERATION_KEY, 0);
+
+        return 'facets:'.$generation.':'.md5(serialize([$query->categoryId, $query->brandId]));
+    }
+
+    /**
+     * Pre-compute a broad listing's facets off the request path and store them in
+     * the cache the request reads. Runs on the direct connection with the web
+     * timeout lifted, so even a whole-catalogue aggregate completes. Returns the
+     * number of facet values warmed. Driven by catalogue:warm-facets.
+     */
+    public function warmFacets(SearchQuery $query): int
+    {
+        $groups = $this->computeFacetsUnfiltered($query, 'pgsql_direct');
+        // Two days, refreshed daily by the scheduler: a single missed run still
+        // leaves the sidebar populated rather than lapsing to empty.
+        Cache::put($this->facetCacheKey($query), $groups, now()->addDays(2));
+
+        return array_sum(array_map(static fn (FacetGroup $g): int => count($g->values), $groups));
     }
 
     /**
@@ -414,19 +442,10 @@ final class PostgresSearchEngine implements SearchEngine
      */
     private function computeFacets(SearchQuery $query): array
     {
-        // No attribute filter is selected: every facet shares one scope, so the
-        // whole sidebar is a single aggregate rather than one query per
-        // attribute. The per-attribute form ran one count(distinct) query per
-        // filterable attribute over the active set - 24 of them at ~1.5s each
-        // (~36s) tripped the request limit and 500'd the PLP - and this is the
-        // broad, most-repeated, cached case, so it is the one worth collapsing.
-        if ($query->filters === []) {
-            return $this->computeFacetsUnfiltered($query);
-        }
-
-        // Filtered: each facet is counted with the OTHER selected filters applied
-        // but not its own, so the scopes genuinely differ and this stays one
-        // query per attribute - but the scoped set is small, so it is cheap.
+        // Only the FILTERED path reaches here - the broad, unfiltered cases are
+        // served from the warmed cache (see facets()). Each facet is counted with
+        // the OTHER selected filters applied but not its own, so the scopes
+        // genuinely differ - but a filtered set is small, so this is cheap.
         $filterable = Attribute::query()
             ->filterable()
             ->orderByDesc('display_order')
@@ -494,14 +513,40 @@ final class PostgresSearchEngine implements SearchEngine
      *
      * @return list<FacetGroup>
      */
-    private function computeFacetsUnfiltered(SearchQuery $query): array
+    private function computeFacetsUnfiltered(SearchQuery $query, ?string $connection = null): array
     {
-        $scoped = $this->baseQuery($query);
+        $db = DB::connection($connection);
 
-        $rows = DB::table('product_attribute_values as pav')
+        if ($connection !== null) {
+            // Off the request path: lift the role's web statement_timeout so the
+            // aggregate is allowed to finish. unprepared() runs the SET as a
+            // simple query so it actually applies to the session.
+            $db->unprepared("SET statement_timeout = '600s'");
+        }
+
+        // The active product scope, built on the SAME connection as the aggregate
+        // so the subquery is not cross-connection. Category filters on
+        // primary_category_id (its own department), as the listing query does.
+        $scope = $db->table('products')
+            ->where('status', 'active')
+            ->whereNull('deleted_at');
+
+        if ($query->brandId !== null) {
+            $scope->where('brand_id', $query->brandId);
+        }
+
+        if ($query->categoryId !== null) {
+            $category = Category::find($query->categoryId);
+            if ($category instanceof Category) {
+                $ids = Category::query()->subtreeOf($category->path)->pluck('id')->all();
+                $scope->whereIn('primary_category_id', $ids);
+            }
+        }
+
+        $rows = $db->table('product_attribute_values as pav')
             ->join('attributes as a', 'a.id', '=', 'pav.attribute_id')
             ->where('a.is_filterable', true)
-            ->whereIn('pav.product_id', $scoped->select('products.id'))
+            ->whereIn('pav.product_id', $scope->select('id'))
             ->groupBy('a.code', 'a.name', 'a.is_indexable_facet', 'a.display_order', 'pav.value_raw')
             ->get([
                 'a.code',
@@ -513,7 +558,19 @@ final class PostgresSearchEngine implements SearchEngine
                 DB::raw('count(distinct pav.product_id) as total'),
             ]);
 
-        // Fold the flat rows back into one group per attribute.
+        return $this->foldFacetRows($rows);
+    }
+
+    /**
+     * Fold the flat (attribute, value, count) rows of the one-pass aggregate into
+     * one FacetGroup per attribute, highest display_order first and each group's
+     * most-common value first, capped at 50.
+     *
+     * @param  Collection<int, \stdClass>  $rows
+     * @return list<FacetGroup>
+     */
+    private function foldFacetRows($rows): array
+    {
         $byCode = [];
         foreach ($rows as $row) {
             $code = (string) $row->code;
@@ -528,14 +585,11 @@ final class PostgresSearchEngine implements SearchEngine
             ];
         }
 
-        // Attribute display order desc, as the per-attribute path produced.
         uasort($byCode, static fn (array $a, array $b): int => $b['order'] <=> $a['order']);
 
         $groups = [];
         foreach ($byCode as $code => $data) {
             $values = $data['values'];
-            // Most-common value first, capped - the same shape the old query's
-            // ORDER BY count DESC LIMIT 50 produced.
             usort($values, static fn (array $x, array $y): int => $y['count'] <=> $x['count']);
             $values = array_slice($values, 0, 50);
 

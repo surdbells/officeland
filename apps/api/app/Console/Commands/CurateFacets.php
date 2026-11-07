@@ -9,6 +9,7 @@ use App\Search\PostgresSearchEngine;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Decide, from the data, which attributes are worth faceting on.
@@ -40,9 +41,38 @@ final class CurateFacets extends Command
         {--max=24 : Keep at most this many facets.}
         {--min-products=8 : An attribute must cover at least this many active products.}
         {--max-values=40 : An attribute with more distinct values than this is too high-cardinality to be a facet.}
-        {--max-coverage=0.4 : Exclude attributes present on more than this fraction of active products - a filter nearly every product matches does not narrow anything and is the most expensive to count.}';
+        {--max-coverage=1.0 : Also exclude attributes present on more than this fraction of active products (1.0 = no cap; selection is primarily by the useful-facet allowlist below).}';
 
-    protected $description = 'Promote only low-cardinality, well-covered attributes to filterable facets';
+    protected $description = 'Promote only useful, low-cardinality attributes to filterable facets';
+
+    /**
+     * Name fragments that mark a raw Icecat feature as genuinely useful to filter
+     * on. Hand-captured import specs (spec-*) are trusted without this list; it is
+     * the ~4,500 icecat-feat-* fields that need it, because most are niche
+     * datasheet rows (cable-lock slot type, AC adapter frequency) no buyer would
+     * filter by. Matched case-insensitively as substrings of the attribute name.
+     */
+    private const FACET_ALLOW = [
+        'colour', 'color', 'material', 'internal memory', 'memory type',
+        'ssd capacity', 'storage capacity', 'total ssd', 'hard drive capacity',
+        'screen size', 'display size', 'screen diagonal', 'display diagonal',
+        'resolution', 'processor manufacturer', 'processor family',
+        'operating system', 'form factor', 'market positioning',
+        'graphics card model', 'graphics adapter', 'series', 'product type',
+    ];
+
+    /**
+     * Name fragments that disqualify an attribute as a facet whatever its source -
+     * counts, versions, port/interface details and boolean datasheet flags make
+     * noisy filters. The block list wins over the allow list.
+     */
+    private const FACET_BLOCK = [
+        'quantity', 'version', 'slot', 'controller', 'adapter', 'voltage',
+        'frequency', 'interface', 'backlight', 'reader', 'antenna', 'lock',
+        'cores', 'threads', 'turbo', 'base power', 'npu', 'number of', 'maximum',
+        'minimum', 'input', 'output', ' port', 'manufacturer code', 'bluetooth',
+        'wi-fi', 'ethernet', 'camera', 'fingerprint',
+    ];
 
     public function handle(): int
     {
@@ -101,7 +131,8 @@ final class CurateFacets extends Command
             ->filter(fn ($row): bool => (int) $row->product_count >= $minProducts
                 && (int) $row->product_count <= $coverageCap
                 && (int) $row->distinct_values >= 2
-                && (int) $row->distinct_values <= $maxValues)
+                && (int) $row->distinct_values <= $maxValues
+                && $this->isUsefulFacet((string) $row->name, (string) $row->code))
             ->sortByDesc(fn ($row): int => (int) $row->product_count)
             ->take($max)
             ->values();
@@ -147,5 +178,33 @@ final class CurateFacets extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Whether an attribute is worth offering as a filter. Hand-captured import
+     * specs (spec-*) are trusted; raw Icecat features must name a useful concept.
+     * The block list wins over both.
+     */
+    private function isUsefulFacet(string $name, string $code): bool
+    {
+        $lower = Str::lower($name);
+
+        foreach (self::FACET_BLOCK as $fragment) {
+            if (str_contains($lower, $fragment)) {
+                return false;
+            }
+        }
+
+        if (str_starts_with($code, 'spec-')) {
+            return true;
+        }
+
+        foreach (self::FACET_ALLOW as $fragment) {
+            if (str_contains($lower, $fragment)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

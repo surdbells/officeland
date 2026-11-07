@@ -76,3 +76,15 @@ Schedule::command('catalogue:recount')
     ->dailyAt('04:30')
     ->timezone('Africa/Lagos')
     ->withoutOverlapping(30);
+
+/*
+ * Pre-compute the facet sidebar. The storefront reads facet counts from cache
+ * and never computes them on the request path (they are too expensive over the
+ * whole catalogue), so this refresh is what keeps the sidebar populated and the
+ * counts current. Runs just after recount, which updates the product counts it
+ * decides which categories and brands to warm from.
+ */
+Schedule::command('catalogue:warm-facets')
+    ->dailyAt('05:15')
+    ->timezone('Africa/Lagos')
+    ->withoutOverlapping(30);
