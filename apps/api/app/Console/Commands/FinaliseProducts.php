@@ -199,15 +199,12 @@ final class FinaliseProducts extends Command
             return;
         }
 
-        // 3. Accept the generated copy (the admin running --index is the person
-        //    approving it) and index/publish when the import bar is cleared.
+        // 3. Index/publish when the import bar is cleared, accepting the generated
+        //    copy only THEN. A blocked product is left unapproved on purpose: its
+        //    generated copy may be a thin blurb a later finalise can re-draft, and
+        //    approving it would freeze the blurb (the drafter never overwrites
+        //    approved copy), which is what stalled the content gap.
         $product->refresh()->loadMissing(['attributeValues']);
-
-        if ($product->description_generated_at !== null && ! $product->descriptionIsApproved()) {
-            if ($apply) {
-                $product->forceFill(['description_approved_at' => now()])->save();
-            }
-        }
 
         $blocker = $this->importBlocker($product, $minimums);
 
@@ -220,6 +217,12 @@ final class FinaliseProducts extends Command
         $this->indexed++;
 
         if ($apply) {
+            // Accept the generated copy now that the product clears the bar - the
+            // admin running --index is the person approving it.
+            if ($product->description_generated_at !== null && ! $product->descriptionIsApproved()) {
+                $product->forceFill(['description_approved_at' => now()]);
+            }
+
             $product->forceFill([
                 'status' => 'active',
                 'is_indexable' => true,
