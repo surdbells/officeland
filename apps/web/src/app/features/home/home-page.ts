@@ -427,7 +427,7 @@ const MAJOR_CATEGORY_SOURCES: readonly {
       is a screen reader's single reading, and the whole band holds still under
       reduced motion.
     -->
-    <div class="ol-ticker border-y border-white/10 bg-ink-900 py-3.5 text-white" aria-label="Why OfficeLand">
+    <div class="ol-ticker hidden border-y border-white/10 bg-ink-900 py-3.5 text-white md:block" aria-label="Why OfficeLand">
       <div class="ol-ticker__track">
         @for (group of [0, 1]; track group) {
           <ul class="flex shrink-0 items-center gap-x-10" [attr.aria-hidden]="group === 1">
@@ -450,7 +450,7 @@ const MAJOR_CATEGORY_SOURCES: readonly {
       carry the argument. The final value is authored in the HTML, so a
       crawler and a no-JS visitor read it whole; the count is enhancement.
     -->
-    <section aria-label="Why OfficeLand" class="border-b border-ink-100 bg-gradient-to-b from-white to-ink-50">
+    <section aria-label="Why OfficeLand" class="hidden border-b border-ink-100 bg-gradient-to-b from-white to-ink-50 md:block">
       <ul class="mx-auto grid max-w-(--container-page) gap-4 px-(--spacing-gutter) py-10 sm:grid-cols-2 lg:grid-cols-4">
         <li
           olReveal
