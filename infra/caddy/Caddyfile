@@ -173,28 +173,56 @@ Disallow: /
 	}
 
 	# ---------------------------------------------------------------------
-	# The client-rendered storefront (SPA). Humans get the shell and the
-	# browser renders. Content-hashed assets get a far-future cache; the shell
-	# must revalidate so a new build is picked up at once.
+	# The storefront. SSR for everyone, hydrated in the browser.
+	#
+	# Humans used to get an empty CSR shell and render the whole page client-
+	# side: every async section re-fetched and swapped a skeleton for content
+	# of a different height (0.72 mobile CLS), and nothing meaningful painted
+	# until the bundle booted and the data returned (slow LCP). Now a human
+	# navigation is rendered on the server (render:4000) exactly as a crawler's
+	# is, and `provideClientHydration` makes the browser REUSE that DOM instead
+	# of rebuilding it - so there is no skeleton swap and the content is in the
+	# first paint.
+	#
+	# Assets still come straight off disk; only extensionless app routes reach
+	# the renderer.
 	# ---------------------------------------------------------------------
 	handle {
 		root * /app/static
 
-		# Angular emits `name-U44D4EQK.js` (dash, uppercase base32), while the
-		# media pipeline emits lowercase hex. Match both, or content-hashed
-		# assets silently fall back to the must-revalidate HTML policy below.
-		@hashed path_regexp [.-]([A-Z0-9]{8,}|[a-f0-9]{8,})\.(js|mjs|css|woff2|png|jpg|jpeg|webp|avif|svg|ico)$
-		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		# A path with a file extension is an asset: a hashed bundle, a font or
+		# image, a sitemap (.xml), a favicon, or the CSR shell. Serve it off
+		# disk. An Angular route has NO extension and keeps its trailing slash,
+		# so it never matches here and falls through to the renderer below - the
+		# split that lets humans be server-rendered without routing every static
+		# file through Node. (The `file` matcher is avoided on purpose: it also
+		# matches the root directory, which would serve the shell for `/`.)
+		@asset path_regexp \.[A-Za-z0-9]+$
+		handle @asset {
+			# Content-hashed bundles never change: far-future immutable cache.
+			# Angular emits `name-U44D4EQK.js` (dash, uppercase base32); the
+			# media pipeline emits lowercase hex. Match both.
+			@hashed path_regexp [.-]([A-Z0-9]{8,}|[a-f0-9]{8,})\.(js|mjs|css|woff2|png|jpg|jpeg|webp|avif|svg|ico)$
+			header @hashed Cache-Control "public, max-age=31536000, immutable"
+			file_server
+		}
 
-		@html path *.html /
-		header @html Cache-Control "public, max-age=0, must-revalidate"
-
-		# SPA fallback: a real file wins; any unknown route serves the CSR
-		# shell and the client router takes over. This is the SPA pattern the
-		# prerendered build could not use - under Dynamic Rendering it is
-		# exactly right, because a human never needs a per-route file and a bot
-		# never reaches here (it was routed to the renderer above).
-		try_files {path} {path}/index.html /index.csr.html
-		file_server
+		# Every remaining path is an app route, now server-rendered for humans.
+		#
+		# The HTML is identical for every anonymous visitor (the quote basket is
+		# client-side, there is no login on the storefront), so it is marked
+		# edge-cacheable: Cloudflare serves the hot pages from cache and the
+		# render service only ever renders a cold URL once, then refreshes it in
+		# the background. That cache is load-bearing here - without it this
+		# handler would send every human request to a single Node process.
+		# s-maxage is the shared-cache (CDN) TTL; browsers get max-age=0 and
+		# always revalidate, so a redeploy is picked up on the next view.
+		# stale-if-error lets Cloudflare keep serving the last good render of a
+		# hot page if the render service is briefly down, so an origin hiccup
+		# degrades to a slightly stale page rather than a 502.
+		handle {
+			header Cache-Control "public, max-age=0, s-maxage=300, stale-while-revalidate=86400, stale-if-error=86400"
+			reverse_proxy render:4000
+		}
 	}
 }

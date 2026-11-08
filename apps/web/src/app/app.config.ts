@@ -3,6 +3,7 @@ import {
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
 } from '@angular/core';
+import { provideClientHydration } from '@angular/platform-browser';
 import { UrlSerializer, provideRouter, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { routes } from './app.routes';
@@ -30,12 +31,37 @@ export const appConfig: ApplicationConfig = {
     { provide: UrlSerializer, useClass: TrailingSlashUrlSerializer },
 
     /*
-     * Client-side rendering (CSR): the app boots and renders in the browser,
-     * so there is no server-rendered HTML to hydrate and no TransferState to
-     * seed. Crawlers and social scrapers are served fully-rendered snapshots
-     * by the Dynamic Rendering service (infra/renderer), which runs this same
-     * app in headless Chrome and captures the DOM once SeoService has written
-     * the head and the route's data has loaded.
+     * Full SSR with hydration. The server (app.config.server.ts) renders the
+     * route to HTML with its data already resolved; the browser now REUSES that
+     * DOM instead of tearing it down and rendering again from an empty shell.
+     *
+     * Before this, the app booted CSR-only: the server HTML was discarded on
+     * load and every async section (home, navigation, the per-department
+     * showcases, Shop-by-category, Best sellers) re-fetched and re-rendered from
+     * a skeleton. That skeleton -> content swap was the 0.72 mobile CLS, and the
+     * wait for the bundle to boot and the data to return was the slow LCP.
+     *
+     * provideClientHydration also enables the HTTP transfer cache by default:
+     * the responses the server already fetched are serialized into the page
+     * (an inert application/json script) and replayed synchronously on the
+     * client, so the signals start populated (content, not undefined) and the
+     * skeletons never render on hydration.
+     *
+     * withEventReplay is deliberately NOT used. It would inject an EXECUTABLE
+     * inline event-contract script into the SSR output, and the storefront CSP
+     * is hash-locked from the build (tools/csp-hashes.mjs, script-src without
+     * 'unsafe-inline') - a per-page inline script rendered on demand by the
+     * engine has no hash in that policy and would be blocked. Hydration itself
+     * (DOM reuse + the transfer cache, which is what removes the skeleton swap
+     * and the CLS) needs no inline script; only early-tap replay does, and that
+     * is the piece we forgo to keep the policy a pure hash list.
+     */
+    provideClientHydration(),
+
+    /*
+     * withFetch() rather than the XHR backend: the server renders in Node, where
+     * XHR does not exist, and the fetch backend is what the HTTP transfer cache
+     * above hooks into to carry each response into hydration.
      */
     provideHttpClient(withFetch()),
   ],

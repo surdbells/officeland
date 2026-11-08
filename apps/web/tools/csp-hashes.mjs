@@ -33,14 +33,17 @@
  *   node tools/csp-hashes.mjs --check    # fail if it differs from the committed one
  */
 
+import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
 // fileURLToPath rather than .pathname: on Windows the latter yields
 // "/C:/...", which join() then turns into "C:C:...".
 const DIST = fileURLToPath(new URL('../dist/web/browser/', import.meta.url));
+const SERVER = fileURLToPath(new URL('../dist/web/server/server.mjs', import.meta.url));
 const COMMITTED = fileURLToPath(new URL('../../../infra/caddy/csp.caddy', import.meta.url));
 
 /** Script types the browser executes. Everything else is inert data. */
@@ -107,12 +110,71 @@ async function* htmlFiles(directory) {
     const path = join(directory, entry.name);
 
     if (entry.isDirectory()) yield* htmlFiles(path);
-    // Under Dynamic Rendering the CSR shell (index.csr.html) is exactly what
-    // Caddy serves to humans, and the on-demand SSR output for bots carries the
-    // same script pattern - an external module bundle plus ld+json data, no
-    // executable inline script - so scanning the shell covers both. It is the
-    // only build-time HTML now that nothing is prerendered.
+    // The CSR shell (index.csr.html) is the only build-time HTML on disk now
+    // that nothing is prerendered. It is NOT the whole story: humans and bots
+    // are served the on-demand SSR output (render:4000), and with hydration on
+    // that output carries inline scripts the shell does not - Angular's
+    // event-replay contract and jsaction bootstrap. Those are rendered, not
+    // written to disk, so collectSsrHashes below renders them to hash them.
     else if (entry.name.endsWith('.html')) yield path;
+  }
+}
+
+/**
+ * Render a few routes through the built SSR engine and return their inline-
+ * script hashes.
+ *
+ * ── Why this is necessary ────────────────────────────────────────────────
+ * The policy is a promise about every byte a browser will execute. Under
+ * hydration the bytes a human runs come from the SSR engine, not the shell on
+ * disk, and they include scripts the shell has never had (the event-replay
+ * contract). Hashing only the disk shell would ship a policy that blocks every
+ * server-rendered page - the exact silent failure this tool exists to prevent.
+ *
+ * The hydration bootstrap is data-independent: it registers a fixed set of
+ * event types, so its hash is identical on every route (verified: the homepage
+ * and the quote form carry the same two). The API is therefore not needed - the
+ * origin is pointed at a closed port so every catalogue call fails fast and the
+ * render completes in a second with the scripts present. A couple of routes are
+ * rendered rather than one so a route that ever inlines something extra is seen.
+ */
+async function collectSsrHashes() {
+  const port = 41000 + Math.floor(Math.random() * 2000);
+  const server = spawn(process.execPath, [SERVER], {
+    env: {
+      ...process.env,
+      PORT: String(port),
+      // A closed port: every /api call fails immediately (ECONNREFUSED), so the
+      // render does not wait on a real API to emit the hydration scripts.
+      PRERENDER_API_ORIGIN: 'http://127.0.0.1:1',
+    },
+    stdio: 'ignore',
+  });
+
+  try {
+    // Wait for the engine to accept connections.
+    const base = `http://127.0.0.1:${port}`;
+    for (let attempt = 0; attempt < 40; attempt++) {
+      try {
+        await fetch(base + '/', { signal: AbortSignal.timeout(2000) });
+        break;
+      } catch {
+        if (attempt === 39) throw new Error('SSR engine did not start for CSP hashing.');
+        await sleep(250);
+      }
+    }
+
+    const merged = { hashes: new Set(), handlers: new Set() };
+    for (const route of ['/', '/quote/request/', '/a-path-that-404s/']) {
+      const html = await fetch(base + route, { signal: AbortSignal.timeout(20000) }).then((r) => r.text());
+      const { hashes, handlers } = hashesIn(html);
+      for (const h of hashes) merged.hashes.add(h);
+      for (const h of handlers) merged.handlers.add(h);
+    }
+
+    return merged;
+  } finally {
+    server.kill();
   }
 }
 
@@ -126,6 +188,9 @@ if (perFile.size === 0) {
   console.error('No built HTML found (expected dist/web/browser/index.csr.html). Run `ng build` first.');
   process.exit(1);
 }
+
+// The SSR output humans and bots actually receive, hashed from live renders.
+perFile.set('ssr:rendered', await collectSsrHashes());
 
 /*
  * The UNION across every page, not one page's set.
