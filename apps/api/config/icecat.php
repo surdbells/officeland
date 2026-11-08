@@ -215,6 +215,47 @@ return [
         1041 => '/it-products/computer-accessories/',                 // wrist rests (Fellowes)
         1870 => '/smart-tech/conferencing-av/',                       // soundbars (JBL / Dell)
         1081 => '/smart-tech/conferencing-av/',                       // commercial loudspeakers (JBL)
+
+        // Added from the 16-brand uncategorised survey (2026-11-08), identified
+        // by the real product names. Mixed Catids are mapped to the home their
+        // dominant product fits; a handful with no honest home (printer paper
+        // trays, robot vacuums, clock radios) are left unmapped on purpose, and
+        // server/rack spare parts are excluded below.
+        1554 => '/it-products/storage-memory/flash-drives/',          // USB flash drives (Dell)
+        5509 => '/it-products/storage-memory/external-hard-drives/',  // external SSDs (Lenovo / HP)
+        922 => '/printers-consumables/printers/inkjet-printers/',     // ink-tank / photo printers (Smart Tank, SELPHY)
+        847 => '/paper-notebooks/printing-paper/',                    // everyday / photo copier paper
+        702 => '/paper-notebooks/specialty-paper/paper-rolls/',       // plotter + fine-art paper rolls
+        577 => '/smart-tech/conferencing-av/webcams/',                // webcams (Dell / Lenovo)
+        3054 => '/smart-tech/security-surveillance/cctv-cameras/',    // network video recorders (TP-Link VIGI)
+        1687 => '/smart-tech/conferencing-av/conference-speakerphones/', // speakerphones (Dell SP/SL)
+        560 => '/it-products/monitors-displays/projectors-screens/',  // projector lamps / connection boxes
+        243 => '/it-products/computer-accessories/hubs-docking-stations/', // USB / interface hubs
+        858 => '/it-products/computer-accessories/hubs-docking-stations/', // card readers
+        1008 => '/it-products/networking/switches-adapters/',         // network media converters (TP-Link)
+        1516 => '/it-products/networking/switches-adapters/',         // PoE injectors / adapters (TP-Link)
+        2505 => '/it-products/networking/switches-adapters/',         // powerline adapters (TP-Link)
+        833 => '/it-products/networking/routers-access-points/',      // Omada gateways / controllers (TP-Link)
+        244 => '/it-products/networking/routers-access-points/',      // wired routers (TP-Link / ASUS ExpertWiFi)
+        1514 => '/it-products/computer-accessories/stands-mounts/',   // display / notebook stands
+        1007 => '/it-products/computer-accessories/stands-mounts/',   // VESA mounting kits
+        1158 => '/it-products/computer-accessories/cables-adapters/', // USB cables (Lenovo / ASUS)
+        2265 => '/it-products/computer-accessories/headsets-audio/',  // headset accessories / audio adapters
+        2778 => '/it-products/computer-accessories/chargers-power-banks/', // laptop power banks (Dell / Lenovo)
+        3652 => '/it-products/computer-accessories/laptop-bags-cases/', // hot-desking work bags (Leitz)
+        450 => '/it-products/computer-accessories/',                  // desk mats (Leitz / Fellowes)
+        316 => '/office-supplies/office-machines/calculators/',       // calculators (Canon)
+        1022 => '/office-supplies/office-machines/laminators/',       // laminator pouches (Fellowes)
+        445 => '/office-supplies/desk-accessories/staplers-punches/', // staplers (Leitz)
+        3869 => '/office-supplies/desk-accessories/cutting-tools/',   // scissors (Leitz)
+        3074 => '/smart-tech/smart-office/smart-plugs-switches/',     // smart plugs (TP-Link Tapo)
+        2818 => '/smart-tech/smart-office/smart-lighting/',           // smart bulbs / light strips (TP-Link Tapo)
+        1848 => '/smart-tech/power-backup/solar-panels/',             // solar panels (TP-Link VIGI)
+        935 => '/smart-tech/conferencing-av/',                        // microphones (JBL / HP table mic)
+        1298 => '/smart-tech/conferencing-av/',                       // AV amplifiers / receivers (JBL MA)
+        1683 => '/smart-tech/conferencing-av/',                       // active subwoofers (JBL)
+        5017 => '/smart-tech/conferencing-av/',                       // speaker mounting brackets (JBL MTC)
+        8906 => '/smart-tech/conferencing-av/',                       // portable-speaker accessories (JBL Party)
     ],
 
     /*
@@ -268,5 +309,9 @@ return [
         803,  // software licences (Absolute, Omada Cloud)
         7,    // operating-system / software licences (Dell)
         2426, // travel / cosmetic pouches (Leitz) - not office
+
+        // 16-brand uncategorised survey (2026-11-08): server/rack spare parts.
+        8638, // RAID controller accessories (cables, cards) - Dell server spares
+        1532, // rack accessories (filler / blanking panels) - Dell/HP server spares
     ],
 ];
