@@ -256,6 +256,108 @@ return [
         1683 => '/smart-tech/conferencing-av/',                       // active subwoofers (JBL)
         5017 => '/smart-tech/conferencing-av/',                       // speaker mounting brackets (JBL MTC)
         8906 => '/smart-tech/conferencing-av/',                       // portable-speaker accessories (JBL Party)
+
+        // Second wave from the per-brand survey (2026-11-08b). The first batch
+        // is placed; these are the remaining Catids with an honest home. What is
+        // left uncategorised after this is deliberate: already-excluded
+        // components/licences (989 Xeon, 803 licences), industrial/service lines,
+        // gaming and consumer audio - none has an office-catalogue home.
+
+        // IT - displays
+        9511 => '/it-products/monitors-displays/monitors/',           // Dell Pro conferencing monitors
+        2344 => '/it-products/monitors-displays/monitors/',           // portable monitors (ASUS ZenScreen)
+        2672 => '/it-products/monitors-displays/tvs-digital-signage/', // large-format digital-signage panels
+        1761 => '/it-products/monitors-displays/projectors-screens/', // projector wall/ceiling mounts (Epson)
+        561 => '/it-products/monitors-displays/projectors-screens/',  // projection screens (Epson)
+        1177 => '/it-products/monitors-displays/projectors-screens/', // projector air filters (Epson)
+
+        // IT - cables & input
+        2939 => '/it-products/computer-accessories/cables-adapters/', // USB-C to DP/VGA adapters (HP)
+        2921 => '/it-products/computer-accessories/cables-adapters/', // VGA cables
+        2925 => '/it-products/computer-accessories/cables-adapters/', // DisplayPort cables
+        2918 => '/it-products/computer-accessories/cables-adapters/', // HDMI cables
+        2917 => '/it-products/computer-accessories/cables-adapters/', // audio cables
+        2347 => '/it-products/computer-accessories/cables-adapters/', // Thunderbolt cables
+        953 => '/it-products/networking/network-cables/',             // DAC / SFP+ / fibre cables
+        2929 => '/it-products/computer-accessories/keyboards-mice/',  // programmable wireless keypads (HP)
+        196 => '/it-products/computer-accessories/keyboards-mice/',   // wireless presenters (Lenovo)
+        1762 => '/it-products/computer-accessories/stands-mounts/',   // under-desk CPU holders (Fellowes)
+        826 => '/it-products/computer-accessories/laptop-bags-cases/', // laptop / casual backpacks (ASUS)
+
+        // IT - networking
+        262 => '/it-products/networking/routers-access-points/',      // outdoor wireless bridges (TP-Link)
+        1773 => '/it-products/networking/routers-access-points/',     // 4G/5G cellular routers / MiFi
+        1524 => '/it-products/networking/switches-adapters/',         // PoE splitters (TP-Link)
+        7188 => '/it-products/networking/switches-adapters/',         // GPON / XGS-PON OLTs (TP-Link)
+        5867 => '/it-products/networking/switches-adapters/',         // PON ONTs / terminals (TP-Link)
+        238 => '/it-products/networking/switches-adapters/',          // media converters (TP-Link)
+
+        // Smart tech - security, smart office, power
+        5744 => '/smart-tech/conferencing-av/webcams/',               // conference cameras (Lenovo Huddly)
+        1668 => '/smart-tech/security-surveillance/video-doorbells/', // video doorbells (TP-Link Tapo)
+        5295 => '/smart-tech/security-surveillance/video-doorbells/', // wired video doorbells
+        2620 => '/smart-tech/security-surveillance/video-doorbells/', // video intercoms
+        4694 => '/smart-tech/security-surveillance/cctv-cameras/',    // security camera kits (Tapo)
+        2325 => '/smart-tech/security-surveillance/cctv-cameras/',    // VIGI NVR + camera kits
+        3846 => '/smart-tech/security-surveillance/alarms-sensors/',  // smart sensor starter kits (Tapo)
+        3843 => '/smart-tech/smart-office/smart-plugs-switches/',     // smart switch modules (Tapo S110E)
+        2375 => '/smart-tech/smart-office/smart-plugs-switches/',     // smart socket-outlets (Tapo)
+        1661 => '/smart-tech/smart-office/smart-lighting/',           // smart bulbs (TP-Link)
+        4725 => '/smart-tech/power-backup/solar-panels/',             // Tapo / VIGI solar panels
+        7799 => '/smart-tech/power-backup/solar-panels/',             // VIGI solar charge controllers
+        7951 => '/smart-tech/power-backup/solar-panels/',             // VIGI solar mounts
+        817 => '/smart-tech/power-backup/ups-systems/',               // UPS (Dell / Lenovo)
+
+        // Smart tech - commercial audio (JBL) & table mics
+        1346 => '/smart-tech/conferencing-av/',                       // speaker mounts (JBL)
+        5568 => '/smart-tech/conferencing-av/',                       // PA speakers (JBL)
+        1894 => '/smart-tech/conferencing-av/',                       // commercial amplifiers (JBL CSA/CSMA)
+        5571 => '/smart-tech/conferencing-av/',                       // wireless microphone sets (JBL)
+        5714 => '/smart-tech/conferencing-av/',                       // table mics / ThinkSmart bars
+        1868 => '/it-products/computer-accessories/headsets-audio/',  // PC 2.1 speaker sets (HP / JBL)
+
+        // Smart tech - cameras & imaging (Canon)
+        584 => '/smart-tech/cameras-imaging/camcorders/',             // cinema camcorders (Canon EOS C)
+        9544 => '/smart-tech/cameras-imaging/camcorders/',            // PTZ cameras (Canon CR-N)
+        1712 => '/smart-tech/cameras-imaging/digital-cameras/',       // compact cameras (PowerShot)
+        586 => '/smart-tech/cameras-imaging/camera-accessories/',     // flashes (Speedlite)
+        8170 => '/smart-tech/cameras-imaging/camera-accessories/',    // camera batteries
+        7366 => '/smart-tech/cameras-imaging/camera-accessories/',    // couplers / body caps / cooling fans
+        1560 => '/smart-tech/cameras-imaging/camera-accessories/',    // lens hoods
+        2259 => '/smart-tech/cameras-imaging/camera-accessories/',    // battery grips
+        3242 => '/smart-tech/cameras-imaging/camera-accessories/',    // camera remotes
+        5824 => '/smart-tech/cameras-imaging/camera-accessories/',    // lens covers
+
+        // Office furniture
+        5637 => '/office-furniture/desks-tables/height-adjustable-desks/', // electric sit-stand desks (Leitz Ergo)
+        8816 => '/office-furniture/partitions-screens/',             // desk dividers (Leitz)
+        8406 => '/office-furniture/seating/ergonomic-task-chairs/',  // active sitting stools (Leitz Ergo)
+        1215 => '/office-furniture/seating/ergonomic-task-chairs/',  // sit / stand stools (Leitz Ergo)
+
+        // Filing & storage
+        3730 => '/filing-storage/desk-filing/magazine-holders/',     // magazine files (Leitz)
+        1448 => '/filing-storage/desk-filing/magazine-holders/',     // magazine racks (Rexel)
+        485 => '/filing-storage/files-folders/report-clip-files/',   // clipfolders (Leitz)
+        3315 => '/filing-storage/files-folders/display-books-clear-files/', // display books (Leitz)
+
+        // Office supplies
+        393 => '/office-supplies/desk-accessories/organisers-holders/', // desk organisers (Leitz)
+        4019 => '/office-supplies/desk-accessories/organisers-holders/', // cable organisers (Fellowes)
+        392 => '/office-supplies/desk-accessories/organisers-holders/', // drawer cubes (Leitz WOW)
+        360 => '/office-supplies/office-machines/laminators/',       // laminators (Leitz iLAM)
+        1075 => '/office-supplies/desk-accessories/staplers-punches/', // hole punches (Leitz)
+        4404 => '/office-supplies/desk-accessories/staplers-punches/', // stapler / punch sets
+        3974 => '/office-supplies/desk-accessories/staplers-punches/', // battery staplers (Leitz)
+        495 => '/office-supplies/desk-accessories/staplers-punches/', // staples (Leitz / Rexel)
+        443 => '/office-supplies/desk-accessories/staplers-punches/', // staple removers (Rexel)
+        3303 => '/office-supplies/desk-accessories/staplers-punches/', // hole-punch accessories
+        388 => '/office-supplies/office-machines/binding-machines/', // binding covers (Fellowes)
+        1438 => '/office-supplies/office-machines/air-purifiers/',   // air-purifier filters (Leitz TruSens)
+
+        // Printers & paper
+        905 => '/printers-consumables/ink-toner/',                   // dot-matrix printer ribbons (Epson)
+        376 => '/printers-consumables/ink-toner/drums-maintenance-kits/', // feed rollers / maintenance (Epson)
+        853 => '/paper-notebooks/specialty-paper/photo-paper/',      // inkjet photo media (Canon IJM)
     ],
 
     /*
@@ -313,5 +415,26 @@ return [
         // 16-brand uncategorised survey (2026-11-08): server/rack spare parts.
         8638, // RAID controller accessories (cables, cards) - Dell server spares
         1532, // rack accessories (filler / blanking panels) - Dell/HP server spares
+
+        // Per-brand survey (2026-11-08b): industrial, service and non-office lines
+        // that would otherwise keep re-importing as uncategorised drafts.
+        2655, // industrial 3D printers (HP Jet Fusion)
+        2758, // 3D-printing materials / agents
+        1547, // commercial web presses (HP PageWide)
+        1024, // latex printhead / textile-kit parts
+        1756, // RAID controllers (server)
+        886,  // server management (iDRAC) / communication software
+        239,  // PCIe slot expanders (server)
+        1571, // CPU / computer cooling parts
+        2381, // screws / bolts (spares)
+        3159, // single-board dev boards (Tinker Board)
+        787,  // installation services
+        2446, // support / software licences
+        9471, // cloud-service subscriptions
+        63,   // software / editable-OCR services
+        1917, // carbon-offset add-ons (not a product)
+        1529, // thermal paste
+        193,  // game controllers (ASUS ROG)
+        3072, // smartglasses (ASUS ROG XREAL)
     ],
 ];
