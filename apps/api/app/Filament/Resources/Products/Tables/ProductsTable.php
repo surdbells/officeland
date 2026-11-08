@@ -196,6 +196,7 @@ final class ProductsTable
                             }
                             self::done(count($ids), 'status updated');
                         })
+                        ->chunkSelectedRecords(1000)
                         ->deselectRecordsAfterCompletion(),
 
                     BulkAction::make('setIndexable')
@@ -211,6 +212,7 @@ final class ProductsTable
                             Product::query()->whereKey($records->pluck('id'))->update(['is_indexable' => (bool) $data['is_indexable']]);
                             self::done($records->count(), 'indexing updated');
                         })
+                        ->chunkSelectedRecords(1000)
                         ->deselectRecordsAfterCompletion(),
 
                     BulkAction::make('assignBrand')
@@ -229,6 +231,7 @@ final class ProductsTable
                                 ->update(['brand_id' => $brand->id, 'brand_name_cached' => $brand->name]);
                             self::done($records->count(), 'brand assigned');
                         })
+                        ->chunkSelectedRecords(1000)
                         ->deselectRecordsAfterCompletion(),
 
                     BulkAction::make('addToCategory')
@@ -245,6 +248,7 @@ final class ProductsTable
                             DB::table('product_category')->insertOrIgnore($rows);
                             self::done($records->count(), 'added to the category');
                         })
+                        ->chunkSelectedRecords(1000)
                         ->deselectRecordsAfterCompletion(),
 
                     DeleteBulkAction::make(),
@@ -252,6 +256,10 @@ final class ProductsTable
                     RestoreBulkAction::make(),
                 ]),
             ])
+            // 66k products: offer larger pages, and never "all" (it would try to
+            // render every row). Bulk actions below chunk the selection so a
+            // "Select all" across more than a page still completes.
+            ->paginationPageOptions([25, 50, 100, 200])
             ->defaultSort('updated_at', 'desc');
     }
 
