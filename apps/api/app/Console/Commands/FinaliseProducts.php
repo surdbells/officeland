@@ -149,9 +149,19 @@ final class FinaliseProducts extends Command
 
     private function finalise(Product $product, DescriptionDrafter $drafter, ContentMinimums $minimums, bool $apply, bool $index): void
     {
-        // 1. Description from specs (the drafter refuses when there is too little
-        //    structured data, which is correct - that product needs data, not copy).
-        if (trim(strip_tags((string) $product->description_html)) === '') {
+        // 1. Description from specs. Draft when there is no description at all,
+        //    OR when the only description is a short, unapproved GENERATED import
+        //    blurb - re-composing from the product's own specs gives the drafter a
+        //    chance to clear the 120-word floor the blurb never could. A human
+        //    description (or an approved generated one) is left untouched: the
+        //    drafter guards that itself, and the thin check below also excludes it.
+        $current = trim(strip_tags((string) $product->description_html));
+        $generatedAndThin = $current !== ''
+            && $product->description_generated_at !== null
+            && ! $product->descriptionIsApproved()
+            && $minimums->words($product->description_html) < ContentMinimums::PRODUCT_WORDS;
+
+        if ($current === '' || $generatedAndThin) {
             $body = $apply ? $drafter->draft($product) : $drafter->compose($product);
             if ($body !== null) {
                 $this->described++;
