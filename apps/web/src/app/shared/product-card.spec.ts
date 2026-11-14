@@ -148,17 +148,12 @@ describe('ProductCard', () => {
       expect(render({ availability: 'in_stock' }).textContent).toContain('In stock');
     });
 
-    /** The B2B equivalent of a stock check: the number buyers ask for. */
-    it('gives the lead time in days when there is one', () => {
+    /** Lead time is confirmed per line on the quote, so the card never states a figure. */
+    it('shows no lead-time figure, only that the product is available to order', () => {
       const host = render({ availability: 'lead_time', lead_time_days: 7 });
 
-      expect(host.textContent).toContain('7 day lead time');
-    });
-
-    it('falls back when a lead-time product has no number yet', () => {
-      const host = render({ availability: 'lead_time' });
-
-      expect(host.textContent).toContain('Available on lead time');
+      expect(host.textContent).toContain('Available to order');
+      expect(host.textContent).not.toContain('lead time');
     });
   });
 

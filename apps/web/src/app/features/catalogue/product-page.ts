@@ -453,9 +453,8 @@ export class ProductPage {
       case 'discontinued':
         return 'Discontinued';
       default:
-        return p?.lead_time_days
-          ? `Available on ${p.lead_time_days} day lead time`
-          : 'Available on lead time';
+        // Lead time is confirmed per line on the quotation, not stated here.
+        return 'Available to order';
     }
   });
 

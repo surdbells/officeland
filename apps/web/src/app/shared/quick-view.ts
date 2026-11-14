@@ -204,7 +204,7 @@ export class QuickView {
       case 'discontinued':
         return 'Discontinued';
       default:
-        return p.lead_time_days ? `${p.lead_time_days} day lead time` : 'Available on lead time';
+        return 'Available to order';
     }
   });
 

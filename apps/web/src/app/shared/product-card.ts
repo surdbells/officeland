@@ -17,7 +17,7 @@ import { BasketStore } from '../core/quotes/basket-store';
  * same anchors, same button; only the arrangement changes.
  *
  * ── The premium treatment ────────────────────────────────────────────────
- * The photograph sits in a soft, padded well so a product shot on white
+ * The photograph sits in a padded white well so a product shot on white
  * floats rather than touching the card edge; the brand is an eyebrow, not a
  * boxed chip; availability is a status dot; and the title is clamped to two
  * lines with its height reserved, so a row of cards shares one baseline no
@@ -186,15 +186,14 @@ import { BasketStore } from '../core/quotes/basket-store';
     }
 
     /*
-     * The image well: a faint top-lit gradient and generous padding, so a
-     * product photographed on white sits IN a space instead of filling a box.
+     * The image well: plain white with generous padding. Supplier photos are
+     * shot on white, so any tinted ground shows each photo as a white box; on
+     * white the product itself is the only thing that reads.
      * The image keeps object-fit: contain (.ol-contain) - a product is never
      * cropped.
      */
     .ol-pcard__well {
-      background:
-        radial-gradient(120% 80% at 50% 0%, #ffffff 0%, transparent 70%),
-        linear-gradient(180deg, var(--color-ink-50) 0%, #f3f5f8 100%);
+      background: #fff;
       padding: 1.25rem;
     }
 
@@ -315,7 +314,8 @@ export class ProductCard {
       case 'discontinued':
         return 'Discontinued';
       default:
-        return p.lead_time_days ? `${p.lead_time_days} day lead time` : 'Available on lead time';
+        // No lead-time figure on the card: it is confirmed per line on the quote.
+        return 'Available to order';
     }
   });
 
