@@ -30,7 +30,7 @@ final class BrandController extends Controller
 
     public function show(Brand $brand): JsonResponse
     {
-        return response()->json(['data' => new BrandResource($brand)]);
+        return response()->json(['data' => new BrandResource($brand->load('logoMedia.derivatives'))]);
     }
 
     /**

@@ -22,6 +22,9 @@ import { SeoService } from '../../core/seo/seo.service';
   template: `
     <ol-content-page
       heading="Delivery &amp; lead times"
+      crumb="Delivery"
+      eyebrow="Customer service"
+      [toc]="true"
       lede="Lead times are quoted per line, not averaged across the order. Nationwide delivery, installation in Lagos."
     >
       <h2>How lead time is quoted</h2>
@@ -103,6 +106,8 @@ export class DeliveryPage {
   template: `
     <ol-content-page
       heading="Returns"
+      eyebrow="Customer service"
+      [toc]="true"
       lede="Tell us quickly, keep the packaging, and most returns are straightforward."
     >
       <h2>If something is wrong on arrival</h2>
@@ -175,6 +180,8 @@ export class ReturnsPage {
   template: `
     <ol-content-page
       heading="Warranty"
+      eyebrow="Customer service"
+      [toc]="true"
       lede="The manufacturer sets the term. We are who you talk to when you need to use it."
     >
       <h2>What is covered</h2>

@@ -186,6 +186,7 @@ export class BulkSupplyPage {
   template: `
     <ol-content-page
       heading="Buying guides"
+      eyebrow="Before you order"
       lede="What to settle before you order, by category. Written for somebody buying for an organisation rather than for themselves."
     >
       <p>
@@ -264,6 +265,8 @@ export class GuidesPage {
   template: `
     <ol-content-page
       heading="Track my quote"
+      eyebrow="Your quote"
+      [toc]="true"
       lede="Quote your reference and we can tell you exactly where it is."
     >
       <h2>Your reference</h2>

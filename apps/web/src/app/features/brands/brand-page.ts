@@ -11,6 +11,8 @@ import { Pagination } from '../../shared/pagination';
 import { ProductCard } from '../../shared/product-card';
 import { Skeleton } from '../../shared/skeleton';
 import { ProductCardSkeleton } from '../../shared/product-card-skeleton';
+import { Icon } from '../../shared/icon';
+import { ResponsiveImage } from '../../shared/responsive-image';
 
 /**
  * A brand hub at /brands/{slug}/.
@@ -24,7 +26,7 @@ import { ProductCardSkeleton } from '../../shared/product-card-skeleton';
   selector: 'ol-brand-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ProductCard, FacetRail, Pagination, Skeleton, ProductCardSkeleton],
+  imports: [RouterLink, ProductCard, FacetRail, Pagination, Skeleton, ProductCardSkeleton, Icon, ResponsiveImage],
   template: `
     @if (loading()) {
       <!-- Loading. Holds the hub's shape until the brand and its products
@@ -45,30 +47,66 @@ import { ProductCardSkeleton } from '../../shared/product-card-skeleton';
         </ul>
       </div>
     } @else if (brand(); as b) {
-      <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8">
-        <nav aria-label="Breadcrumb">
-          <ol class="flex flex-wrap items-center gap-2 text-sm text-ink-600">
-            <li><a routerLink="/" class="hover:text-brand-600">Home</a></li>
-            <li aria-hidden="true">/</li>
-            <li><a routerLink="/brands/" class="hover:text-brand-600">Brands</a></li>
-            <li aria-hidden="true">/</li>
-            <li aria-current="page" class="text-ink-900">{{ b.name }}</li>
-          </ol>
-        </nav>
+      <!-- The brand band: its logo on a white tile, name, count and the way to a bulk price. -->
+      <section class="relative isolate overflow-hidden bg-ink-900 text-white">
+        <span aria-hidden="true" class="ol-brand-glow absolute inset-0 -z-10"></span>
+        <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) pb-10 pt-6 sm:pb-14 sm:pt-8">
+          <nav aria-label="Breadcrumb">
+            <ol class="flex flex-wrap items-center gap-2 text-sm text-white/70">
+              <li><a routerLink="/" class="hover:text-white">Home</a></li>
+              <li aria-hidden="true">/</li>
+              <li><a routerLink="/brands/" class="hover:text-white">Brands</a></li>
+              <li aria-hidden="true">/</li>
+              <li aria-current="page" class="text-white">{{ b.name }}</li>
+            </ol>
+          </nav>
 
-        <h1 class="mt-4 font-heading text-3xl font-bold">{{ b.name }}</h1>
+          <div class="mt-8 flex flex-col gap-6 sm:flex-row sm:items-center">
+            <span class="flex h-24 w-36 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-4 shadow-lg sm:h-28 sm:w-44">
+              @if (b.logo; as logo) {
+                <ol-image
+                  class="block h-full w-full [&>picture]:block [&>picture]:h-full [&>picture]:w-full"
+                  [image]="logo"
+                  sizes="176px"
+                  [priority]="true"
+                  imgClass="h-full w-full object-contain"
+                />
+              } @else {
+                <span class="font-heading text-2xl font-bold text-ink-900">{{ b.name }}</span>
+              }
+            </span>
+            <div class="min-w-0">
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-accent-400">Authorised supply</p>
+              <h1 class="mt-1 font-heading text-3xl font-bold tracking-tight text-white sm:text-display">{{ b.name }}</h1>
+              @if (listing().meta.total) {
+                <p class="mt-1 text-white/75">{{ listing().meta.total.toLocaleString('en') }} products listed</p>
+              }
+            </div>
+          </div>
 
-        @if (b.description_html) {
-          <div class="mt-4 max-w-3xl text-ink-600" [innerHTML]="b.description_html"></div>
-        } @else {
-          <p class="mt-4 max-w-3xl text-ink-600">
-            {{ b.name }} products supplied and supported by OfficeLand across Nigeria. Request a
-            quote for volume pricing, delivery and installation.
-          </p>
-        }
+          @if (b.description_html) {
+            <div class="mt-6 max-w-3xl text-white/80 [&_a]:text-white [&_a]:underline" [innerHTML]="b.description_html"></div>
+          } @else {
+            <p class="mt-6 max-w-3xl text-white/80">
+              {{ b.name }} products supplied and supported by OfficeLand across Nigeria. Request a
+              quote for volume pricing, delivery and installation.
+            </p>
+          }
 
+          <div class="mt-6 flex flex-wrap gap-3">
+            <a routerLink="/quote/" class="inline-flex items-center gap-2 rounded-full bg-accent-500 px-6 py-3 text-sm font-semibold text-ink-900 transition-colors hover:bg-accent-400">
+              Quote me for {{ b.name }} <ol-icon name="arrow-right" [size]="16" />
+            </a>
+            <a routerLink="/brands/" class="inline-flex items-center gap-2 rounded-full border border-white/50 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10">
+              All brands
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8 sm:py-10">
         <!-- Facets above the grid; see category-page. -->
-        <div class="mt-10">
+        <div>
           <ol-facet-rail
             [facets]="listing().facets"
             [selected]="selectedFilters()"
@@ -84,7 +122,7 @@ import { ProductCardSkeleton } from '../../shared/product-card-skeleton';
             </div>
 
             @if (listing().data.length) {
-              <ul class="mt-4 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              <ul class="mt-5 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 @for (product of listing().data; track product.uuid) {
                   <li class="h-full"><ol-product-card [product]="product" [headingLevel]="3" /></li>
                 }
@@ -97,11 +135,14 @@ import { ProductCardSkeleton } from '../../shared/product-card-skeleton';
                 [preserved]="paginationParams()"
               />
             } @else {
-              <p class="mt-6 text-ink-600">
-                Nothing from {{ b.name }} is listed yet.
-                <a routerLink="/quote/" class="text-brand-600 hover:underline">Ask us for a quote</a>
-                - we source far more than we list.
-              </p>
+              <div class="mt-6 rounded-3xl border border-ink-100 bg-white px-6 py-10 text-center shadow-xs">
+                <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600"><ol-icon name="box" [size]="26" /></span>
+                <p class="mt-4 font-heading text-lg font-semibold text-ink-900">Nothing from {{ b.name }} is listed yet</p>
+                <p class="mt-1 text-ink-600">We source far more than we list - tell us the model and we will price it.</p>
+                <a routerLink="/quote/" class="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-3 font-semibold text-white hover:bg-brand-700">
+                  Request a quote <ol-icon name="arrow-right" [size]="16" />
+                </a>
+              </div>
             }
           </section>
         </div>
@@ -113,6 +154,13 @@ import { ProductCardSkeleton } from '../../shared/product-card-skeleton';
           <a routerLink="/brands/" class="text-brand-600 hover:underline">See every brand we supply</a>
         </p>
       </div>
+    }
+  `,
+  styles: `
+    .ol-brand-glow {
+      background:
+        radial-gradient(60rem 28rem at 85% -10%, rgb(5 91 240 / 0.35), transparent 60%),
+        radial-gradient(40rem 22rem at 0% 110%, rgb(245 158 11 / 0.14), transparent 60%);
     }
   `,
 })
