@@ -50,7 +50,11 @@ import { ResponsiveImage } from './responsive-image';
                   class="mx-auto flex aspect-square w-20 items-center justify-center overflow-hidden rounded-full bg-brand-50 ring-1 ring-ink-100 transition group-hover:ring-brand-600 sm:w-24"
                 >
                   @if (category.hero) {
+                    <!-- The host and its <picture> must be full-size blocks, or the
+                         img's h-full has nothing to resolve against and a wide
+                         photo sits as a strip across the middle of the circle. -->
                     <ol-image
+                      class="block h-full w-full [&>picture]:block [&>picture]:h-full [&>picture]:w-full"
                       [image]="category.hero"
                       sizes="96px"
                       imgClass="h-full w-full object-cover"
