@@ -25,13 +25,50 @@ final class BrandHttp
 
     public int $requests = 0;
 
-    public function __construct(private readonly int $delayMs, private readonly string $userAgent = self::UA) {}
+    /**
+     * @param  ?string  $caBundle  CA file to verify against instead of the system store (see withCertificates()).
+     */
+    public function __construct(
+        private readonly int $delayMs,
+        private readonly string $userAgent = self::UA,
+        private readonly ?string $caBundle = null,
+    ) {}
 
+    /**
+     * The system CA store plus extra PEM certificates, written once to storage.
+     *
+     * For servers that omit an intermediate from their chain: browsers fetch
+     * the missing certificate themselves, OpenSSL does not. Supplying that
+     * public intermediate keeps verification ON - never switch it off instead.
+     *
+     * @param  list<string>  $pems  paths to PEM files
+     */
+    public static function withCertificates(array $pems): ?string
+    {
+        if ($pems === []) {
+            return null;
+        }
+        $system = openssl_get_cert_locations()['default_cert_file'] ?? '';
+        $bundle = (is_file($system) ? (string) file_get_contents($system) : '')."\n";
+        foreach ($pems as $pem) {
+            $bundle .= (string) file_get_contents($pem)."\n";
+        }
+        $path = storage_path('app/ca/'.sha1($bundle).'.pem');
+        if (! is_file($path)) {
+            @mkdir(dirname($path), 0755, true);
+            file_put_contents($path, $bundle);
+        }
+
+        return $path;
+    }
+
+    /** @param  array<string, string>  $headers */
     public function get(string $url, array $headers = []): string
     {
         $this->pace();
 
         $response = Http::timeout(45)
+            ->withOptions($this->caBundle !== null ? ['verify' => $this->caBundle] : [])
             ->connectTimeout(15)
             ->withHeaders($headers + ['User-Agent' => $this->userAgent, 'Accept-Language' => 'en'])
             ->retry(2, 2000, throw: false)
@@ -46,7 +83,10 @@ final class BrandHttp
         return $response->body();
     }
 
-    /** @return array<mixed> */
+    /**
+     * @param  array<string, string>  $headers
+     * @return array<mixed>
+     */
     public function json(string $url, array $headers = []): array
     {
         $data = json_decode($this->get($url, $headers + ['Accept' => 'application/json']), true);

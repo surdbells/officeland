@@ -149,6 +149,7 @@ final class AnkerAdapter extends AbstractBrandAdapter
     }
 
     /** Model number: the page's own "Model Number:" line, else the SKU stem (A2687141 -> A2687). */
+    /** @param  list<array<string, mixed>>  $variants */
     private function model(string $html, array $variants, string $url): ?string
     {
         if (preg_match('#Model Number:\s*([A-Z][0-9A-Z]{4})#', $html, $m)) {
@@ -163,7 +164,11 @@ final class AnkerAdapter extends AbstractBrandAdapter
         return preg_match('#/products/(a[0-9][0-9a-z]{3})#i', $url, $m) ? strtoupper($m[1]) : null;
     }
 
-    /** @return array{0: ?string, 1: string} */
+    /**
+     * @param  array<string>  $tags
+     * @param  array<string>  $collections
+     * @return array{0: ?string, 1: string}
+     */
     private function category(string $url, string $title, ?string $mpn, array $tags, array $collections): array
     {
         $t = Str::lower($title);
@@ -210,6 +215,8 @@ final class AnkerAdapter extends AbstractBrandAdapter
      * Clean studio shots only: the variant image, then square images (the
      * 4:5 portrait files are text-on-dark infographics). Capped at 2000 px.
      *
+     * @param  array<string, mixed>  $p
+     * @param  array<string, mixed>  $first
      * @return list<string>
      */
     private function images(array $p, array $first): array
@@ -232,7 +239,12 @@ final class AnkerAdapter extends AbstractBrandAdapter
         ))), 0, 3);
     }
 
-    /** @return array<string, string> */
+    /**
+     * @param  array<string, mixed>  $props
+     * @param  array<string, mixed>  $first
+     * @param  array<string>  $tags
+     * @return array<string, string>
+     */
     private function specs(array $props, array $first, array $tags): array
     {
         $out = [];
@@ -277,6 +289,7 @@ final class AnkerAdapter extends AbstractBrandAdapter
         return $out;
     }
 
+    /** @param  array<string, string>  $out */
     private function put(array &$out, mixed $label, mixed $value): void
     {
         $label = trim(BrandHttp::text((string) $label), " :\t");
@@ -286,6 +299,7 @@ final class AnkerAdapter extends AbstractBrandAdapter
         }
     }
 
+    /** @param  array<string, mixed>  $p */
     private function summary(array $p): ?string
     {
         $lines = [];

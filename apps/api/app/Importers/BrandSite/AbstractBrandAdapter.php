@@ -20,6 +20,11 @@ abstract class AbstractBrandAdapter implements BrandSiteAdapter
         return [];
     }
 
+    public function extraCertificates(): array
+    {
+        return [];
+    }
+
     public function minDelayMs(): int
     {
         return 3000;

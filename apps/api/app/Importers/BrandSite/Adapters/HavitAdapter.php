@@ -151,7 +151,10 @@ final class HavitAdapter extends AbstractBrandAdapter
         return null;
     }
 
-    /** @return list<string> */
+    /**
+     * @param  array<string, mixed>  $p
+     * @return list<string>
+     */
     private function images(array $p, ?string $model): array
     {
         $images = array_values(array_filter((array) ($p['images'] ?? []), fn ($i): bool => (int) ($i['width'] ?? 0) >= 600));

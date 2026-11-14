@@ -140,7 +140,11 @@ final class ImportBrandSite extends Command
 
         $apply = (bool) $this->option('apply');
         $limit = (int) $this->option('limit');
-        $http = new BrandHttp($adapter->minDelayMs() + max(0, (int) $this->option('sleep')), $adapter->userAgent());
+        $http = new BrandHttp(
+            $adapter->minDelayMs() + max(0, (int) $this->option('sleep')),
+            $adapter->userAgent(),
+            BrandHttp::withCertificates($adapter->extraCertificates()),
+        );
 
         $this->info("── {$adapter->brandName()}".($apply ? '' : ' (dry run)'));
 
@@ -162,7 +166,7 @@ final class ImportBrandSite extends Command
             }
 
             try {
-                $items = $adapter->read($http, $reference);
+                $items = $adapter->read($http, (string) $reference);
             } catch (Throwable $e) {
                 $this->stats['failed']++;
                 $this->warn("  read failed [{$reference}]: {$e->getMessage()}");
@@ -269,7 +273,7 @@ final class ImportBrandSite extends Command
         if ($mpn !== '') {
             $sql = "upper(replace(replace(mpn, ' ', ''), '-', '')) = ?";
             $found = Product::query()
-                ->when($brand !== null, fn ($q) => $q->where('brand_id', $brand->id))
+                ->when($brand !== null, fn ($q) => $q->where('brand_id', $brand?->id))
                 ->whereRaw($sql, [$mpn])
                 ->first();
 
@@ -283,6 +287,26 @@ final class ImportBrandSite extends Command
 
             if ($found !== null) {
                 return $found;
+            }
+
+            // Legacy rows that carry the model only in the name ("GENIUS DX-110
+            // USB MOUSE", MPN blank or a distributor code): match the code as a
+            // whole token, hyphen/space optional between letters and digits, so
+            // DX-111 never matches DX-1110. Brands without part numbers (Genius,
+            // Havit) would otherwise duplicate every product already listed.
+            $runs = preg_split('/(?<=[A-Z])(?=\d)|(?<=\d)(?=[A-Z])/', $mpn) ?: [];
+            if (count($runs) > 1 && strlen($mpn) >= 4 && preg_match('/\d/', $mpn)) {
+                $pattern = '\m'.implode('[- ]?', $runs).'\M';
+                $found = Product::query()
+                    ->where(fn ($q) => $q
+                        ->when($brand !== null, fn ($w) => $w->where('brand_id', $brand?->id))
+                        ->orWhere(fn ($w) => $w->whereNull('brand_id')->where('name', 'ilike', '%'.$adapter->brandName().'%')))
+                    ->whereRaw('upper(name) ~ ?', [$pattern])
+                    ->orderBy('id')
+                    ->first();
+                if ($found !== null) {
+                    return $found;
+                }
             }
         }
 

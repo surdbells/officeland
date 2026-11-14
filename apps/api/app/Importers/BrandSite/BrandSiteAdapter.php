@@ -26,6 +26,9 @@ interface BrandSiteAdapter
     /** @return array<string, string>  extra headers for image downloads (e.g. a Referer the image host requires) */
     public function imageHeaders(): array;
 
+    /** @return list<string>  PEM files of intermediates the site fails to send (see BrandHttp::withCertificates()) */
+    public function extraCertificates(): array;
+
     /** Milliseconds between requests the site should see at minimum. */
     public function minDelayMs(): int;
 
