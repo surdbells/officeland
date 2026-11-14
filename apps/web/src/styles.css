@@ -146,18 +146,18 @@
   --shadow-brand: 0 12px 24px -6px rgb(0 70 191 / 0.25);
 
   /* --- Radius ------------------------------------------------------------
-     ONE radius, everywhere (8px). Every rounded-* step resolves to it, so a
+     ONE radius, everywhere (12px). Every rounded-* step resolves to it, so a
      chip, a button, a card and the hero stage share the same corner and the
      interface reads as one system. Pills and circles (rounded-full) are
      shapes, not corners, and stay fully round. Change the value here only. */
-  --radius-xs: 0.5rem;
-  --radius-sm: 0.5rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.5rem;
-  --radius-2xl: 0.5rem;
-  --radius-3xl: 0.5rem;
-  --radius-4xl: 0.5rem;
+  --radius-xs: 0.75rem;
+  --radius-sm: 0.75rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 0.75rem;
+  --radius-3xl: 0.75rem;
+  --radius-4xl: 0.75rem;
 
   /* --- Motion ------------------------------------------------------------
      Named easings so movement is consistent rather than whatever each
