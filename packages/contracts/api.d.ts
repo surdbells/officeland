@@ -259,6 +259,12 @@ export interface components {
             product_count: number;
             image?: components["schemas"]["Image"] | null;
         };
+        /** @description The generated card image of one category in the default "Shop by category" grid. */
+        HomeCategoryCard: {
+            /** @example /c/it-products/computers/laptops/ */
+            url: string;
+            image: components["schemas"]["Image"];
+        };
         /** @description One brand card in the homepage brand rail - the whole roster, ordered by live product count. */
         HomeBrand: {
             /** @example HP */
@@ -284,7 +290,9 @@ export interface components {
         Home: {
             hero_slides: components["schemas"]["HeroSlide"][];
             category_picks: components["schemas"]["HomeCategoryTile"][];
-            /** @description The curated "best sellers" band. Empty means the storefront fills the band from the catalogue instead. */
+            /** @description Card images for the default category grid (used when category_picks is empty), keyed by url. */
+            category_cards: components["schemas"]["HomeCategoryCard"][];
+            /** @description The "best sellers" band: curated picks, else the newest products with a real photograph. Empty only when the catalogue has none. */
             product_picks: components["schemas"]["ProductCard"][];
             /** @description Every brand as a logo-and-name card, ordered by live product count. */
             brands: components["schemas"]["HomeBrand"][];

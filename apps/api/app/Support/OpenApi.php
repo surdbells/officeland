@@ -256,6 +256,16 @@ use OpenApi\Attributes as OA;
     type: 'object',
 )]
 #[OA\Schema(
+    schema: 'HomeCategoryCard',
+    description: 'The generated card image of one category in the default "Shop by category" grid.',
+    required: ['url', 'image'],
+    properties: [
+        new OA\Property(property: 'url', type: 'string', example: '/c/it-products/computers/laptops/'),
+        new OA\Property(property: 'image', ref: '#/components/schemas/Image'),
+    ],
+    type: 'object',
+)]
+#[OA\Schema(
     schema: 'HomeBrand',
     description: 'One brand card in the homepage brand rail - the whole roster, ordered by live product count.',
     required: ['name', 'slug', 'url', 'product_count'],
@@ -284,13 +294,19 @@ use OpenApi\Attributes as OA;
 #[OA\Schema(
     schema: 'Home',
     description: 'Editorial content for the homepage. Curated sections (hero, category picks, product picks) are optional and empty-by-default; brands and department rails are derived from live inventory.',
-    required: ['hero_slides', 'category_picks', 'product_picks', 'brands', 'department_rails'],
+    required: ['hero_slides', 'category_picks', 'category_cards', 'product_picks', 'brands', 'department_rails'],
     properties: [
         new OA\Property(property: 'hero_slides', type: 'array', items: new OA\Items(ref: '#/components/schemas/HeroSlide')),
         new OA\Property(property: 'category_picks', type: 'array', items: new OA\Items(ref: '#/components/schemas/HomeCategoryTile')),
         new OA\Property(
+            property: 'category_cards',
+            description: 'Card images for the default category grid (used when category_picks is empty), keyed by url.',
+            type: 'array',
+            items: new OA\Items(ref: '#/components/schemas/HomeCategoryCard'),
+        ),
+        new OA\Property(
             property: 'product_picks',
-            description: 'The curated "best sellers" band. Empty means the storefront fills the band from the catalogue instead.',
+            description: 'The "best sellers" band: curated picks, else the newest products with a real photograph. Empty only when the catalogue has none.',
             type: 'array',
             items: new OA\Items(ref: '#/components/schemas/ProductCard'),
         ),

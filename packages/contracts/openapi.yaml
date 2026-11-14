@@ -471,6 +471,18 @@ components:
             -
               type: 'null'
       type: object
+    HomeCategoryCard:
+      description: 'The generated card image of one category in the default "Shop by category" grid.'
+      required:
+        - url
+        - image
+      properties:
+        url:
+          type: string
+          example: /c/it-products/computers/laptops/
+        image:
+          $ref: '#/components/schemas/Image'
+      type: object
     HomeBrand:
       description: 'One brand card in the homepage brand rail - the whole roster, ordered by live product count.'
       required:
@@ -529,6 +541,7 @@ components:
       required:
         - hero_slides
         - category_picks
+        - category_cards
         - product_picks
         - brands
         - department_rails
@@ -541,8 +554,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/HomeCategoryTile'
+        category_cards:
+          description: 'Card images for the default category grid (used when category_picks is empty), keyed by url.'
+          type: array
+          items:
+            $ref: '#/components/schemas/HomeCategoryCard'
         product_picks:
-          description: 'The curated "best sellers" band. Empty means the storefront fills the band from the catalogue instead.'
+          description: 'The "best sellers" band: curated picks, else the newest products with a real photograph. Empty only when the catalogue has none.'
           type: array
           items:
             $ref: '#/components/schemas/ProductCard'

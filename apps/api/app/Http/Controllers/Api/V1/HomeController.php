@@ -14,6 +14,7 @@ use App\Models\HomepageCategoryPick;
 use App\Models\HomepageProductPick;
 use App\Models\Media;
 use App\Models\Product;
+use App\Support\PlaceholderMedia;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
@@ -43,6 +44,29 @@ final class HomeController extends Controller
     /** Products shown in each department rail on the homepage. */
     private const RAIL_SIZE = 12;
 
+    /**
+     * The storefront's default "Shop by category" grid (its MAJOR_CATEGORY_SOURCES
+     * in home-page.ts). Their generated card images are returned as
+     * category_cards so the grid shows the category's own artwork instead of
+     * whichever product photo happens to list first (a supplier logo, often).
+     */
+    private const MAJOR_CATEGORY_PATHS = [
+        '/it-products/computers/laptops/',
+        '/it-products/monitors-displays/monitors/',
+        '/printers-consumables/printers/',
+        '/printers-consumables/ink-toner/',
+        '/office-furniture/seating/',
+        '/office-furniture/desks-tables/',
+        '/office-supplies/office-machines/shredders/',
+        '/it-products/computer-accessories/',
+        '/it-products/storage-memory/',
+        '/filing-storage/',
+        '/paper-notebooks/',
+        '/office-supplies/writing/',
+        '/school-supplies/',
+        '/it-products/networking/',
+    ];
+
     #[OA\Get(
         path: '/api/v1/home',
         operationId: 'getHome',
@@ -64,6 +88,7 @@ final class HomeController extends Controller
         return response()->json(['data' => [
             'hero_slides' => $this->heroSlides(),
             'category_picks' => $this->categoryPicks(),
+            'category_cards' => $this->categoryCards(),
             'product_picks' => $this->productPicks(),
             'brands' => $this->brands(),
             'department_rails' => $this->departmentRails(),
@@ -119,6 +144,7 @@ final class HomeController extends Controller
             ->get();
 
         $rails = [];
+        $placeholders = PlaceholderMedia::ids();
 
         foreach ($departments as $department) {
             // Filter on primary_category_id (a product's own department) rather
@@ -139,6 +165,12 @@ final class HomeController extends Controller
                 // products almost always have one (publishing requires it), so
                 // this EXISTS is cheap here.
                 ->whereHas('media', fn (Builder $q) => $q->whereHas('derivatives'))
+                // ...and never a brand-logo stand-in: the homepage is merchandised
+                // space, and a row of HP roundels sells nothing.
+                ->when($placeholders !== [], fn (Builder $q) => $q->whereDoesntHave(
+                    'media',
+                    fn (Builder $m) => $m->whereIn('media.id', $placeholders),
+                ))
                 ->with(['brand', 'media.derivatives', 'attributeValues.attribute'])
                 ->latest('published_at')
                 ->limit(self::RAIL_SIZE)
@@ -196,14 +228,37 @@ final class HomeController extends Controller
     {
         return HomepageCategoryPick::query()
             ->active()
-            ->with(['category.heroMedia.derivatives', 'media.derivatives'])
+            ->with(['category.cardMedia.derivatives', 'category.heroMedia.derivatives', 'media.derivatives'])
             ->get()
             ->filter(fn (HomepageCategoryPick $pick): bool => $pick->category !== null)
             ->map(fn (HomepageCategoryPick $pick): array => [
                 'name' => $pick->label ?? $pick->category->name,
                 'url' => $pick->category->url(),
                 'product_count' => (int) $pick->category->product_count_cached,
-                'image' => $this->image($pick->media ?? $pick->category->heroMedia),
+                'image' => $this->image($pick->media ?? $pick->category->cardMedia ?? $pick->category->heroMedia),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Card images for the default category grid, keyed by storefront URL.
+     * Categories without a card are left out; the storefront then falls back
+     * to a product photograph for that tile.
+     *
+     * @return array<int, array{url: string, image: array<string, mixed>}>
+     */
+    private function categoryCards(): array
+    {
+        return Category::query()
+            ->whereIn('path', self::MAJOR_CATEGORY_PATHS)
+            ->whereNotNull('card_media_id')
+            ->with('cardMedia.derivatives')
+            ->get()
+            ->filter(fn (Category $category): bool => $category->cardMedia !== null)
+            ->map(fn (Category $category): array => [
+                'url' => $category->url(),
+                'image' => (array) $this->image($category->cardMedia),
             ])
             ->values()
             ->all();
@@ -219,6 +274,8 @@ final class HomeController extends Controller
      */
     private function productPicks(): array
     {
+        $placeholders = PlaceholderMedia::ids();
+
         $products = HomepageProductPick::query()
             ->active()
             ->with([
@@ -229,7 +286,28 @@ final class HomeController extends Controller
             ->get()
             ->map(fn (HomepageProductPick $pick) => $pick->product)
             ->filter(fn ($product): bool => $product !== null && $product->status === 'active')
+            // A curated pick whose only image is a brand-logo stand-in drops out
+            // too, until it has a real photograph.
+            ->reject(fn (Product $product): bool => $product->media->pluck('id')->intersect($placeholders)->isNotEmpty())
             ->values();
+
+        // Nothing curated (or nothing presentable): the newest products that have
+        // a real photograph, so the band never shows a placeholder. The
+        // storefront used to fill this itself from the plain catalogue listing,
+        // which cannot tell a photograph from a stand-in.
+        if ($products->isEmpty()) {
+            $products = Product::query()
+                ->active()
+                ->whereHas('media', fn (Builder $q) => $q->whereHas('derivatives'))
+                ->when($placeholders !== [], fn (Builder $q) => $q->whereDoesntHave(
+                    'media',
+                    fn (Builder $m) => $m->whereIn('media.id', $placeholders),
+                ))
+                ->with(['brand', 'media.derivatives', 'attributeValues.attribute'])
+                ->latest('published_at')
+                ->limit(10)
+                ->get();
+        }
 
         return ProductCardResource::collection($products)->resolve();
     }

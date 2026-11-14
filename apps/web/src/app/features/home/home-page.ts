@@ -228,26 +228,32 @@ const MAJOR_CATEGORY_SOURCES: readonly {
 
           <span aria-hidden="true" class="ol-heroscrim absolute inset-0"></span>
 
-          <div class="relative flex min-h-[26rem] flex-col justify-end gap-5 p-8 sm:min-h-[34rem] sm:p-14">
-            <span class="inline-flex w-fit items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white backdrop-blur">
+          <!--
+            Phones get a landscape stage (about 16:10), not a portrait tower:
+            headline, one action and the dots. The chip, the supporting line,
+            the second action and the caption link return from sm up, where
+            there is room for them.
+          -->
+          <div class="relative flex min-h-[13.5rem] flex-col justify-end gap-3 p-5 sm:min-h-[34rem] sm:gap-5 sm:p-14">
+            <span class="hidden w-fit items-center sm:inline-flex gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-white backdrop-blur">
               <span class="h-1.5 w-1.5 rounded-full bg-accent-400"></span>
               Business, school &amp; government supply
             </span>
 
             @if (currentHero(); as hero) {
-              <h1 class="max-w-3xl text-display font-extrabold leading-[1.02] text-white drop-shadow-sm sm:text-display-xl">
+              <h1 class="max-w-3xl text-[1.625rem] font-extrabold leading-[1.08] text-white drop-shadow-sm sm:text-display-xl sm:leading-[1.02]">
                 {{ hero.headline }}
               </h1>
 
               @if (hero.subheadline) {
-                <p class="max-w-xl text-lg text-white/85">{{ hero.subheadline }}</p>
+                <p class="hidden max-w-xl text-lg text-white/85 sm:block">{{ hero.subheadline }}</p>
               }
 
               <div class="flex flex-wrap items-center gap-3">
                 @if (hero.ctaUrl && hero.ctaLabel) {
                   <a
                     [routerLink]="hero.ctaUrl"
-                    class="rounded-full bg-brand-600 px-7 py-3.5 font-semibold text-white shadow-brand transition-transform hover:-translate-y-0.5 hover:bg-brand-700"
+                    class="rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-brand transition-transform hover:-translate-y-0.5 hover:bg-brand-700 sm:px-7 sm:py-3.5 sm:text-base"
                   >
                     {{ hero.ctaLabel }}
                   </a>
@@ -255,7 +261,7 @@ const MAJOR_CATEGORY_SOURCES: readonly {
                 @if (hero.secondaryCtaUrl && hero.secondaryCtaLabel) {
                   <a
                     [routerLink]="hero.secondaryCtaUrl"
-                    class="rounded-full border border-white/70 bg-white/10 px-7 py-3.5 font-semibold text-white backdrop-blur transition-colors hover:bg-white/20"
+                    class="hidden rounded-full border border-white/70 bg-white/10 px-7 py-3.5 font-semibold text-white backdrop-blur transition-colors hover:bg-white/20 sm:inline-block"
                   >
                     {{ hero.secondaryCtaLabel }}
                   </a>
@@ -267,12 +273,12 @@ const MAJOR_CATEGORY_SOURCES: readonly {
               The caption names the department on show and links to it, so the
               stage is a way in rather than decoration. It sits above the dots.
             -->
-            <div class="mt-2 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center justify-between gap-4 sm:mt-2">
               @if (currentHero(); as current) {
                 @if (current.caption && current.captionUrl) {
                   <a
                     [routerLink]="current.captionUrl"
-                    class="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-ink-900 shadow-sm transition-colors hover:bg-white"
+                    class="hidden items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-semibold text-ink-900 shadow-sm transition-colors hover:bg-white sm:inline-flex"
                   >
                     {{ current.caption }}
                     <ol-icon name="arrow-right" [size]="16" class="text-brand-600" />
@@ -304,17 +310,17 @@ const MAJOR_CATEGORY_SOURCES: readonly {
             below. Each is a real anchor to its department, its hero photograph
             behind a scrim; missing photo falls back to the brand ground.
           -->
-          <div class="grid gap-4 lg:grid-rows-2">
+          <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-1 lg:grid-rows-2">
             @for (banner of heroBanners(); track banner.url) {
               <a
                 [routerLink]="banner.url"
-                class="ol-lift group relative isolate flex min-h-[11rem] flex-col justify-end overflow-hidden rounded-2xl bg-brand-700 p-5 text-white shadow-md"
+                class="ol-lift group relative isolate flex min-h-[8.5rem] flex-col justify-end overflow-hidden rounded-2xl bg-brand-700 p-3.5 text-white shadow-md sm:min-h-[11rem] sm:p-5"
               >
                 @if (banner.image; as image) {
                   <span class="absolute inset-0">
                     <ol-image
                       [image]="image"
-                      sizes="(min-width: 1024px) 20rem, 100vw"
+                      sizes="(min-width: 1024px) 20rem, 50vw"
                       imgClass="h-full w-full object-cover"
                     />
                   </span>
@@ -324,10 +330,10 @@ const MAJOR_CATEGORY_SOURCES: readonly {
                   class="absolute inset-0 bg-gradient-to-t from-ink-900/85 via-ink-900/35 to-transparent"
                 ></span>
                 <div class="relative">
-                  <p class="text-xs font-semibold uppercase tracking-[0.1em] text-white/80">
+                  <p class="hidden text-xs font-semibold uppercase tracking-[0.1em] text-white/80 sm:block">
                     {{ banner.eyebrow }}
                   </p>
-                  <h2 class="mt-0.5 font-heading text-lg font-semibold text-white">{{ banner.name }}</h2>
+                  <h2 class="mt-0.5 font-heading text-base font-semibold text-white sm:text-lg">{{ banner.name }}</h2>
                   <span class="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-white">
                     {{ banner.tagline }}
                     <ol-icon name="arrow-right" [size]="15" class="transition-transform group-hover:translate-x-0.5" />
@@ -343,23 +349,23 @@ const MAJOR_CATEGORY_SOURCES: readonly {
           on the site, and the showroom is the differentiator against
           online-only competitors - both earn a place in the first screen.
         -->
-        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <div class="mt-3 grid grid-cols-2 gap-3 sm:mt-4 sm:gap-4">
           <a
             routerLink="/bulk-supply/"
-            class="ol-banner ol-lift ol-sheen flex flex-col justify-end rounded-2xl bg-ink-900 p-6 text-white shadow-md hover:bg-ink-800"
+            class="ol-banner ol-lift ol-sheen flex flex-col justify-end rounded-2xl bg-ink-900 p-4 text-white sm:p-6 shadow-md hover:bg-ink-800"
           >
-            <h2 class="font-heading text-xl font-semibold text-white">Bulk &amp; tender supply</h2>
-            <p class="mt-1 text-sm text-white/80">
+            <h2 class="font-heading text-base font-semibold text-white sm:text-xl">Bulk &amp; tender supply</h2>
+            <p class="mt-1 hidden text-sm text-white/80 sm:block">
               Ministries, schools and corporates. Send the schedule, we price it.
             </p>
           </a>
 
           <a
             routerLink="/locations/"
-            class="ol-banner ol-lift flex flex-col justify-end rounded-2xl bg-accent-500 p-6 text-ink-900 shadow-md hover:bg-accent-600"
+            class="ol-banner ol-lift flex flex-col justify-end rounded-2xl bg-accent-500 p-4 text-ink-900 sm:p-6 shadow-md hover:bg-accent-600"
           >
-            <h2 class="font-heading text-xl font-semibold">Visit a showroom</h2>
-            <p class="mt-1 text-sm text-ink-900/80">
+            <h2 class="font-heading text-base font-semibold sm:text-xl">Visit a showroom</h2>
+            <p class="mt-1 hidden text-sm text-ink-900/80 sm:block">
               See the furniture before you commit. Two on Victoria Island.
             </p>
           </a>
@@ -400,16 +406,25 @@ const MAJOR_CATEGORY_SOURCES: readonly {
             <li olReveal [olRevealDelay]="i * 70">
               <a
                 [routerLink]="useCase.url"
-                class="ol-lift group flex h-full flex-col rounded-2xl border border-ink-100 bg-white p-5 shadow-xs hover:border-brand-600"
+                class="ol-lift ol-zoom-frame group flex h-full flex-col overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-xs hover:border-brand-600"
               >
-                <span class="inline-flex w-fit rounded-xl bg-brand-50 p-3 text-brand-600 transition-colors group-hover:bg-brand-600 group-hover:text-white">
-                  <ol-icon [name]="useCase.icon" [size]="24" />
-                </span>
-                <h3 class="mt-4 font-heading text-base font-semibold text-ink-900">{{ useCase.name }}</h3>
-                <p class="mt-1 text-sm text-ink-600">{{ useCase.detail }}</p>
-                <span class="mt-auto pt-4 inline-flex items-center gap-1 text-sm font-semibold text-brand-600">
-                  Explore
-                  <ol-icon name="arrow-right" [size]="14" class="transition-transform group-hover:translate-x-0.5" />
+                <!-- Self-hosted 4:3 WebP with intrinsic size, so the card reserves its space (no CLS). -->
+                <img
+                  [src]="useCase.img"
+                  [alt]="useCase.alt"
+                  width="960"
+                  height="720"
+                  loading="lazy"
+                  decoding="async"
+                  class="aspect-[4/3] w-full object-cover"
+                />
+                <span class="flex flex-1 flex-col p-4 sm:p-5">
+                  <h3 class="font-heading text-base font-semibold text-ink-900">{{ useCase.name }}</h3>
+                  <span class="mt-1 block text-sm text-ink-600">{{ useCase.detail }}</span>
+                  <span class="mt-auto inline-flex items-center gap-1 pt-3 text-sm font-semibold text-brand-600">
+                    Explore
+                    <ol-icon name="arrow-right" [size]="14" class="transition-transform group-hover:translate-x-0.5" />
+                  </span>
                 </span>
               </a>
             </li>
@@ -1124,8 +1139,15 @@ const MAJOR_CATEGORY_SOURCES: readonly {
       pointer-events: none;
     }
 
+    /* Compact pair on phones (two across), full height from sm up. */
     .ol-banner {
-      min-height: 10.5rem;
+      min-height: 5.5rem;
+    }
+
+    @media (min-width: 640px) {
+      .ol-banner {
+        min-height: 10.5rem;
+      }
     }
 
     /*
@@ -1561,7 +1583,7 @@ export class HomePage {
    * categories that actually have products, so the grid is self-pruning as the
    * catalogue fills. Runs once at build (D-009) and transfers into hydration.
    */
-  private readonly derivedMajorCategories = toSignal(
+  private readonly derivedMajorCategoryTiles = toSignal(
     forkJoin(
       MAJOR_CATEGORY_SOURCES.map((source) =>
         this.api.categoryProducts(source.path, { perPage: 10 }).pipe(
@@ -1601,6 +1623,20 @@ export class HomePage {
    * the derived set above. `undefined` only while /home is still loading, which
    * is the grid's skeleton state.
    */
+  /**
+   * The derived tiles with each category's own generated card image laid over
+   * the product photograph. The card is the category's designed artwork; the
+   * product photo is whatever listed first (often a supplier logo), so it is
+   * only the fallback for a category that has no card yet.
+   */
+  private readonly derivedMajorCategories = computed<readonly MajorCategory[] | undefined>(() => {
+    const tiles = this.derivedMajorCategoryTiles();
+    if (tiles === undefined) return undefined;
+
+    const cards = new Map((this.home()?.category_cards ?? []).map((card) => [card.url, card.image]));
+    return tiles.map((tile) => ({ ...tile, image: cards.get(tile.url) ?? tile.image }));
+  });
+
   protected readonly majorCategories = computed<readonly MajorCategory[] | undefined>(() => {
     const home = this.home();
     if (home === undefined) return undefined;
@@ -1641,12 +1677,12 @@ export class HomePage {
    * same glyph.
    */
   protected readonly pvcUseCases = [
-    { icon: 'cooking-pot', name: 'Kitchens', detail: 'Cabinetry, islands and worktop units.', url: '/c/pvc-doors-interiors/pvc-kitchens/' },
-    { icon: 'shirt', name: 'Wardrobes', detail: 'Fitted and sliding-door wardrobes.', url: '/c/pvc-doors-interiors/pvc-wardrobes/' },
-    { icon: 'door-open', name: 'Doors', detail: 'Internal, flush and framed doors.', url: '/c/pvc-doors-interiors/pvc-doors/' },
-    { icon: 'panels-top-left', name: 'Wall & ceiling panels', detail: 'Cladding and ceiling panelling.', url: '/c/pvc-doors-interiors/pvc-interiors/' },
-    { icon: 'layers', name: 'Boards & sheets', detail: 'The board by the sheet, cut to your list.', url: '/c/pvc-doors-interiors/pvc-boards/' },
-  ] as const satisfies readonly { icon: IconName; name: string; detail: string; url: string }[];
+    { img: '/images/pvc/room-kitchens.webp', alt: 'Kitchen with sage-green and white PVC cabinets and a stone-topped island', name: 'Kitchens', detail: 'Cabinetry, islands and worktop units.', url: '/c/pvc-doors-interiors/pvc-kitchens/' },
+    { img: '/images/pvc/room-wardrobes.webp', alt: 'Fitted oak-finish PVC wardrobe with two doors open on shelves and hanging rails', name: 'Wardrobes', detail: 'Fitted and sliding-door wardrobes.', url: '/c/pvc-doors-interiors/pvc-wardrobes/' },
+    { img: '/images/pvc/room-doors.webp', alt: 'Walnut-finish PVC internal door with a black lever handle, ajar onto a bedroom', name: 'Doors', detail: 'Internal, flush and framed doors.', url: '/c/pvc-doors-interiors/pvc-doors/' },
+    { img: '/images/pvc/room-panels.webp', alt: 'Meeting room with a marble-effect PVC wall panel and a white PVC panel ceiling', name: 'Wall & ceiling panels', detail: 'Cladding and ceiling panelling.', url: '/c/pvc-doors-interiors/pvc-interiors/' },
+    { img: '/images/pvc/room-boards.webp', alt: 'Stack of white, grey and wood-grain PVC board sheets in a workshop', name: 'Boards & sheets', detail: 'The board by the sheet, cut to your list.', url: '/c/pvc-doors-interiors/pvc-boards/' },
+  ] as const satisfies readonly { img: string; alt: string; name: string; detail: string; url: string }[];
 
   /**
    * The home banners carried over from the current site (officelandng.com),
