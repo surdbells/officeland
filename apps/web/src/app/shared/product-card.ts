@@ -41,6 +41,7 @@ import { BasketStore } from '../core/quotes/basket-store';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, ResponsiveImage, Icon],
+  host: { '[class.is-feature]': 'isFeature()' },
   template: `
     <article
       class="ol-pcard group relative flex h-full flex-col overflow-hidden rounded-2xl border border-ink-100 bg-white"
@@ -70,7 +71,7 @@ import { BasketStore } from '../core/quotes/basket-store';
         <ol-icon name="search" [size]="16" />
       </button>
 
-      <div class="flex flex-1 flex-col p-4 sm:p-5" [class]="bodyClass()">
+      <div class="ol-pcard__body flex flex-1 flex-col p-4 sm:p-5" [class]="bodyClass()">
         <!-- Eyebrow: who makes it, and which one it is. -->
         <div class="flex min-h-3 min-w-0 items-center gap-2 text-[0.6875rem] leading-none">
           @if (product().brand; as brand) {
@@ -200,6 +201,23 @@ import { BasketStore } from '../core/quotes/basket-store';
     @media (min-width: 640px) {
       .ol-pcard__well {
         padding: 1.5rem;
+      }
+    }
+
+    /*
+     * The separator between photo and details: a brand line, so the white
+     * image well and the white body read as two parts of one object. On the
+     * spotlight card the body sits beside the photo, so the line turns
+     * vertical from md up.
+     */
+    .ol-pcard__body {
+      border-top: 2px solid var(--color-brand-600);
+    }
+
+    @media (min-width: 768px) {
+      :host(.is-feature) .ol-pcard__body {
+        border-top: 0;
+        border-left: 2px solid var(--color-brand-600);
       }
     }
 
