@@ -205,19 +205,19 @@ import { BasketStore } from '../core/quotes/basket-store';
     }
 
     /*
-     * The separator between photo and details: a brand line, so the white
-     * image well and the white body read as two parts of one object. On the
-     * spotlight card the body sits beside the photo, so the line turns
-     * vertical from md up.
+     * The separator between photo and details: a light grey hairline, so the
+     * white image well and the white body read as two parts of one object
+     * without competing with the photo. On the spotlight card the body sits
+     * beside the photo, so the line turns vertical from md up.
      */
     .ol-pcard__body {
-      border-top: 2px solid var(--color-brand-600);
+      border-top: 1px solid var(--color-ink-100);
     }
 
     @media (min-width: 768px) {
       :host(.is-feature) .ol-pcard__body {
         border-top: 0;
-        border-left: 2px solid var(--color-brand-600);
+        border-left: 1px solid var(--color-ink-100);
       }
     }
 
