@@ -405,6 +405,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'brand', type: 'string', nullable: true),
         new OA\Property(property: 'availability', type: 'string', nullable: true),
         new OA\Property(property: 'lead_time_days', type: 'integer', nullable: true),
+        new OA\Property(property: 'image', description: 'The product photograph, or null (free-text lines).', ref: '#/components/schemas/Image', nullable: true),
     ],
     type: 'object',
 )]

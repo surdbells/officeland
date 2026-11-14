@@ -358,6 +358,8 @@ export interface components {
             brand?: string | null;
             availability?: string | null;
             lead_time_days?: number | null;
+            /** @description The product photograph, or null (free-text lines). */
+            image?: components["schemas"]["Image"] | null;
         };
         /** @description The quote basket. No prices and no total anywhere (D-002). An absent basket is returned as an empty one, so the storefront needs one code path rather than two. */
         Basket: {

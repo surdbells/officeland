@@ -164,7 +164,7 @@ final class BasketController extends Controller
         // Loaded explicitly: lazy loading is disabled application-wide, and
         // BasketResource reads each line's product to resolve its display name
         // and its quantity rules.
-        $basket?->load(['items.product']);
+        $basket?->load(['items.product.media.derivatives']);
 
         $response = response()->json([
             'data' => new BasketResource($basket),

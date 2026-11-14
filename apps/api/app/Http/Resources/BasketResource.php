@@ -93,6 +93,10 @@ final class BasketResource extends JsonResource
             'brand' => $product?->brand_name_cached,
             'availability' => $product?->availability,
             'lead_time_days' => $product?->lead_time_days,
+            // The product's primary photograph, for the basket thumbnail.
+            'image' => $product instanceof Product && $product->relationLoaded('media') && $product->media->isNotEmpty()
+                ? new ImageResource($product->media->first())
+                : null,
         ];
     }
 }
