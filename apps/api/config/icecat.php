@@ -87,10 +87,14 @@ return [
         'canon' => 10,
         'epson' => 13,
         'belkin' => 32,          // not a sponsor
+        'apc' => 33,             // sponsor
         'fellowes' => 74,
         'logitech' => 91,
         'asus' => 161,
+        'transcend' => 249,      // sponsor status unknown
+        'casio' => 285,          // sponsor status unknown
         'dell' => 292,
+        'genius' => 358,         // "Genius Computer Technology" = KYE's Genius line (not 40057)
         'leitz' => 361,
         'rexel' => 619,
         'lenovo' => 728,
@@ -98,6 +102,7 @@ return [
         'tp-link' => 2988,
         'ubiquiti' => 3405,      // not a sponsor
         'havit' => 7448,         // not a sponsor
+        'anker' => 9708,         // sponsor status unknown
     ],
 
     /*
