@@ -75,6 +75,12 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'description_html', type: 'string', nullable: true),
         new OA\Property(property: 'is_featured', type: 'boolean'),
         new OA\Property(property: 'product_count', type: 'integer'),
+        new OA\Property(
+            property: 'logo',
+            description: 'The brand logo, or null. Present on the brand index (GET /brands).',
+            ref: '#/components/schemas/Image',
+            nullable: true,
+        ),
         new OA\Property(property: 'seo', ref: '#/components/schemas/Seo'),
     ],
     type: 'object',

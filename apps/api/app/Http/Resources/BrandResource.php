@@ -25,6 +25,11 @@ final class BrandResource extends JsonResource
             'description_html' => $this->description_html,
             'is_featured' => $this->is_featured,
             'product_count' => $this->product_count_cached,
+            // The brand's logo, when the caller loaded it (the /brands/ index).
+            'logo' => $this->whenLoaded(
+                'logoMedia',
+                fn (): ?ImageResource => $this->logoMedia === null ? null : new ImageResource($this->logoMedia),
+            ),
             'seo' => [
                 'meta_title' => $this->meta_title,
                 'meta_description' => $this->meta_description,

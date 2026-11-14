@@ -36,6 +36,9 @@ import { SeoService } from '../../core/seo/seo.service';
   template: `
     <ol-content-page
       heading="Privacy &amp; data protection"
+      crumb="Privacy"
+      eyebrow="Legal"
+      [toc]="true"
       lede="What we collect, why, and how long we keep it. Written against the Nigeria Data Protection Act 2023."
     >
       <p>
@@ -168,6 +171,8 @@ export class PrivacyPage {
   template: `
     <ol-content-page
       heading="Terms"
+      eyebrow="Legal"
+      [toc]="true"
       lede="What this site is, what a quotation commits us to, and what an order commits you to."
     >
       <h2>This site is a catalogue, not a shop</h2>
@@ -261,6 +266,8 @@ export class TermsPage {
   template: `
     <ol-content-page
       heading="Cookies"
+      eyebrow="Legal"
+      [toc]="true"
       lede="Two cookies, both needed to make the site work. No tracking, and no banner, because there is nothing to consent to."
     >
       <p>

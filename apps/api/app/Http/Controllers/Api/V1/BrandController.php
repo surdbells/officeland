@@ -24,7 +24,7 @@ final class BrandController extends Controller
     public function index(): AnonymousResourceCollection
     {
         return BrandResource::collection(
-            Brand::query()->orderBy('name')->get()
+            Brand::query()->with('logoMedia.derivatives')->orderBy('name')->get()
         );
     }
 

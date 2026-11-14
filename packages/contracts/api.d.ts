@@ -143,6 +143,8 @@ export interface components {
             description_html?: string | null;
             is_featured?: boolean;
             product_count?: number;
+            /** @description The brand logo, or null. Present on the brand index (GET /brands). */
+            logo?: components["schemas"]["Image"] | null;
             seo?: components["schemas"]["Seo"];
         };
         Seo: {

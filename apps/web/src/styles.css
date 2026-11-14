@@ -644,6 +644,42 @@
   margin-top: 1rem;
 }
 
+/* Section headings: the base layer resets them to body size, which flattened
+   every editorial page into one undifferentiated column of text. */
+.ol-prose h2 {
+  margin-top: 2.75rem;
+  margin-bottom: 0.75rem;
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--color-ink-900);
+}
+
+.ol-prose h3 {
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+  font-family: var(--font-heading);
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--color-ink-900);
+}
+
+.ol-prose > :first-child {
+  margin-top: 0;
+}
+
+.ol-prose strong {
+  font-weight: 600;
+  color: var(--color-ink-900);
+}
+
+.ol-prose p {
+  line-height: 1.75;
+}
+
 .ol-prose ul,
 .ol-prose ol {
   margin-top: 1rem;

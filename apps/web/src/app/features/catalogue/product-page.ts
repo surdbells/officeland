@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
@@ -10,7 +10,7 @@ import {
 import { ProductGallery } from '../../shared/product-gallery';
 import { SpecAccordion } from '../../shared/spec-accordion';
 import { ProductCard } from '../../shared/product-card';
-import { Icon } from '../../shared/icon';
+import { Icon, type IconName } from '../../shared/icon';
 import { Skeleton } from '../../shared/skeleton';
 import { BasketStore } from '../../core/quotes/basket-store';
 import { SeoService } from '../../core/seo/seo.service';
@@ -61,110 +61,131 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
         </div>
       </div>
     } @else if (product(); as p) {
-      <article class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-8">
-        <nav aria-label="Breadcrumb">
-          <ol class="flex flex-wrap items-center gap-2 text-sm text-ink-600">
+      <article class="mx-auto max-w-(--container-page) px-(--spacing-gutter) pb-24 pt-6 md:pb-10 sm:pt-8">
+        <nav aria-label="Breadcrumb" class="text-xs text-ink-500 sm:text-sm">
+          <ol class="flex flex-wrap items-center gap-1.5">
             <li><a routerLink="/" class="hover:text-brand-600">Home</a></li>
             @for (crumb of p.breadcrumb ?? []; track crumb.url) {
-              <li aria-hidden="true">/</li>
+              <li aria-hidden="true" class="text-ink-300">/</li>
               <li><a [routerLink]="crumb.url" class="hover:text-brand-600">{{ crumb.name }}</a></li>
             }
           </ol>
         </nav>
 
-        <!-- Exactly one h1 per page (section 14.8). The display face (inherited
-             from the base layer, no font-heading override) matches every other
-             page title. -->
-        <h1 class="mt-4 text-2xl font-bold leading-tight sm:text-4xl">{{ p.name }}</h1>
-
-        <!--
-          Brand and model, separated.
-
-          These were two adjacent @if blocks with only source whitespace
-          between them, and Angular collapses that - so the page read
-          "OfficeLandModel EX900". A flex row with a gap makes the separation
-          structural rather than dependent on a space surviving compilation.
-        -->
-        <p class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-600">
-          @if (p.brand) {
-            <a [routerLink]="p.brand.url" class="font-medium text-brand-600 hover:underline">{{ p.brand.name }}</a>
-          }
-          @if (p.brand && p.mpn) {
-            <span aria-hidden="true" class="text-ink-300">&middot;</span>
-          }
-          @if (p.mpn) {
-            <span>Model {{ p.mpn }}</span>
-          }
-          @if (p.sku) {
-            <span aria-hidden="true" class="text-ink-300">&middot;</span>
-            <span>SKU {{ p.sku }}</span>
-          }
-        </p>
-
-        <div class="mt-6 grid gap-8 lg:grid-cols-2">
-          <div class="rounded-2xl bg-[#f6f3ee] p-4 sm:p-6">
-            <ol-product-gallery [images]="p.images ?? []" />
+        <div class="mt-5 grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12">
+          <!-- The gallery, on the warm ground every product photo sits on. -->
+          <div class="lg:sticky lg:top-28 lg:self-start">
+            <div class="rounded-3xl border border-ink-100 bg-white p-4 shadow-xs sm:p-6">
+              <ol-product-gallery [images]="p.images ?? []" />
+            </div>
           </div>
 
           <!--
-            The buy box.
-
-            Sticky above lg, because the gallery is tall and a buyer
-            comparing images against specifications should never have to
-            scroll back up to act. "top" clears the sticky site header.
-
-            Everything a B2B buyer needs before raising a requisition, in the
-            order they need it: what it is, whether you can get it, when, in
-            what quantity, and who they are dealing with.
+            The decision column: what it is, whether you can get it, what it
+            does, and the way to act - in the order a buyer needs them.
           -->
-          <div class="lg:sticky lg:top-28 lg:self-start">
-            <div class="rounded-2xl border border-ink-100 p-6 shadow-xs">
-              <p class="flex items-center gap-2 text-sm font-medium">
-                <span
-                  class="inline-block h-2 w-2 rounded-full"
-                  [class]="inStock() ? 'bg-emerald-500' : 'bg-amber-500'"
-                  aria-hidden="true"
-                ></span>
-                {{ availabilityLabel() }}
-              </p>
+          <div>
+            <p class="flex flex-wrap items-center gap-2">
+              @if (p.brand) {
+                <a
+                  [routerLink]="p.brand.url"
+                  class="rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-brand-700 transition-colors hover:bg-brand-600 hover:text-white"
+                >{{ p.brand.name }}</a>
+              }
+              @if (p.mpn) {
+                <span class="rounded-full border border-ink-100 px-3 py-1 font-mono text-xs text-ink-600">Model {{ p.mpn }}</span>
+              }
+              @if (p.sku && p.sku !== p.mpn) {
+                <span class="rounded-full border border-ink-100 px-3 py-1 font-mono text-xs text-ink-400">SKU {{ p.sku }}</span>
+              }
+            </p>
 
-              <!-- D-002: no prices anywhere. pricing_mode drives this from data,
-                   so enabling posture C later is a data change, not a code one. -->
+            <!-- Exactly one h1 per page (section 14.8). -->
+            <h1 class="mt-4 text-2xl font-bold leading-tight tracking-tight sm:text-3xl xl:text-4xl">{{ p.name }}</h1>
+
+            <p
+              class="mt-4 inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold"
+              [class]="inStock() ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'"
+            >
+              <span class="inline-block h-2 w-2 rounded-full" [class]="inStock() ? 'bg-emerald-500' : 'bg-amber-500'" aria-hidden="true"></span>
+              {{ availabilityLabel() }}
+            </p>
+
+            @if (p.short_description) {
+              <p class="mt-4 leading-relaxed text-ink-600">{{ p.short_description }}</p>
+            }
+
+            <!--
+              Key specifications, above the fold beside the gallery: where the
+              buyer decides whether to keep reading. Taken from the same grouped
+              payload as the full table, so the two can never disagree.
+              The heading sits OUTSIDE the <dl> (a <p> inside one is invalid).
+            -->
+            @if (keySpecs().length) {
+              <div class="mt-6">
+                <p class="text-xs font-semibold uppercase tracking-[0.14em] text-ink-400">At a glance</p>
+                <dl class="mt-3 grid grid-cols-2 gap-2.5">
+                  @for (spec of keySpecs(); track spec.label) {
+                    <div class="rounded-xl border border-ink-100 bg-ink-50 px-3.5 py-3">
+                      <dt class="text-xs text-ink-500">{{ spec.label }}</dt>
+                      <dd class="mt-0.5 line-clamp-2 text-sm font-semibold text-ink-900">{{ spec.value }}</dd>
+                    </div>
+                  }
+                </dl>
+              </div>
+            }
+
+            <!-- The buy box. D-002: no prices; pricing_mode drives this from data. -->
+            <div id="pdp-buy" class="mt-6 rounded-3xl border border-ink-100 bg-white p-5 shadow-md sm:p-6">
               @if (p.pricing_mode === 'quote_only') {
-                <p class="mt-4 font-heading text-xl font-semibold">Request a quote for pricing</p>
-                <p class="mt-1 text-sm text-ink-600">
-                  We respond within one business day. Volume pricing available.
-                </p>
+                <div class="flex items-start gap-3">
+                  <span class="inline-flex shrink-0 rounded-xl bg-brand-50 p-2.5 text-brand-600"><ol-icon name="file-text" [size]="20" /></span>
+                  <div>
+                    <p class="font-heading text-lg font-semibold text-ink-900">Request a quote for pricing</p>
+                    <p class="text-sm text-ink-600">Answered within one business day. Volume pricing available.</p>
+                  </div>
+                </div>
               }
 
               <!--
-                Quantity, because this is a trade counter rather than a shop.
-
-                A facilities manager ordering forty chairs should say forty
-                here rather than in a free-text note, and min_order_qty and
-                qty_step are already on the product for exactly this. Stepped
-                to the product's own multiple so an invalid quantity cannot
-                be entered rather than being rejected later.
+                Quantity, because this is a trade counter rather than a shop:
+                a buyer ordering forty chairs says forty here. Stepped to the
+                product's own multiple so an invalid quantity cannot be built.
               -->
-              <div class="mt-6 flex flex-wrap items-end gap-3">
-                <div>
-                  <label for="quote-qty" class="block text-sm font-medium">Quantity</label>
+              <div class="mt-5 flex flex-wrap items-stretch gap-3">
+                <div class="flex items-center rounded-full border border-ink-200">
+                  <button
+                    type="button"
+                    class="flex h-12 w-11 cursor-pointer items-center justify-center rounded-l-full text-lg text-ink-600 hover:text-brand-600 disabled:cursor-not-allowed disabled:text-ink-300"
+                    aria-label="Decrease quantity"
+                    [disabled]="quantity() <= minQty()"
+                    (click)="stepQuantity(-1)"
+                  >&minus;</button>
+                  <label for="quote-qty" class="sr-only">Quantity</label>
                   <input
                     id="quote-qty"
                     type="number"
-                    class="mt-1 w-24 rounded-lg border border-ink-200 px-3 py-2.5"
-                    [min]="p.min_order_qty ?? 1"
-                    [step]="p.qty_step ?? 1"
-                    [value]="p.min_order_qty ?? 1"
-                    #qty
+                    inputmode="numeric"
+                    class="h-12 w-14 border-0 bg-transparent text-center font-semibold text-ink-900 [appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
+                    [min]="minQty()"
+                    [step]="stepQty()"
+                    [value]="quantity()"
+                    (change)="setQuantity($any($event.target).valueAsNumber)"
                   />
+                  <button
+                    type="button"
+                    class="flex h-12 w-11 cursor-pointer items-center justify-center rounded-r-full text-lg text-ink-600 hover:text-brand-600"
+                    aria-label="Increase quantity"
+                    (click)="stepQuantity(1)"
+                  >+</button>
                 </div>
 
                 <button
                   type="button"
-                  class="flex-1 cursor-pointer rounded-full bg-brand-600 px-6 py-3 font-semibold text-white shadow-brand transition-colors hover:bg-brand-700"
-                  (click)="addToQuote(p.slug, qty.valueAsNumber)"
+                  class="inline-flex min-w-[12rem] flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-brand-600 px-6 py-3 font-semibold text-white shadow-brand transition-colors hover:bg-brand-700"
+                  (click)="addToQuote(p.slug, quantity())"
                 >
+                  <ol-icon name="file-text" [size]="18" />
                   Add to quote
                 </button>
               </div>
@@ -178,106 +199,114 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
               <a
                 href="https://wa.me/2347074723165"
                 rel="noopener"
-                class="mt-3 flex items-center justify-center gap-2 rounded-full border border-ink-200 px-6 py-3 font-semibold transition-colors hover:border-brand-600 hover:text-brand-600"
+                class="mt-3 flex items-center justify-center gap-2 rounded-full border border-ink-200 px-6 py-3 font-semibold text-ink-900 transition-colors hover:border-emerald-500 hover:text-emerald-700"
               >
-                <ol-icon name="message-circle" [size]="18" class="text-brand-600" />
+                <ol-icon name="message-circle" [size]="18" class="text-emerald-600" />
                 Ask on WhatsApp
               </a>
 
-              <!--
-                The assurances a procurement officer checks before raising an
-                order, on the page rather than three clicks away. Every line
-                is a fact this business can stand behind; none of it is a
-                claim invented for the layout.
-              -->
-              <ul class="mt-6 space-y-3 border-t border-ink-100 pt-5 text-sm text-ink-600">
-                <li class="flex items-start gap-2.5">
-                  <ol-icon name="truck" [size]="18" class="mt-0.5 shrink-0 text-brand-600" />
-                  <span>
-                    Nationwide delivery, installed in Lagos.
-                    <a routerLink="/delivery/" class="text-brand-600 hover:underline">Lead times</a>
-                  </span>
-                </li>
-                <li class="flex items-start gap-2.5">
-                  <ol-icon name="shield-check" [size]="18" class="mt-0.5 shrink-0 text-brand-600" />
-                  <span>
-                    Manufacturer warranty, claims handled by us.
-                    <a routerLink="/warranty/" class="text-brand-600 hover:underline">How it works</a>
-                  </span>
-                </li>
-                <li class="flex items-start gap-2.5">
-                  <ol-icon name="badge-check" [size]="18" class="mt-0.5 shrink-0 text-brand-600" />
-                  <span>Authorised reseller, certified by the Standards Organisation of Nigeria.</span>
-                </li>
-                <li class="flex items-start gap-2.5">
-                  <ol-icon name="file-text" [size]="18" class="mt-0.5 shrink-0 text-brand-600" />
-                  <span>
-                    Buying in volume?
-                    <a routerLink="/bulk-supply/" class="text-brand-600 hover:underline">Send the schedule</a>
-                    and we price the whole list.
-                  </span>
-                </li>
+              <!-- The assurances a procurement officer checks before raising an order. -->
+              <ul class="mt-5 grid gap-2.5 border-t border-ink-100 pt-5 sm:grid-cols-2">
+                @for (assurance of assurances; track assurance.text) {
+                  <li class="flex items-start gap-2.5 text-sm text-ink-600">
+                    <span class="inline-flex shrink-0 rounded-lg bg-ink-50 p-1.5 text-brand-600"><ol-icon [name]="assurance.icon" [size]="16" /></span>
+                    <span>
+                      {{ assurance.text }}
+                      @if (assurance.url) {
+                        <a [routerLink]="assurance.url" class="font-medium text-brand-600 hover:underline">{{ assurance.link }}</a>
+                      }
+                    </span>
+                  </li>
+                }
               </ul>
             </div>
-
-            <!--
-              Key specifications, above the fold and beside the gallery.
-
-              A spec accordion further down the page is where somebody
-              confirms a detail; this is where they decide whether to keep
-              reading. Four is the limit on purpose — a summary that lists
-              everything is the table it was meant to summarise.
-            -->
-            @if (keySpecs().length) {
-              <!--
-                The heading sits OUTSIDE the <dl>.
-
-                A <dl> may only directly contain dt/dd groups wrapped in
-                div, plus script and template. A <p> in there is invalid,
-                and axe rates it SERIOUS because assistive technology walks
-                a definition list by its term/description pairing — a stray
-                child breaks that traversal rather than just looking odd.
-                Caught by the gate on 1,200 product pages.
-              -->
-              <div class="mt-6 rounded-2xl border border-ink-100 p-6 text-sm">
-                <p class="font-heading font-semibold text-ink-900">At a glance</p>
-
-                <dl>
-                  @for (spec of keySpecs(); track spec.label) {
-                    <div class="mt-3 flex justify-between gap-4 border-t border-ink-50 pt-3">
-                      <dt class="text-ink-600">{{ spec.label }}</dt>
-                      <dd class="text-right font-medium text-ink-900">{{ spec.value }}</dd>
-                    </div>
-                  }
-                </dl>
-              </div>
-            }
           </div>
         </div>
 
-        @if (p.description_html) {
-          <section class="mt-12">
-            <h2 class="font-heading text-xl font-semibold">Overview</h2>
-            <div class="ol-prose mt-3 max-w-3xl text-ink-600" [innerHTML]="p.description_html"></div>
-          </section>
+        <!-- Section nav: jump links to the long-form content below. -->
+        @if (p.description_html || p.specifications?.length || p.warranty_text) {
+          <nav aria-label="Product information" class="sticky top-[4.5rem] z-10 -mx-(--spacing-gutter) mt-12 border-y border-ink-100 bg-white/95 px-(--spacing-gutter) backdrop-blur md:top-24">
+            <ul class="flex gap-6 overflow-x-auto text-sm font-semibold">
+              @if (p.description_html) {
+                <li><a href="#pdp-overview" class="block border-b-2 border-transparent py-3.5 text-ink-600 hover:border-brand-600 hover:text-brand-700">Overview</a></li>
+              }
+              @if (p.specifications?.length) {
+                <li><a href="#pdp-specs" class="block border-b-2 border-transparent py-3.5 text-ink-600 hover:border-brand-600 hover:text-brand-700">Specifications</a></li>
+              }
+              @if (p.warranty_text) {
+                <li><a href="#pdp-warranty" class="block border-b-2 border-transparent py-3.5 text-ink-600 hover:border-brand-600 hover:text-brand-700">Warranty</a></li>
+              }
+            </ul>
+          </nav>
         }
 
-        <!-- Grouped specifications (section 23.3). Always in the HTML. -->
-        @if (p.specifications?.length) {
-          <section class="mt-12">
-            <h2 class="font-heading text-xl font-semibold">Specifications</h2>
-            <ol-spec-accordion [groups]="p.specifications ?? []" />
-          </section>
-        }
+        <div class="mt-8 grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12">
+          <div class="min-w-0 space-y-12">
+            @if (p.description_html) {
+              <section id="pdp-overview" class="scroll-mt-40">
+                <h2 class="font-heading text-xl font-semibold sm:text-2xl">Overview</h2>
+                <div class="ol-prose mt-4 max-w-3xl text-ink-600" [innerHTML]="p.description_html"></div>
+              </section>
+            }
 
-        @if (p.warranty_text) {
-          <section class="mt-10">
-            <h2 class="font-heading text-xl font-semibold">Warranty</h2>
-            <p class="mt-2 max-w-3xl text-ink-600">{{ p.warranty_text }}</p>
-          </section>
-        }
+            <!-- Grouped specifications (section 23.3). Always in the HTML. -->
+            @if (p.specifications?.length) {
+              <section id="pdp-specs" class="scroll-mt-40">
+                <h2 class="font-heading text-xl font-semibold sm:text-2xl">Specifications</h2>
+                <div class="mt-4 rounded-2xl border border-ink-100 bg-white p-2 shadow-xs sm:p-4">
+                  <ol-spec-accordion [groups]="p.specifications ?? []" />
+                </div>
+              </section>
+            }
 
+            @if (p.warranty_text) {
+              <section id="pdp-warranty" class="scroll-mt-40">
+                <h2 class="font-heading text-xl font-semibold sm:text-2xl">Warranty</h2>
+                <p class="mt-3 max-w-3xl leading-relaxed text-ink-600">{{ p.warranty_text }}</p>
+              </section>
+            }
+          </div>
+
+          <!-- Beside the long-form content: the way to a person, and to a bulk price. -->
+          <aside class="space-y-4 lg:sticky lg:top-40 lg:self-start">
+            <div class="relative isolate overflow-hidden rounded-3xl bg-ink-900 p-6 text-white">
+              <span aria-hidden="true" class="ol-pdp-glow absolute inset-0 -z-10"></span>
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-accent-400">Buying more than one?</p>
+              <h2 class="mt-2 font-heading text-xl font-semibold text-white">Send the whole list</h2>
+              <p class="mt-2 text-sm text-white/80">
+                Requisitions, tenders and fit-outs priced line by line, with documentation for procurement.
+              </p>
+              <a routerLink="/bulk-supply/" class="mt-4 inline-flex items-center gap-1.5 rounded-full bg-accent-500 px-5 py-2.5 text-sm font-semibold text-ink-900 transition-colors hover:bg-accent-400">
+                Bulk &amp; tender supply <ol-icon name="arrow-right" [size]="14" />
+              </a>
+            </div>
+            <div class="rounded-3xl border border-ink-100 bg-white p-6 shadow-xs">
+              <p class="font-heading text-base font-semibold text-ink-900">See it in person</p>
+              <p class="mt-1 text-sm text-ink-600">Two showrooms on Idowu Martins Street, Victoria Island.</p>
+              <a routerLink="/locations/" class="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:underline">
+                Showrooms &amp; directions <ol-icon name="arrow-right" [size]="14" />
+              </a>
+            </div>
+          </aside>
+        </div>
       </article>
+
+      <!--
+        Phone: the action stays in reach. A bar above the bottom navigation
+        with the product's own Add to quote; hidden from md, where the buy box
+        sits beside the gallery.
+      -->
+      <div class="ol-pdp-bar fixed inset-x-0 z-40 flex items-center gap-3 border-t border-ink-100 bg-white/95 px-4 py-2.5 backdrop-blur md:hidden">
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-sm font-semibold text-ink-900">{{ p.name }}</p>
+          <p class="text-xs" [class]="inStock() ? 'text-emerald-700' : 'text-amber-700'">{{ availabilityLabel() }}</p>
+        </div>
+        <button
+          type="button"
+          class="shrink-0 cursor-pointer rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white"
+          (click)="addToQuote(p.slug, quantity())"
+        >Add to quote</button>
+      </div>
 
       <!--
         Related products, on a dark band so the product photographs carry it -
@@ -315,6 +344,18 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
       </div>
     }
   `,
+  styles: `
+    .ol-pdp-glow {
+      background:
+        radial-gradient(28rem 16rem at 100% 0%, rgb(5 91 240 / 0.45), transparent 65%),
+        radial-gradient(20rem 12rem at 0% 100%, rgb(245 158 11 / 0.16), transparent 60%);
+    }
+
+    /* Sits on top of the fixed bottom navigation (3.25rem + the safe area). */
+    .ol-pdp-bar {
+      bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+    }
+  `,
 })
 export class ProductPage {
   private readonly route = inject(ActivatedRoute);
@@ -329,6 +370,32 @@ export class ProductPage {
    * the product's min/step (§9b), so this only guards against an empty or junk
    * value before sending. Success raises the shared toast via the basket store.
    */
+  /** The quantity the buyer has chosen, reset to the product's minimum on each product. */
+  protected readonly quantity = signal(1);
+
+  protected readonly minQty = computed(() => Math.max(1, this.product()?.min_order_qty ?? 1));
+  protected readonly stepQty = computed(() => Math.max(1, this.product()?.qty_step ?? 1));
+
+  protected stepQuantity(direction: 1 | -1): void {
+    this.setQuantity(this.quantity() + direction * this.stepQty());
+  }
+
+  /** Clamp to the minimum and snap to the product's multiple. */
+  protected setQuantity(value: number): void {
+    const min = this.minQty();
+    const step = this.stepQty();
+    const raw = Number.isFinite(value) ? Math.floor(value) : min;
+    const snapped = Math.max(min, min + Math.round((raw - min) / step) * step);
+    this.quantity.set(snapped);
+  }
+
+  protected readonly assurances: readonly { icon: IconName; text: string; link?: string; url?: string }[] = [
+    { icon: 'truck', text: 'Nationwide delivery, installed in Lagos.', link: 'Lead times', url: '/delivery/' },
+    { icon: 'shield-check', text: 'Manufacturer warranty, claims handled by us.', link: 'How it works', url: '/warranty/' },
+    { icon: 'badge-check', text: 'Authorised reseller, SON certified.' },
+    { icon: 'clock', text: 'Quotes answered within one business day.' },
+  ];
+
   protected addToQuote(slug: string, qty: number): void {
     const quantity = Number.isFinite(qty) && qty > 0 ? Math.floor(qty) : 1;
     this.basket.addProduct(slug, quantity);
@@ -431,7 +498,7 @@ export class ProductPage {
 
     return groups
       .flatMap((group) => group.items ?? [])
-      .slice(0, 4)
+      .slice(0, 6)
       .map((row) => ({ label: String(row.label ?? ''), value: String(row.value ?? '') }))
       .filter((row) => row.label !== '' && row.value !== '');
   });
@@ -472,6 +539,12 @@ export class ProductPage {
      * Only this service writes tags (section 15.5).
      */
     effect(() => this.applySeo());
+
+    // A new product starts at its own minimum quantity.
+    effect(() => {
+      this.product();
+      this.quantity.set(untracked(() => this.minQty()));
+    });
   }
 
   private applySeo(): void {

@@ -171,6 +171,14 @@ components:
           type: boolean
         product_count:
           type: integer
+        logo:
+          oneOf:
+            -
+              $ref: '#/components/schemas/Image'
+              description: 'The brand logo, or null. Present on the brand index (GET /brands).'
+            -
+              type: 'null'
+          description: 'The brand logo, or null. Present on the brand index (GET /brands).'
         seo:
           $ref: '#/components/schemas/Seo'
       type: object

@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ContentPage } from './content-page';
+import { Icon, type IconName } from '../../shared/icon';
+import { Reveal } from '../../shared/reveal';
 import { SeoService } from '../../core/seo/seo.service';
 
 /**
@@ -24,68 +26,142 @@ import { SeoService } from '../../core/seo/seo.service';
   selector: 'ol-bulk-supply-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ContentPage, RouterLink],
+  imports: [ContentPage, RouterLink, Icon, Reveal],
   template: `
     <ol-content-page
       heading="Bulk &amp; tender supply"
+      crumb="Bulk supply"
+      eyebrow="For ministries, schools and corporates"
+      image="/images/pages/bulk.webp"
       lede="Send the schedule. We price it line by line, state lead times per item, and supply the documentation a tender asks for."
+      [wide]="true"
     >
-      <h2>Send us the schedule</h2>
-      <p>
-        You do not need to find anything on this site first. A bill of quantities, a
-        requisition list, a spreadsheet, a scanned tender document or a photograph of
-        a printed schedule are all things we can price from. Send it to
-        <a href="mailto:sales@officelandng.com">sales&#64;officelandng.com</a> or through
-        the <a routerLink="/quote/">quote form</a>.
-      </p>
-      <p>
-        We price every line, including the ones we would substitute, and we say which
-        is which. A quotation that silently swaps a specification is a quotation that
-        fails at evaluation.
-      </p>
+      <div heroActions class="mt-7 flex flex-wrap gap-3">
+        <a routerLink="/quote/" class="inline-flex items-center gap-2 rounded-full bg-accent-500 px-6 py-3 font-semibold text-ink-900 transition-colors hover:bg-accent-400">
+          Send a schedule <ol-icon name="arrow-right" [size]="16" />
+        </a>
+        <a href="mailto:sales@officelandng.com" class="inline-flex items-center gap-2 rounded-full border border-white/60 px-6 py-3 font-semibold text-white transition-colors hover:bg-white/10">
+          <ol-icon name="mail" [size]="16" /> sales&#64;officelandng.com
+        </a>
+      </div>
 
-      <h2>Who we supply</h2>
-      <p>
-        Ministries, agencies and parastatals; schools, universities and their
-        bursaries; hospitals and clinics; banks, and corporates running multi-site
-        fit-outs. Between them they account for most of what leaves our warehouse.
-      </p>
+      <!-- How it works, as four steps. -->
+      <section aria-labelledby="bulk-steps">
+        <p class="ol-eyebrow">How it works</p>
+        <h2 id="bulk-steps" class="mt-1 font-heading text-2xl font-bold sm:text-3xl">From schedule to site, in four steps</h2>
+        <ol class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          @for (step of steps; track step.title; let i = $index) {
+            <li olReveal [olRevealDelay]="i * 80" class="relative rounded-2xl border border-ink-100 bg-white p-6 shadow-xs">
+              <div class="flex items-center justify-between">
+                <span class="inline-flex rounded-xl bg-brand-50 p-2.5 text-brand-600"><ol-icon [name]="step.icon" [size]="20" /></span>
+                <span class="font-heading text-3xl font-bold text-ink-100">0{{ i + 1 }}</span>
+              </div>
+              <h3 class="mt-4 font-heading text-base font-semibold text-ink-900">{{ step.title }}</h3>
+              <p class="mt-1 text-sm leading-relaxed text-ink-600">{{ step.text }}</p>
+            </li>
+          }
+        </ol>
+      </section>
 
-      <h2>Documentation</h2>
-      <p>
-        Public-sector procurement usually asks for more than a price. We can supply
-        company registration and tax documentation, our Standards Organisation of
-        Nigeria certification, authorised-reseller confirmation for the brands
-        concerned, and references from comparable supplies. Tell us what the tender
-        requires and we will assemble it with the quotation rather than after the
-        deadline.
-      </p>
+      <!-- Who we supply. -->
+      <section aria-labelledby="bulk-sectors" class="mt-16">
+        <p class="ol-eyebrow">Who we supply</p>
+        <h2 id="bulk-sectors" class="mt-1 font-heading text-2xl font-bold sm:text-3xl">Most of what leaves our warehouse</h2>
+        <ul class="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+          @for (sector of sectors; track sector.title) {
+            <li olReveal class="flex flex-col items-start gap-3 rounded-2xl bg-ink-900 p-5 text-white">
+              <span class="inline-flex rounded-xl bg-white/10 p-2.5 text-accent-400"><ol-icon [name]="sector.icon" [size]="20" /></span>
+              <span class="font-heading text-sm font-semibold leading-snug text-white sm:text-base">{{ sector.title }}</span>
+            </li>
+          }
+        </ul>
+      </section>
 
-      <h2>Phased delivery</h2>
-      <p>
-        Large orders rarely want to arrive at once, and buildings rarely have room for
-        them to. We will schedule delivery in phases against your programme - by
-        floor, by site, by term - and hold the balance. Say so at quotation
-        stage, because it changes how the order is planned rather than how it is
-        delivered.
-      </p>
+      <!-- Documentation and what we need, side by side. -->
+      <div class="mt-16 grid gap-4 lg:grid-cols-2">
+        <section olReveal class="rounded-3xl border border-ink-100 bg-white p-7 shadow-xs sm:p-9">
+          <span class="inline-flex rounded-xl bg-brand-50 p-3 text-brand-600"><ol-icon name="file-stack" [size]="22" /></span>
+          <h2 class="mt-4 font-heading text-xl font-semibold text-ink-900">Documentation, with the quotation</h2>
+          <p class="mt-2 text-sm leading-relaxed text-ink-600">
+            Public-sector procurement asks for more than a price. Tell us what the tender requires and we
+            assemble it with the quotation, not after the deadline.
+          </p>
+          <ul class="mt-5 space-y-3">
+            @for (doc of documents; track doc) {
+              <li class="flex items-start gap-3 text-sm text-ink-800">
+                <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+                  <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6.5l2.5 2.5 4.5-5.5" /></svg>
+                </span>
+                {{ doc }}
+              </li>
+            }
+          </ul>
+        </section>
 
-      <h2>What we need from you</h2>
-      <ul>
-        <li>Quantities, and whether they are firm or indicative.</li>
-        <li>The delivery address or addresses, and access constraints.</li>
-        <li>The date it has to be on site, and whether that date is a deadline or a target.</li>
-        <li>Any specification you are obliged to match exactly.</li>
-      </ul>
-      <p>
-        The last one matters more than it looks. "Or equivalent" and "as specified"
-        lead to two different quotations, and only one of them survives evaluation.
-      </p>
+        <section olReveal class="rounded-3xl bg-brand-600 p-7 text-white shadow-brand sm:p-9">
+          <span class="inline-flex rounded-xl bg-white/15 p-3 text-white"><ol-icon name="scroll" [size]="22" /></span>
+          <h2 class="mt-4 font-heading text-xl font-semibold text-white">What we need from you</h2>
+          <ol class="mt-5 space-y-4">
+            @for (need of needs; track need; let i = $index) {
+              <li class="flex gap-3">
+                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-sm font-bold text-brand-700">{{ i + 1 }}</span>
+                <span class="text-sm leading-relaxed text-white/90">{{ need }}</span>
+              </li>
+            }
+          </ol>
+          <p class="mt-6 rounded-2xl bg-white/10 p-4 text-sm text-white/90">
+            The last one matters more than it looks. "Or equivalent" and "as specified" lead to two
+            different quotations, and only one of them survives evaluation.
+          </p>
+        </section>
+      </div>
+
+      <!-- Phased delivery. -->
+      <section olReveal class="mt-16 grid items-center gap-6 rounded-3xl border border-ink-100 bg-ink-50 p-7 sm:p-10 lg:grid-cols-[auto_minmax(0,1fr)]">
+        <span class="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-brand-600 shadow-xs"><ol-icon name="truck" [size]="30" /></span>
+        <div>
+          <h2 class="font-heading text-xl font-semibold text-ink-900">Phased delivery against your programme</h2>
+          <p class="mt-2 max-w-3xl leading-relaxed text-ink-600">
+            Large orders rarely want to arrive at once, and buildings rarely have room for them to. We
+            schedule delivery by floor, by site or by term, and hold the balance. Say so at quotation
+            stage - it changes how the order is planned, not just how it is delivered.
+          </p>
+        </div>
+      </section>
     </ol-content-page>
   `,
 })
 export class BulkSupplyPage {
   private readonly seo = inject(SeoService);
+
+  protected readonly steps: readonly { icon: IconName; title: string; text: string }[] = [
+    { icon: 'send', title: 'Send the schedule', text: 'A bill of quantities, a requisition, a spreadsheet or a scanned tender - you do not need to find anything on this site first.' },
+    { icon: 'calculator', title: 'Priced line by line', text: 'Every line, including the ones we would substitute, and we say which is which.' },
+    { icon: 'file-stack', title: 'Documentation attached', text: 'Registration, tax, SON certification and reseller letters, assembled with the quotation.' },
+    { icon: 'truck', title: 'Delivered in phases', text: 'By floor, by site or by term, installed by our own people in Lagos.' },
+  ];
+
+  protected readonly sectors: readonly { icon: IconName; title: string }[] = [
+    { icon: 'building-2', title: 'Ministries & agencies' },
+    { icon: 'graduation-cap', title: 'Schools & universities' },
+    { icon: 'shield-check', title: 'Hospitals & clinics' },
+    { icon: 'store', title: 'Banks' },
+    { icon: 'boxes', title: 'Multi-site corporates' },
+  ];
+
+  protected readonly documents = [
+    'Company registration and tax documentation',
+    'Standards Organisation of Nigeria certification',
+    'Authorised-reseller confirmation for the brands concerned',
+    'References from comparable supplies',
+  ] as const;
+
+  protected readonly needs = [
+    'Quantities, and whether they are firm or indicative.',
+    'The delivery address or addresses, and access constraints.',
+    'The date it has to be on site, and whether that is a deadline or a target.',
+    'Any specification you are obliged to match exactly.',
+  ] as const;
 
   constructor() {
     this.seo.apply({
