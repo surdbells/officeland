@@ -119,7 +119,7 @@ export type ShowcaseStyle = 'grid' | 'feature' | 'rail';
 
             @default {
               <ul class="ol-showcase-grid mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-                @for (product of products(); track product.uuid; let i = $index) {
+                @for (product of gridProducts(); track product.uuid; let i = $index) {
                   <li class="h-full" olReveal [olRevealDelay]="(i % 5) * 70">
                     <ol-product-card [product]="product" [headingLevel]="3" />
                   </li>
@@ -183,6 +183,13 @@ export class DepartmentShowcase {
   protected readonly lead = computed<ProductCardData | null>(
     () => this.products().find((p) => p.image) ?? this.products()[0] ?? null,
   );
+
+  /**
+   * The grid shows ten: two full rows of five (and, with the last two hidden
+   * by the rule above, two rows of four). The API sends twelve for the
+   * scrolling rail; twelve in a five-column grid leaves a row of two.
+   */
+  protected readonly gridProducts = computed(() => this.products().slice(0, 10));
 
   protected readonly rest = computed(() => {
     const lead = this.lead();
