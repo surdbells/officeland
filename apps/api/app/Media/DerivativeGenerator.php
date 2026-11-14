@@ -145,7 +145,19 @@ final class DerivativeGenerator
         //
         // Materialising the thumbnail once means all three encodes read from
         // memory, which is also why one decode serves fifteen derivatives.
-        return VipsImage::thumbnail($source, $width, $options)->copyMemory();
+        $image = VipsImage::thumbnail($source, $width, $options);
+
+        // Flatten transparency onto white. Manufacturer cut-outs (Logitech,
+        // Anker, Casio) are RGBA PNGs, and JPEG has no alpha: libvips fills the
+        // transparent pixels with BLACK, so the JPEG fallback - the <img src>
+        // every browser without AVIF/WebP gets, and the og:image - showed the
+        // product on a black square. The storefront ground is white, so
+        // flattening there is lossless to the eye in every format.
+        if ($image->hasAlpha()) {
+            $image = $image->flatten(['background' => [255, 255, 255]]);
+        }
+
+        return $image->copyMemory();
     }
 
     /**
