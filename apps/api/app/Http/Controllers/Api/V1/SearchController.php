@@ -75,7 +75,7 @@ final class SearchController extends Controller
     )]
     public function suggest(Request $request): JsonResponse
     {
-        $suggestions = $this->engine->suggest((string) $request->query('q', ''));
+        $suggestions = $this->engine->suggest((string) $request->query('q', ''), 6);
 
         return response()->json([
             'data' => [

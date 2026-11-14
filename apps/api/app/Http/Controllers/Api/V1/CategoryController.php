@@ -14,11 +14,11 @@ use App\Search\SearchEngine;
 use App\Search\SearchQuery;
 use App\Support\PlaceholderMedia;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Cache;
-use OpenApi\Attributes as OA;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Cache;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class CategoryController extends Controller

@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Search;
 
+use App\Http\Resources\ImageResource;
 use App\Models\Attribute;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\PlaceholderMedia;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
@@ -142,7 +144,7 @@ final class PostgresSearchEngine implements SearchEngine
             })
             ->orderByRaw('case when lower(mpn) like ? then 0 when lower(name) like ? then 1 else 2 end', [$like, $like])
             ->limit($limit * 5)
-            ->get(['name', 'slug', 'mpn']);
+            ->get(['id', 'name', 'slug', 'mpn', 'brand_id']);
 
         // One suggestion per distinct name (first wins, so ordering is kept),
         // then back down to the requested limit.
@@ -150,6 +152,13 @@ final class PostgresSearchEngine implements SearchEngine
             ->unique(fn (Product $p): string => mb_strtolower((string) $p->name))
             ->take($limit)
             ->values();
+
+        // Thumbnails and brand for the few rows that survived - one eager
+        // load over at most $limit ids, after the cheap match above. A
+        // brand-logo stand-in is not a product photo, so it is dropped and the
+        // dropdown draws its own glyph instead.
+        $products->load(['media.derivatives', 'brand:id,name']);
+        $placeholders = PlaceholderMedia::ids();
 
         $categories = Category::query()
             ->whereRaw('lower(name) like ?', [$contains])
@@ -166,6 +175,8 @@ final class PostgresSearchEngine implements SearchEngine
                 'label' => $p->name,
                 'url' => $p->url(),
                 'meta' => $p->mpn,
+                'brand' => $p->brand?->name,
+                'image' => $this->suggestionImage($p, $placeholders),
             ])->all()),
             categories: array_values($categories->map(fn (Category $c): array => [
                 'label' => $c->name,
@@ -179,6 +190,23 @@ final class PostgresSearchEngine implements SearchEngine
             ])->all()),
             durationMs: $this->elapsed($start),
         );
+    }
+
+    /**
+     * The primary photograph as a small image descriptor, or null.
+     *
+     * @param  list<int>  $placeholders
+     * @return array<string, mixed>|null
+     */
+    private function suggestionImage(Product $product, array $placeholders): ?array
+    {
+        $media = $product->media->first();
+
+        if ($media === null || in_array($media->id, $placeholders, true) || $media->derivatives->isEmpty()) {
+            return null;
+        }
+
+        return (new ImageResource($media))->resolve();
     }
 
     /**

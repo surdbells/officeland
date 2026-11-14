@@ -116,6 +116,10 @@ export interface Suggestion {
   readonly label: string;
   readonly url: string;
   readonly meta?: string | null;
+  /** Products only: the brand name, when known. */
+  readonly brand?: string | null;
+  /** Products only: the primary photograph; null for a brand-logo stand-in. */
+  readonly image?: Image | null;
 }
 
 /**

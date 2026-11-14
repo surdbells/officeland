@@ -55,6 +55,11 @@ final class AdminPanelProvider extends PanelProvider
                     ->regenerableRecoveryCodes(),
             ])
             ->brandName('OfficeLand')
+            // Explicit, and versioned: with no <link rel="icon"> the browser
+            // falls back to /favicon.ico, which it caches per host for months -
+            // so admins kept seeing the Angular placeholder that shipped there
+            // before the branded icons. The storefront's static root serves it.
+            ->favicon('/favicon.svg?v=2')
             // Local initials avatar, not ui-avatars.com: the external request is
             // blocked by the admin CSP (renders broken) and leaks names.
             ->defaultAvatarProvider(InitialsAvatarProvider::class)

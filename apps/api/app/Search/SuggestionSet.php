@@ -12,7 +12,7 @@ namespace App\Search;
 final readonly class SuggestionSet
 {
     /**
-     * @param  list<array{label: string, url: string, meta: string|null}>  $products
+     * @param  list<array{label: string, url: string, meta: string|null, brand?: string|null, image?: array<string, mixed>|null}>  $products
      * @param  list<array{label: string, url: string, meta: string|null}>  $categories
      * @param  list<array{label: string, url: string, meta: string|null}>  $brands
      */
