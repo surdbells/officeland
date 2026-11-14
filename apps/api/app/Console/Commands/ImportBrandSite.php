@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Content\ProductSpecs;
+use App\Importers\BrandSite\AbstractBrandAdapter;
 use App\Importers\BrandSite\BrandHttp;
 use App\Importers\BrandSite\BrandSiteAdapter;
 use App\Importers\BrandSite\ImportedProduct;
@@ -56,6 +57,7 @@ final class ImportBrandSite extends Command
         {--refresh-images : Replace images this importer added earlier.}
         {--rename : Overwrite the name of matched existing products.}
         {--url=* : Import only these product references (URLs), skipping discovery.}
+        {--deep : Let adapters make their slow extra fetches (e.g. Havit product pages for specs).}
         {--list : List the available adapters.}';
 
     protected $description = "Import a brand's products from its official website (casio, anker, apple, apc, havit, transcend, genius)";
@@ -102,7 +104,11 @@ final class ImportBrandSite extends Command
         $status = self::SUCCESS;
         InvalidatesRenderedRoutes::withoutInvalidation(function () use ($keys, $adapters, $ingestor, &$status): void {
             foreach ($keys as $k) {
-                if ($this->runAdapter(new $adapters[$k], $ingestor) !== self::SUCCESS) {
+                $adapter = new $adapters[$k];
+                if ($adapter instanceof AbstractBrandAdapter) {
+                    $adapter->options = ['deep' => (bool) $this->option('deep')];
+                }
+                if ($this->runAdapter($adapter, $ingestor) !== self::SUCCESS) {
                     $status = self::FAILURE;
                 }
             }

@@ -88,6 +88,7 @@ final class BrandHttp
 
     /**
      * The first schema.org Product node in a page's JSON-LD (looks inside
+     *
      * @graph and arrays), or null.
      *
      * @return array<string, mixed>|null
