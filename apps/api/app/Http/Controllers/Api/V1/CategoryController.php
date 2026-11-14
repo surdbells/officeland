@@ -138,12 +138,13 @@ final class CategoryController extends Controller
         $query = new SearchQuery(
             filters: $this->filters($request),
             categoryId: $category->id,
-            brandId: $request->integer('brand') ?: null,
+            brandId: $this->brandId($request),
             page: max(1, $request->integer('page', 1)),
             perPage: $this->perPage($request),
             // Relevance is meaningless without a term; newest-first is the
             // listing default and the only order that is stable across pages.
             sort: (string) $request->query('sort', 'newest'),
+            availability: $this->availability($request),
         );
 
         $result = $this->engine->search($query);

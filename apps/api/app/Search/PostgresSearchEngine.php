@@ -311,6 +311,10 @@ final class PostgresSearchEngine implements SearchEngine
             $builder->where('brand_id', $query->brandId);
         }
 
+        if ($query->availability !== []) {
+            $builder->whereIn('availability', $query->availability);
+        }
+
         foreach ($query->filters as $code => $values) {
             if ($values === []) {
                 continue;

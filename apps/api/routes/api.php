@@ -49,6 +49,8 @@ Route::prefix('v1')->name('api.')->middleware('throttle:catalogue')->group(funct
     // The whole catalogue as one faceted listing (the /shop/ page). Declared
     // before 'products/{slug}' so 'products' is not read as a slug.
     Route::get('products', [ProductController::class, 'index'])->name('products.index');
+    // Sidebar choices with counts; also before 'products/{slug}'.
+    Route::get('products/filters', [ProductController::class, 'sidebar'])->name('products.filters');
 
     Route::get('products/{slug}', [ProductController::class, 'show'])->name('products.show');
 

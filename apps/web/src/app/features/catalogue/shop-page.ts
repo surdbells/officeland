@@ -1,16 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, of, switchMap } from 'rxjs';
+import { catchError, distinctUntilChanged, map, of, switchMap } from 'rxjs';
 import { CatalogueApi } from '../../core/api/catalogue-api';
 import { SeoService } from '../../core/seo/seo.service';
 import { EMPTY_LISTING, filterParams, readFilters } from '../../shared/listing-state';
 import { Icon } from '../../shared/icon';
 import { ResponsiveImage } from '../../shared/responsive-image';
+import type { ShopFilters } from '../../core/api/catalogue-api';
+import { ShopSidebar, type ShopState } from './shop-sidebar';
 import { FacetRail } from '../../shared/facet-rail';
-import { FilterSheet } from '../../shared/filter-sheet';
 import { Pagination } from '../../shared/pagination';
 import { ProductCard } from '../../shared/product-card';
+
+const EMPTY_FILTERS: ShopFilters = { brands: [], availability: [] };
 
 /**
  * The shop page - the whole catalogue behind one set of filters.
@@ -65,7 +68,7 @@ import { ProductCard } from '../../shared/product-card';
   selector: 'ol-shop-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, FacetRail, FilterSheet, Pagination, ProductCard, Icon, ResponsiveImage],
+  imports: [RouterLink, FacetRail, Pagination, ProductCard, Icon, ResponsiveImage, ShopSidebar],
   template: `
     <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-6 sm:py-8">
       <!-- Page header: a quiet breadcrumb, a title that steps down a size on a
@@ -162,34 +165,59 @@ import { ProductCard } from '../../shared/product-card';
         </nav>
       }
 
-      <!-- The rail column exists only when there is something to filter by;
-           otherwise the grid takes the full width instead of sitting beside a blank. -->
-      <div [class]="listing().facets.length ? 'mt-6 grid gap-8 sm:mt-8 lg:grid-cols-[18rem_1fr]' : 'mt-6 grid gap-8 sm:mt-8'">
+      <div class="mt-6 grid gap-6 sm:mt-8 lg:grid-cols-[18rem_1fr] lg:gap-8">
         <!--
-          Desktop: an always-open rail in the left column. Mobile: the rail is
-          hidden and the filter+sort sheet (above the grid) takes its place, so
-          the products still lead on a phone.
+          The sidebar: sort, category, availability and brand (which every
+          product has), then the category's specification facets where it has
+          any. Desktop: always open in the left column, and it stays in view as
+          the grid scrolls. Phone: collapsed behind the "Filters" button so the
+          products lead, opened in place - the same links, no second UI.
         -->
-        <div [class]="listing().facets.length ? 'hidden lg:order-1 lg:block' : 'hidden'">
-          <ol-facet-rail
-            [facets]="listing().facets"
-            [selected]="selectedFilters()"
-            basePath="/shop/"
-            [preserved]="preservedParams()"
-            layout="rail"
-          />
-        </div>
+        <!-- Phone: the toggle comes first, so the panel opens beneath it. -->
+        <button
+          type="button"
+          class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-ink-200 bg-white px-5 py-2.5 text-sm font-semibold text-ink-900 lg:hidden"
+          aria-controls="shop-filters"
+          [attr.aria-expanded]="filtersOpen()"
+          (click)="filtersOpen.set(!filtersOpen())"
+        >
+          <ol-icon name="sliders-horizontal" [size]="16" />
+          {{ filtersOpen() ? 'Hide filters' : 'Filters & sort' }}
+          @if (appliedCount() > 0) {
+            <span class="rounded-full bg-brand-600 px-2 py-0.5 text-xs font-semibold text-white">{{ appliedCount() }}</span>
+          }
+        </button>
+
+        <aside
+          id="shop-filters"
+          aria-label="Filters"
+          [class]="(filtersOpen() ? 'block' : 'hidden') + ' lg:order-1 lg:block'"
+        >
+          <div class="space-y-4 lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-1">
+            <ol-shop-sidebar [departments]="departments()" [filters]="sidebarFilters()" [state]="state()" />
+
+            @if (listing().facets.length) {
+              <ol-facet-rail
+                [facets]="listing().facets"
+                [selected]="selectedFilters()"
+                basePath="/shop/"
+                [preserved]="preservedParams()"
+                layout="rail"
+              />
+            }
+
+            <div class="rounded-2xl bg-ink-900 p-5 text-white">
+              <h3 class="font-heading text-base font-semibold text-white">Buying in bulk?</h3>
+              <p class="mt-1 text-sm text-white/80">Send the list. We price every line within one business day.</p>
+              <a routerLink="/quote/" class="mt-3 inline-flex items-center gap-1.5 rounded-full bg-accent-500 px-4 py-2 text-sm font-semibold text-ink-900 transition-colors hover:bg-accent-400">
+                Request a quote
+                <ol-icon name="arrow-right" [size]="14" />
+              </a>
+            </div>
+          </div>
+        </aside>
 
         <section aria-labelledby="products-heading" class="lg:order-2">
-          <ol-filter-sheet
-            class="mb-4 block lg:hidden"
-            [facets]="listing().facets"
-            [selected]="selectedFilters()"
-            basePath="/shop/"
-            [preserved]="preservedParams()"
-            [total]="listing().meta.total"
-            [sort]="currentSort()"
-          />
 
           <div class="flex flex-wrap items-baseline justify-between gap-3 border-b border-ink-100 pb-3">
             <h2 id="products-heading" class="font-heading text-lg font-semibold">
@@ -200,7 +228,7 @@ import { ProductCard } from '../../shared/product-card';
           </div>
 
           @if (listing().data.length) {
-            <ul class="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            <ul class="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
               @for (product of listing().data; track product.uuid) {
                 <li class="h-full">
                   <ol-product-card [product]="product" [headingLevel]="3" />
@@ -219,7 +247,7 @@ import { ProductCard } from '../../shared/product-card';
             <p class="mt-6 text-ink-600">
               @if (hasFilters()) {
                 No products match those filters.
-                <a routerLink="/shop/" class="text-brand-600 hover:underline">Clear them</a>
+                <a routerLink="/shop/" [queryParams]="preservedSort()" class="text-brand-600 hover:underline">Clear them</a>
                 to see the whole catalogue.
               } @else {
                 Nothing is listed yet.
@@ -265,7 +293,56 @@ export class ShopPage {
     Object.values(this.selectedFilters()).reduce((total, values) => total + values.length, 0),
   );
 
-  protected readonly hasFilters = computed(() => this.filterCount() > 0);
+  /** Phone only: whether the sidebar is opened in place. */
+  protected readonly filtersOpen = signal(false);
+
+  protected readonly activeBrand = computed<string | null>(() => {
+    const raw = (this.queryParams()?.get('brand') ?? '').trim();
+
+    return /^[a-z0-9-]+$/.test(raw) ? raw : null;
+  });
+
+  protected readonly activeAvailability = computed<readonly string[]>(() =>
+    (this.queryParams()?.get('availability') ?? '').split(',').filter((value) => /^[a-z_]+$/.test(value)),
+  );
+
+  /** Everything applied, for the phone button's badge and the empty-state wording. */
+  protected readonly appliedCount = computed(
+    () =>
+      this.filterCount() +
+      (this.activeCategory() ? 1 : 0) +
+      (this.activeBrand() ? 1 : 0) +
+      this.activeAvailability().length,
+  );
+
+  protected readonly hasFilters = computed(() => this.appliedCount() > 0);
+
+  /** The URL state, parsed once, for the sidebar. */
+  protected readonly state = computed<ShopState>(() => ({
+    category: this.activeCategory(),
+    brand: this.activeBrand(),
+    availability: this.activeAvailability(),
+    sort: this.currentSort(),
+    filterParams: filterParams(this.selectedFilters()),
+  }));
+
+  /**
+   * Brand and availability choices with counts, re-read whenever the scope
+   * changes. Keeps the previous lists while the next ones load, so the sidebar
+   * does not blink empty between two filters.
+   */
+  protected readonly sidebarFilters = toSignal(
+    this.route.queryParamMap.pipe(
+      map((params) => ({
+        category: this.activeCategoryOf(params.get('category')),
+        brand: /^[a-z0-9-]+$/.test(params.get('brand') ?? '') ? params.get('brand') : null,
+        availability: (params.get('availability') ?? '').split(',').filter((value) => /^[a-z_]+$/.test(value)),
+      })),
+      distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
+      switchMap((scope) => this.api.shopFilters(scope).pipe(catchError(() => of(EMPTY_FILTERS)))),
+    ),
+    { initialValue: EMPTY_FILTERS },
+  );
 
   /** Departments with their card artwork, from the navigation payload. */
   private readonly navigation = toSignal(this.api.navigation().pipe(catchError(() => of(null))));
@@ -300,10 +377,13 @@ export class ShopPage {
   protected readonly listing = toSignal(
     this.route.queryParamMap.pipe(
       switchMap((params) => {
+        const brand = params.get('brand') ?? '';
         const listingParams = {
           page: Number(params.get('page') ?? 1) || 1,
           sort: params.get('sort') ?? undefined,
           filters: readFilters(params),
+          brand: /^[a-z0-9-]+$/.test(brand) ? brand : undefined,
+          availability: (params.get('availability') ?? '').split(',').filter((value) => /^[a-z_]+$/.test(value)),
         };
         const category = this.activeCategoryOf(params.get('category'));
 
@@ -337,11 +417,18 @@ export class ShopPage {
     return sort ? { sort } : ({} as Record<string, string>);
   });
 
-  /** Carried across facet changes (sort and category); page deliberately is not. */
+  /** Carried across specification-facet changes and pages: sort, category, brand, availability. */
   protected readonly preservedParams = computed<Record<string, string>>(() => {
+    const params: Record<string, string> = { ...this.preservedSort() };
     const category = this.activeCategory();
+    const brand = this.activeBrand();
+    const availability = this.activeAvailability();
 
-    return category ? { ...this.preservedSort(), category } : this.preservedSort();
+    if (category) params['category'] = category;
+    if (brand) params['brand'] = brand;
+    if (availability.length) params['availability'] = availability.join(',');
+
+    return params;
   });
 
   protected readonly paginationParams = computed<Record<string, string>>(() => ({

@@ -8,11 +8,14 @@ use App\Http\Concerns\BuildsListingResponses;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductCardResource;
 use App\Http\Resources\ProductResource;
+use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Product;
 use App\Search\SearchEngine;
 use App\Search\SearchQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -46,10 +49,11 @@ final class ProductController extends Controller
         $query = new SearchQuery(
             filters: $this->filters($request),
             categoryId: null,
-            brandId: $request->integer('brand') ?: null,
+            brandId: $this->brandId($request),
             page: max(1, $request->integer('page', 1)),
             perPage: $this->perPage($request),
             sort: (string) $request->query('sort', 'newest'),
+            availability: $this->availability($request),
         );
 
         $result = $this->engine->search($query);
@@ -59,6 +63,74 @@ final class ProductController extends Controller
             'meta' => $this->listingMeta($query, $result),
             'facets' => $this->facetPayload($result),
         ]);
+    }
+
+    /**
+     * The shop sidebar's choices, with counts: brands and availability.
+     *
+     * These are properties of every product, unlike attribute facets, so the
+     * sidebar has something to offer even where no facet is curated (the whole
+     * catalogue, most departments). Each group is counted with the OTHER
+     * selections applied but not its own - choosing HP must not empty the brand
+     * list to "HP" alone, or there is no way to switch brand without clearing.
+     *
+     * Scoped by ?category=<path> (a department or deeper; its subtree), ?brand=
+     * and ?availability=. Cached briefly: two GROUP BYs over the active
+     * catalogue are cheap once and wasteful on every sidebar paint.
+     */
+    public function sidebar(Request $request): JsonResponse
+    {
+        $path = '/'.trim((string) $request->query('category', ''), '/').'/';
+        $category = $path === '//' ? null : Category::query()->where('path', $path)->first();
+        $brandId = $this->brandId($request);
+        $availability = $this->availability($request);
+
+        $key = 'shop-filters:v1:'.md5(serialize([$category?->id, $brandId, $availability]));
+
+        $data = Cache::remember($key, now()->addMinutes(10), function () use ($category, $brandId, $availability): array {
+            $scope = fn () => Product::query()->active()->when(
+                $category !== null,
+                fn ($q) => $q->whereIn('primary_category_id', Category::query()->subtreeOf((string) $category?->path)->pluck('id')),
+            );
+
+            $brandCounts = $scope()
+                ->when($availability !== [], fn ($q) => $q->whereIn('availability', $availability))
+                ->whereNotNull('brand_id')
+                ->selectRaw('brand_id, count(*) as products')
+                ->groupBy('brand_id')
+                ->orderByDesc('products')
+                ->limit(200)
+                ->pluck('products', 'brand_id');
+
+            $brands = Brand::query()
+                ->whereIn('id', $brandCounts->keys())
+                ->get(['id', 'name', 'slug'])
+                ->map(fn (Brand $brand): array => [
+                    'name' => $brand->name,
+                    'slug' => $brand->slug,
+                    'count' => (int) $brandCounts[$brand->id],
+                ])
+                ->sortBy([['count', 'desc'], ['name', 'asc']])
+                ->values()
+                ->all();
+
+            $availabilityCounts = $scope()
+                ->when($brandId !== null, fn ($q) => $q->where('brand_id', $brandId))
+                ->selectRaw('availability, count(*) as products')
+                ->groupBy('availability')
+                ->pluck('products', 'availability');
+
+            $options = [];
+            foreach (self::AVAILABILITY as $value => $label) {
+                if (($availabilityCounts[$value] ?? 0) > 0) {
+                    $options[] = ['value' => $value, 'label' => $label, 'count' => (int) $availabilityCounts[$value]];
+                }
+            }
+
+            return ['brands' => $brands, 'availability' => $options];
+        });
+
+        return response()->json(['data' => $data]);
     }
 
     /**

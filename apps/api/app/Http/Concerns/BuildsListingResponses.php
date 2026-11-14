@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Concerns;
 
+use App\Models\Brand;
 use App\Search\FacetGroup;
 use App\Search\SearchQuery;
 use App\Search\SearchResult;
@@ -21,6 +22,47 @@ use Illuminate\Http\Request;
 trait BuildsListingResponses
 {
     /** Section 23.2's grid size. Capped so a caller cannot request the catalogue. */
+    /** Availability values a buyer can filter by (discontinued is never listed). */
+    private const AVAILABILITY = [
+        'in_stock' => 'In stock',
+        'limited' => 'Limited stock',
+        'lead_time' => 'Available to order',
+        'made_to_order' => 'Made to order',
+    ];
+
+    /**
+     * ?brand= as a brand id. Accepts the numeric id or the slug: the shop
+     * sidebar links by slug, which is what a buyer can read in the address bar.
+     * An unknown slug resolves to 0 - a filter that matches nothing - rather
+     * than silently dropping the filter and showing every brand.
+     */
+    private function brandId(Request $request): ?int
+    {
+        $raw = trim((string) $request->query('brand', ''));
+
+        if ($raw === '') {
+            return null;
+        }
+        if (ctype_digit($raw)) {
+            return (int) $raw;
+        }
+
+        return (int) (Brand::query()->where('slug', $raw)->value('id') ?? 0);
+    }
+
+    /**
+     * ?availability=in_stock,lead_time as a clean list of known values.
+     *
+     * @return list<string>
+     */
+    private function availability(Request $request): array
+    {
+        $raw = $request->query('availability', '');
+        $values = is_array($raw) ? $raw : explode(',', (string) $raw);
+
+        return array_values(array_intersect(array_keys(self::AVAILABILITY), array_map('strval', $values)));
+    }
+
     private function perPage(Request $request): int
     {
         return min(max($request->integer('per_page', 24), 1), 50);

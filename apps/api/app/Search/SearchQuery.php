@@ -24,6 +24,8 @@ final readonly class SearchQuery
         public int $page = 1,
         public int $perPage = 24,
         public string $sort = 'relevance',
+        /** @var list<string> availability values to keep; empty = any */
+        public array $availability = [],
     ) {}
 
     public function hasTerm(): bool
@@ -48,7 +50,7 @@ final readonly class SearchQuery
     {
         return new self(
             $this->term, $filters, $this->categoryId, $this->brandId,
-            $this->page, $this->perPage, $this->sort,
+            $this->page, $this->perPage, $this->sort, $this->availability,
         );
     }
 }

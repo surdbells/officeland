@@ -166,10 +166,24 @@ export interface Listing {
   readonly facets: readonly FacetGroup[];
 }
 
+/**
+ * The shop sidebar's always-available choices, with counts for the current
+ * scope. Hand-typed: the endpoint (GET /products/filters) is not in the
+ * OpenAPI contract.
+ */
+export interface ShopFilters {
+  readonly brands: readonly { readonly name: string; readonly slug: string; readonly count: number }[];
+  readonly availability: readonly { readonly value: string; readonly label: string; readonly count: number }[];
+}
+
 export interface ListingParams {
   readonly page?: number;
   readonly perPage?: number;
   readonly sort?: string;
+  /** Brand slug. */
+  readonly brand?: string;
+  /** Availability values to keep (in_stock, lead_time, ...). */
+  readonly availability?: readonly string[];
   /** attribute code => selected values */
   readonly filters?: Readonly<Record<string, readonly string[]>>;
 }
@@ -236,6 +250,16 @@ export class CatalogueApi {
     });
   }
 
+  /** Brand and availability choices (with counts) for the shop sidebar, scoped like the listing. */
+  shopFilters(scope: { category?: string | null; brand?: string | null; availability?: readonly string[] }): Observable<ShopFilters> {
+    let params = new HttpParams();
+    if (scope.category) params = params.set('category', scope.category);
+    if (scope.brand) params = params.set('brand', scope.brand);
+    if (scope.availability?.length) params = params.set('availability', scope.availability.join(','));
+
+    return this.unwrap<ShopFilters>(`${this.base}/products/filters`, params);
+  }
+
   brandProducts(slug: string, params: ListingParams = {}): Observable<Listing> {
     return this.http.get<Listing>(
       `${this.base}/brands/${encodeURIComponent(slug)}/products`,
@@ -283,6 +307,8 @@ export class CatalogueApi {
     if (params.page && params.page > 1) http = http.set('page', params.page);
     if (params.perPage) http = http.set('per_page', params.perPage);
     if (params.sort) http = http.set('sort', params.sort);
+    if (params.brand) http = http.set('brand', params.brand);
+    if (params.availability?.length) http = http.set('availability', params.availability.join(','));
 
     for (const [code, values] of Object.entries(params.filters ?? {})) {
       if (values.length > 0) http = http.set(`filters[${code}]`, values.join(','));
