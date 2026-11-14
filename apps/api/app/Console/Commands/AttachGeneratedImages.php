@@ -43,7 +43,8 @@ final class AttachGeneratedImages extends Command
         {--manifest= : Manifest path (default database/data/generated-images.json).}
         {--apply : Write. Without this it only reports.}
         {--force : Replace category images that are already set.}
-        {--only= : Limit to "heroes", "cards" or "slides".}';
+        {--only= : Limit to "heroes", "cards" or "slides".}
+        {--replace-slides : Deactivate active hero slides that are not in the manifest (kept, not deleted).}';
 
     protected $description = 'Attach generated category heroes, category cards and homepage hero slides from a manifest';
 
@@ -143,6 +144,17 @@ final class AttachGeneratedImages extends Command
                     'sort_order' => (int) $order,
                 ])->save();
                 $this->attached++;
+            }
+        }
+
+        if ($apply && $this->option('replace-slides') && ($only === '' || $only === 'slides')) {
+            $headlines = array_values(array_filter(array_map(
+                fn ($slide): string => (string) ($slide['headline'] ?? ''),
+                (array) ($manifest['hero_slides'] ?? []),
+            )));
+            if ($headlines !== []) {
+                $off = HeroSlide::query()->where('is_active', true)->whereNotIn('headline', $headlines)->update(['is_active' => false]);
+                $this->line("  deactivated {$off} slide(s) not in the manifest");
             }
         }
 
