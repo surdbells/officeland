@@ -67,18 +67,24 @@ export type ShowcaseStyle = 'grid' | 'feature' | 'rail';
                 and inheriting the grid default would have the browser
                 download a card-sized file and stretch it.
               -->
-              <div class="mt-6 grid gap-4 lg:grid-cols-2">
+              <div class="mt-6 grid gap-4">
                 @if (lead(); as first) {
-                  <div olReveal="scale" class="h-full">
+                  <!--
+                    The spotlight: the same card laid out image-beside-details,
+                    full width, so the department's lead product gets a proper
+                    stage instead of a giant square that is mostly white space.
+                  -->
+                  <div olReveal="scale">
                     <ol-product-card
                       [product]="first"
                       [headingLevel]="3"
-                      imageSizes="(min-width: 1024px) 50vw, 100vw"
+                      variant="feature"
+                      imageSizes="(min-width: 768px) 40vw, 100vw"
                     />
                   </div>
                 }
 
-                <ul class="grid gap-4 sm:grid-cols-2">
+                <ul class="grid grid-cols-2 gap-4 lg:grid-cols-4">
                   @for (product of rest(); track product.uuid; let i = $index) {
                     <li class="h-full" olReveal [olRevealDelay]="i * 70">
                       <ol-product-card [product]="product" [headingLevel]="3" />
@@ -162,7 +168,13 @@ export class DepartmentShowcase {
   /** Ties the section landmark to its own heading, so each one is uniquely named. */
   protected readonly headingId = computed(() => `showcase-${this.slug()}`);
 
-  protected readonly lead = computed<ProductCardData | null>(() => this.products()[0] ?? null);
+  /** The spotlight goes to the first product with a real photograph - never a placeholder. */
+  protected readonly lead = computed<ProductCardData | null>(
+    () => this.products().find((p) => p.image) ?? this.products()[0] ?? null,
+  );
 
-  protected readonly rest = computed(() => this.products().slice(1, 5));
+  protected readonly rest = computed(() => {
+    const lead = this.lead();
+    return this.products().filter((p) => p !== lead).slice(0, 4);
+  });
 }

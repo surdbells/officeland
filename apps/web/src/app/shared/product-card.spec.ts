@@ -81,7 +81,7 @@ describe('ProductCard', () => {
 
   it('renders the quote call to action, not an add-to-cart', () => {
     const host = render();
-    const button = host.querySelector('button');
+    const button = host.querySelector('button.ol-pcard__cta');
 
     expect(button?.textContent?.trim()).toBe('Add to quote');
   });
@@ -94,7 +94,7 @@ describe('ProductCard', () => {
     let emitted: ProductCardData | null = null;
     fixture.componentInstance.addToQuote.subscribe((p) => (emitted = p));
 
-    (fixture.nativeElement as HTMLElement).querySelector('button')?.click();
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button.ol-pcard__cta')?.click();
 
     expect(emitted).toEqual(base);
   });
