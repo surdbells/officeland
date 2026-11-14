@@ -26,6 +26,13 @@ use Illuminate\Database\Eloquent\Builder;
  *   php artisan catalogue:audit-watermarks
  *   php artisan catalogue:audit-watermarks --category=/pvc-doors-interiors/
  *   php artisan catalogue:audit-watermarks --clear        # detach flagged images
+ *   php artisan catalogue:audit-watermarks --csv=storage/app/watermarks.csv  # shortlist for review
+ *
+ * Confidence in the CSV: "high" when the second Snimay badge (bottom-right) is
+ * also present or the product is known Snimay stock (source, brand, name, or
+ * the PVC doors department); "review" otherwise - those are the red-logo
+ * products (Maped, Norton…) that trip the corner check without a watermark,
+ * and must not be sent for AI removal unchecked.
  */
 final class AuditWatermarks extends Command
 {
@@ -34,7 +41,8 @@ final class AuditWatermarks extends Command
         {--clear : Detach the flagged image from each product (otherwise read-only).}
         {--all : Also scan Icecat products (skipped by default - they are clean).}
         {--samples=25 : How many flagged products to list.}
-        {--limit=0 : Cap how many products to scan (0 = all).}';
+        {--limit=0 : Cap how many products to scan (0 = all).}
+        {--csv= : Write every flagged product to this CSV (slug, brand, source, confidence, image URL) for review.}';
 
     protected $description = 'Flag (and optionally clear) product images carrying the Snimay watermark';
 
@@ -84,11 +92,13 @@ final class AuditWatermarks extends Command
         $missing = 0;
         $cleared = 0;
         $sampleList = [];
+        $rows = [];
+        $csv = (string) $this->option('csv');
         $samples = (int) $this->option('samples');
 
-        $base->with(['media' => fn ($q) => $q->with('derivatives')->orderByDesc('product_media.role')])
+        $base->with(['primaryCategory', 'media' => fn ($q) => $q->with('derivatives')->orderByDesc('product_media.role')])
             ->orderBy('id')
-            ->chunkById($limit > 0 ? min($limit, 200) : 200, function ($products) use ($storage, $clear, $bar, &$scanned, &$flagged, &$missing, &$cleared, &$sampleList, $samples, $limit): bool {
+            ->chunkById($limit > 0 ? min($limit, 200) : 200, function ($products) use ($storage, $clear, $bar, &$scanned, &$flagged, &$missing, &$cleared, &$sampleList, &$rows, $csv, $samples, $limit): bool {
             foreach ($products as $product) {
                 if ($limit > 0 && $scanned >= $limit) {
                     return false;
@@ -115,6 +125,9 @@ final class AuditWatermarks extends Command
                 }
 
                 $flagged++;
+                if ($csv !== '') {
+                    $rows[] = $this->csvRow($product, $media, $path);
+                }
                 if (count($sampleList) < $samples) {
                     $sampleList[] = '/p/'.$product->slug.'/';
                 }
@@ -136,6 +149,10 @@ final class AuditWatermarks extends Command
             [$clear ? 'Images cleared' : 'Would clear (run --clear)', $clear ? $cleared : $flagged],
             ['Original missing on disk', $missing],
         ]);
+
+        if ($csv !== '') {
+            $this->writeCsv($csv, $rows);
+        }
 
         if ($sampleList !== []) {
             $this->newLine();
@@ -205,6 +222,86 @@ final class AuditWatermarks extends Command
         // Red badge in the corner, over a non-red product scene. A red-packaged
         // product is red in the centre too, so it is excluded.
         return $topLeft >= 0.25 && $centre < 0.10;
+    }
+
+    /**
+     * One shortlist row for a flagged product.
+     *
+     * @return array<string, string>
+     */
+    private function csvRow(Product $product, \App\Models\Media $media, string $path): array
+    {
+        $brand = (string) ($product->brand_name_cached ?? '');
+        $category = (string) ($product->primaryCategory?->path ?? '');
+
+        // Known Snimay stock: the importer's own source tag on the image or the
+        // product, the brand or the name, or the PVC doors department the
+        // Snimay catalogue was filed under.
+        $knownSnimay = $media->source === 'snimay'
+            || $product->source === 'snimay'
+            || stripos($brand, 'snimay') !== false
+            || stripos((string) $product->name, 'snimay') !== false
+            || str_starts_with($category, '/pvc-doors-interiors/');
+
+        $bottomBadge = $this->hasBottomBadge($path);
+
+        return [
+            'product_id' => (string) $product->id,
+            'slug' => (string) $product->slug,
+            'name' => (string) $product->name,
+            'brand' => $brand,
+            'product_source' => (string) ($product->source ?? ''),
+            'image_source' => (string) ($media->source ?? ''),
+            'category' => $category,
+            'bottom_badge' => $bottomBadge ? 'yes' : 'no',
+            'confidence' => ($bottomBadge || $knownSnimay) ? 'high' : 'review',
+            'url' => 'https://officelandng.com/p/'.$product->slug.'/',
+            'image' => 'https://officelandng.com/media/'.ltrim((string) $media->path, '/'),
+        ];
+    }
+
+    /**
+     * The second Snimay mark: a small red "SNIMAY" badge at the bottom right,
+     * beside the snimayhome.com URL (measured at x 0.84-0.93, y 0.90-0.92 of the
+     * frame). A red-logo product has no reason to carry red there as well.
+     */
+    private function hasBottomBadge(string $path): bool
+    {
+        $data = @file_get_contents($path);
+        $image = $data === false ? false : @imagecreatefromstring($data);
+        if ($image === false) {
+            return false;
+        }
+
+        $fraction = $this->redFraction($image, 0.80, 0.96, 0.86, 0.95);
+        imagedestroy($image);
+
+        return $fraction >= 0.05;
+    }
+
+    /** @param  list<array<string, string>>  $rows */
+    private function writeCsv(string $file, array $rows): void
+    {
+        $handle = @fopen($file, 'w');
+        if ($handle === false) {
+            $this->error("Could not write {$file}.");
+
+            return;
+        }
+
+        if ($rows !== []) {
+            fputcsv($handle, array_keys($rows[0]), escape: '');
+        }
+        foreach ($rows as $row) {
+            fputcsv($handle, $row, escape: '');
+        }
+        fclose($handle);
+
+        $high = count(array_filter($rows, fn (array $r): bool => $r['confidence'] === 'high'));
+        $this->info(sprintf(
+            'Wrote %d flagged product(s) to %s - %d high-confidence Snimay, %d to review by eye.',
+            count($rows), $file, $high, count($rows) - $high,
+        ));
     }
 
     /** The fraction of Snimay-badge-red pixels in a relative rectangle. */
