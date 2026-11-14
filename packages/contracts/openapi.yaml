@@ -11,6 +11,31 @@ servers:
     url: 'http://localhost:8095'
     description: 'Local development'
 paths:
+  '/api/v1/categories/{path}/featured':
+    get:
+      tags:
+        - Catalogue
+      summary: 'Featured products for a category (megamenu)'
+      description: "A department's featured products for the megamenu panel.\n\nThe plain listing would do, except it cannot leave out products whose\nonly image is a brand-logo stand-in, and the menu is merchandised space\nexactly as the homepage rails are. Same rules as those rails: real\nderivatives, no placeholder media, newest first. Cached briefly, since\nevery visitor who opens a panel asks the same question."
+      operationId: categoryFeatured
+      parameters:
+        -
+          name: path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'Up to six product cards'
+          content:
+            application/json:
+              schema:
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ProductCard' } }
+                type: object
+        '404':
+          description: 'No category at that path'
   /api/v1/home:
     get:
       tags:
@@ -801,6 +826,9 @@ tags:
   -
     name: Products
     description: 'Product detail'
+  -
+    name: Catalogue
+    description: Catalogue
   -
     name: Search
     description: Search

@@ -239,6 +239,16 @@ export class CatalogueApi {
   }
 
   /**
+   * A department's featured products for the megamenu: real photographs only,
+   * never a brand-logo stand-in (the API applies the homepage-rail rules).
+   */
+  featuredProducts(path: string): Observable<readonly ProductCard[]> {
+    return this.http
+      .get<{ data: ProductCard[] }>(`${this.base}/categories/${this.segment(path)}/featured`)
+      .pipe(map((response) => response.data));
+  }
+
+  /**
    * The whole catalogue as one faceted listing - the shop page.
    *
    * Same envelope as every other listing surface, because it is the same

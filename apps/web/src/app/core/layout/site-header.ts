@@ -957,18 +957,18 @@ export class SiteHeader {
     });
   }
 
-  /** Fetch a department's featured products once, from the shared listing endpoint. */
+  /** Fetch a department's featured products once (placeholder images excluded server-side). */
   private loadDeptProducts(dept: NavigationNode): void {
     const path = dept.url.replace(/^\/c/, '');
     if (this.deptProductsRequested.has(path)) return;
     this.deptProductsRequested.add(path);
 
     this.api
-      .categoryProducts(path, { perPage: 6 })
+      .featuredProducts(path)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (listing) =>
-          this.deptProducts.update((map) => ({ ...map, [path]: listing.data })),
+        next: (products) =>
+          this.deptProducts.update((map) => ({ ...map, [path]: products })),
         // Leave it absent and allow a later retry; the panel just shows no row.
         error: () => this.deptProductsRequested.delete(path),
       });

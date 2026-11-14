@@ -448,7 +448,7 @@ export class ShopPage {
 
   protected tileClass(active: boolean): string {
     return (
-      'group block rounded-2xl border bg-white p-2 text-center transition-colors ' +
+      'group block h-full rounded-2xl border bg-white p-2 text-center transition-colors ' +
       (active
         ? 'border-brand-600 text-brand-700 shadow-sm ring-2 ring-brand-600/25'
         : 'border-ink-100 text-ink-800 hover:border-brand-600 hover:text-brand-700')

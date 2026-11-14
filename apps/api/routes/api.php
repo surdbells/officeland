@@ -93,6 +93,10 @@ Route::prefix('v1')->name('api.')->middleware('throttle:catalogue')->group(funct
     // Catch-all paths must come last, and the more specific /products suffix
     // must be declared before the bare path — otherwise 'a/b/products' is
     // captured as a category path called "a/b/products".
+    Route::get('categories/{path}/featured', [CategoryController::class, 'featured'])
+        ->where('path', '.*')
+        ->name('categories.featured');
+
     Route::get('categories/{path}/products', [CategoryController::class, 'products'])
         ->where('path', '.*')
         ->name('categories.products');

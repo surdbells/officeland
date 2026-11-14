@@ -12,6 +12,10 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Search\SearchEngine;
 use App\Search\SearchQuery;
+use App\Support\PlaceholderMedia;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
+use OpenApi\Attributes as OA;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -154,6 +158,55 @@ final class CategoryController extends Controller
             'meta' => $this->listingMeta($query, $result),
             'facets' => $this->facetPayload($result),
         ]);
+    }
+
+    /**
+     * A department's featured products for the megamenu panel.
+     *
+     * The plain listing would do, except it cannot leave out products whose
+     * only image is a brand-logo stand-in, and the menu is merchandised space
+     * exactly as the homepage rails are. Same rules as those rails: real
+     * derivatives, no placeholder media, newest first. Cached briefly, since
+     * every visitor who opens a panel asks the same question.
+     */
+    #[OA\Get(
+        path: '/api/v1/categories/{path}/featured',
+        operationId: 'categoryFeatured',
+        summary: 'Featured products for a category (megamenu)',
+        tags: ['Catalogue'],
+        parameters: [new OA\Parameter(name: 'path', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Up to six product cards', content: new OA\JsonContent(
+                properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ProductCard'))],
+            )),
+            new OA\Response(response: 404, description: 'No category at that path'),
+        ],
+    )]
+    public function featured(string $path): JsonResponse
+    {
+        $category = $this->resolve($path);
+
+        $data = Cache::remember('catalogue:featured:v1:'.$category->id, now()->addMinutes(15), function () use ($category): array {
+            $subtreeIds = Category::query()->subtreeOf($category->path)->pluck('id');
+            $placeholders = PlaceholderMedia::ids();
+
+            $products = Product::query()
+                ->active()
+                ->whereIn('primary_category_id', $subtreeIds)
+                ->whereHas('media', fn (Builder $q) => $q->whereHas('derivatives'))
+                ->when($placeholders !== [], fn (Builder $q) => $q->whereDoesntHave(
+                    'media',
+                    fn (Builder $m) => $m->whereIn('media.id', $placeholders),
+                ))
+                ->with(['brand', 'media.derivatives', 'attributeValues.attribute'])
+                ->latest('published_at')
+                ->limit(6)
+                ->get();
+
+            return ProductCardResource::collection($products)->resolve();
+        });
+
+        return response()->json(['data' => $data]);
     }
 
     /**

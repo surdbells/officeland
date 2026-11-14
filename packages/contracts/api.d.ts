@@ -4,6 +4,32 @@
  */
 
 export interface paths {
+    "/api/v1/categories/{path}/featured": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Featured products for a category (megamenu)
+         * @description A department's featured products for the megamenu panel.
+         *
+         *     The plain listing would do, except it cannot leave out products whose
+         *     only image is a brand-logo stand-in, and the menu is merchandised space
+         *     exactly as the homepage rails are. Same rules as those rails: real
+         *     derivatives, no placeholder media, newest first. Cached briefly, since
+         *     every visitor who opens a panel asks the same question.
+         */
+        get: operations["categoryFeatured"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/home": {
         parameters: {
             query?: never;
@@ -393,6 +419,37 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    categoryFeatured: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                path: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Up to six product cards */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data?: components["schemas"]["ProductCard"][];
+                    };
+                };
+            };
+            /** @description No category at that path */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     getHome: {
         parameters: {
             query?: never;
