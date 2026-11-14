@@ -208,8 +208,9 @@ export class CatalogueApi {
     return this.unwrap<Home>(`${this.base}/home`);
   }
 
-  categories(): Observable<readonly Category[]> {
-    return this.collection<Category>(`${this.base}/categories`);
+  /** The department tree; `images` adds hero + card per department and a card per subcategory. */
+  categories(images = false): Observable<readonly Category[]> {
+    return this.collection<Category>(`${this.base}/categories${images ? '?images=1' : ''}`);
   }
 
   category(path: string): Observable<Category> {

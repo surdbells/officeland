@@ -23,10 +23,20 @@ final class CategoryController extends Controller
 
     public function __construct(private readonly SearchEngine $engine) {}
 
-    public function index(): AnonymousResourceCollection
+    /**
+     * The department tree. With ?images=1 each department also carries its hero
+     * and square card, and each subcategory its card - what the /c/ hub draws
+     * its tiles from. Opt-in, so a caller that only needs names and URLs does
+     * not download fifty image descriptors.
+     */
+    public function index(Request $request): AnonymousResourceCollection
     {
+        $with = $request->boolean('images')
+            ? ['heroMedia.derivatives', 'cardMedia.derivatives', 'children.cardMedia.derivatives']
+            : ['children'];
+
         return CategoryResource::collection(
-            Category::query()->depth(1)->orderBy('sort_order')->with('children')->get()
+            Category::query()->depth(1)->orderBy('sort_order')->with($with)->get()
         );
     }
 

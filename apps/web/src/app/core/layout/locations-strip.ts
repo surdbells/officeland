@@ -36,48 +36,44 @@ import { Reveal } from '../../shared/reveal';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Icon, Reveal],
   template: `
-    <section aria-labelledby="locations-heading" class="border-t border-ink-100 bg-white">
-      <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-14">
-        <div class="flex flex-wrap items-baseline justify-between gap-4">
-          <h2 id="locations-heading" class="font-heading text-display-sm font-semibold">
-            See it before you buy
-          </h2>
+    <section aria-labelledby="locations-heading" class="border-t border-ink-100 bg-ink-50">
+      <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-14 sm:py-16">
+        <div olReveal="fade" class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p class="ol-eyebrow">Showrooms &amp; offices</p>
+            <h2 id="locations-heading" class="mt-1 font-heading text-display-sm font-semibold">
+              See it before you buy
+            </h2>
+            <p class="mt-2 max-w-xl text-ink-600">
+              Two showrooms on Victoria Island. Sit in the chair, open the drawer, then order.
+            </p>
+          </div>
           <a
             routerLink="/locations/"
-            class="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:underline"
+            class="inline-flex items-center gap-1.5 rounded-full border border-brand-600 px-5 py-2.5 text-sm font-semibold text-brand-600 transition-colors hover:bg-brand-600 hover:text-white"
           >
             All locations
             <ol-icon name="arrow-right" [size]="16" />
           </a>
         </div>
 
-        <ul class="mt-8 grid gap-6 md:grid-cols-3">
+        <ul class="mt-8 grid gap-5 md:grid-cols-3 md:gap-6">
           @for (location of locations; track location.name; let i = $index) {
             <li
               olReveal="scale"
               [olRevealDelay]="i * 90"
-              class="ol-lift group overflow-hidden rounded-2xl border border-ink-100 shadow-xs"
+              class="ol-lift group flex flex-col overflow-hidden rounded-3xl border border-ink-100 bg-white shadow-xs"
             >
               <!--
-                A photograph where there is one, the icon where there is not.
-
-                The photographs are the missing half: a supplier telling you
-                to come and look at the furniture, without showing you the
-                place, is asking for a trip on trust. The field is here and
-                the layout is here; the files are not, and drawing a fake
-                storefront would be worse than the icon.
-
-                Served from public/images/locations/ rather than the media
-                pipeline: these are three fixed brand assets that never
-                change per environment, not catalogue content somebody
-                uploads, so a content-addressed store buys nothing.
-
-                The photo sits in an .ol-zoom-frame so it drifts in a touch on
-                card hover - the one cinematic beat this component earns, given
-                these are the only real photographs on the page.
+                The photograph carries the card: the place itself, with its
+                kind and its name set over a scrim at the foot. Served from
+                public/images/locations/ rather than the media pipeline - three
+                fixed brand assets, not catalogue content. The frame zooms a
+                touch on hover; a location without a photo keeps a brand ground
+                and its icon instead of a drawn-up storefront.
               -->
-              @if (location.photo) {
-                <div class="ol-zoom-frame aspect-[4/3] w-full">
+              <div class="ol-zoom-frame relative isolate aspect-[4/3] w-full overflow-hidden bg-brand-900 text-white">
+                @if (location.photo) {
                   <img
                     [src]="location.photo"
                     [alt]="location.alt"
@@ -85,39 +81,49 @@ import { Reveal } from '../../shared/reveal';
                     height="450"
                     loading="lazy"
                     decoding="async"
-                    class="h-full w-full object-cover"
+                    class="absolute inset-0 -z-20 h-full w-full object-cover"
                   />
-                </div>
-              }
-
-              <div class="p-6">
-                @if (!location.photo) {
-                  <span class="inline-flex rounded-xl bg-brand-50 p-2.5 text-brand-600">
-                    <ol-icon [name]="location.icon" [size]="22" />
+                } @else {
+                  <span class="absolute inset-0 -z-20 flex items-center justify-center text-white/40">
+                    <ol-icon [name]="location.icon" [size]="56" />
                   </span>
                 }
+                <span aria-hidden="true" class="absolute inset-0 -z-10 bg-gradient-to-t from-ink-900/85 via-ink-900/20 to-transparent"></span>
 
-                <h3 [class]="location.photo ? 'font-heading text-lg font-semibold' : 'mt-4 font-heading text-lg font-semibold'">{{ location.name }}</h3>
+                <span class="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-ink-900 shadow-sm backdrop-blur">
+                  <ol-icon [name]="location.icon" [size]="14" class="text-brand-600" />
+                  {{ location.kind }}
+                </span>
 
-              <address class="mt-2 text-sm not-italic leading-relaxed text-ink-600">
-                {{ location.address }}
-              </address>
+                <div class="absolute inset-x-0 bottom-0 p-5">
+                  <p class="text-xs font-semibold uppercase tracking-[0.14em] text-white/75">{{ location.place }}</p>
+                  <h3 class="mt-0.5 font-heading text-xl font-semibold text-white">{{ location.name }}</h3>
+                </div>
+              </div>
 
-              @if (location.directions) {
-                <a
-                  [href]="location.directions"
-                  rel="noopener"
-                  class="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:underline"
-                >
-                  <ol-icon name="map-pin" [size]="16" />
-                  Get directions
-                </a>
-              } @else {
-                <p class="mt-4 inline-flex items-center gap-1.5 text-sm text-ink-400">
-                  <ol-icon name="building-2" [size]="16" />
-                  Registered office
-                </p>
-              }
+              <div class="flex flex-1 flex-col p-5 sm:p-6">
+                <address class="flex gap-2.5 text-sm not-italic leading-relaxed text-ink-600">
+                  <ol-icon name="map-pin" [size]="18" class="mt-0.5 shrink-0 text-brand-600" />
+                  <span>{{ location.address }}</span>
+                </address>
+
+                <div class="mt-auto pt-5">
+                  @if (location.directions) {
+                    <a
+                      [href]="location.directions"
+                      rel="noopener"
+                      class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
+                    >
+                      Get directions
+                      <ol-icon name="arrow-right" [size]="16" class="transition-transform group-hover:translate-x-0.5" />
+                    </a>
+                  } @else {
+                    <p class="inline-flex w-full items-center justify-center gap-2 rounded-full border border-ink-100 bg-ink-50 px-5 py-2.5 text-sm font-medium text-ink-600">
+                      <ol-icon name="building-2" [size]="16" />
+                      Registered office - not a showroom
+                    </p>
+                  }
+                </div>
               </div>
             </li>
           }
@@ -139,6 +145,8 @@ export class LocationsStrip {
   protected readonly locations = [
     {
       name: 'Head Office',
+      kind: 'Head office',
+      place: 'Victoria Island, Lagos',
       photo: '/images/locations/head-office.webp',
       alt: 'The OfficeLand counter inside Century 21 Mall, with HP authorised reseller signage and shelves of stationery and IT supplies',
       icon: 'building-2' as const,
@@ -148,6 +156,8 @@ export class LocationsStrip {
     },
     {
       name: 'Furniture Showroom',
+      kind: 'Showroom',
+      place: 'Victoria Island, Lagos',
       photo: '/images/locations/furniture-showroom.webp',
       alt: 'The OfficeLand furniture showroom on Idowu Martins Street, its frontage listing desks, chairs, conference tables and filing cabinets',
       icon: 'store' as const,
@@ -158,6 +168,8 @@ export class LocationsStrip {
     {
       // No directions link, on purpose - see the class comment on Q14.
       name: 'Dubai Office',
+      kind: 'Registered office',
+      place: 'Jumeirah Lakes Towers, Dubai',
       photo: '/images/locations/dubai-office.jpg',
       alt: 'High-rise towers at Jumeirah Lakes Towers, Dubai',
       icon: 'building-2' as const,

@@ -118,6 +118,12 @@ use OpenApi\Attributes as OA;
             nullable: true,
         ),
         new OA\Property(
+            property: 'card',
+            description: 'The category\'s square card artwork, or null. Present only when the caller asked for images (GET /categories?images=1).',
+            ref: '#/components/schemas/Image',
+            nullable: true,
+        ),
+        new OA\Property(
             property: 'hero_inherited',
             description: 'The nearest ancestor category\'s hero, returned only when this category has none of its own. Used for the page hero so every category page carries an image; NOT used for chips or child cards, where inheriting would show one photograph five times.',
             ref: '#/components/schemas/Image',

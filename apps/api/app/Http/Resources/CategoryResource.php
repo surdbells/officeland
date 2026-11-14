@@ -97,6 +97,13 @@ final class CategoryResource extends JsonResource
                     ? null
                     : new ImageResource($this->heroMedia),
             ),
+            // The square card artwork, when the caller loaded it (the /c/ hub).
+            'card' => $this->whenLoaded(
+                'cardMedia',
+                fn (): ?ImageResource => $this->cardMedia === null
+                    ? null
+                    : new ImageResource($this->cardMedia),
+            ),
             'product_count' => $this->product_count_cached,
             // Children ship as real data so the storefront can render them as
             // crawlable anchors on every category page (D-011) - that is what

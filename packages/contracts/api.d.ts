@@ -172,6 +172,8 @@ export interface components {
             product_count?: number;
             /** @description The category hero image, or null. Rendered as a <picture>; the storefront falls back to a typographic treatment when absent, so an image is always an improvement and never a prerequisite. */
             hero?: components["schemas"]["Image"] | null;
+            /** @description The category's square card artwork, or null. Present only when the caller asked for images (GET /categories?images=1). */
+            card?: components["schemas"]["Image"] | null;
             /** @description The nearest ancestor category's hero, returned only when this category has none of its own. Used for the page hero so every category page carries an image; NOT used for chips or child cards, where inheriting would show one photograph five times. */
             hero_inherited?: components["schemas"]["Image"] | null;
             /** @description Categories alongside this one, returned only when it has no children of its own. Drives the chip row on a leaf page. */

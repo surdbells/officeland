@@ -4,7 +4,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of, switchMap } from 'rxjs';
 import { CatalogueApi } from '../../core/api/catalogue-api';
 import { SeoService } from '../../core/seo/seo.service';
-import { EMPTY_LISTING, readFilters } from '../../shared/listing-state';
+import { EMPTY_LISTING, filterParams, readFilters } from '../../shared/listing-state';
+import { Icon } from '../../shared/icon';
+import { ResponsiveImage } from '../../shared/responsive-image';
 import { FacetRail } from '../../shared/facet-rail';
 import { FilterSheet } from '../../shared/filter-sheet';
 import { Pagination } from '../../shared/pagination';
@@ -37,6 +39,15 @@ import { ProductCard } from '../../shared/product-card';
  * than a long rail of filters. CSS "order" puts the rail on the left at
  * desktop widths without moving it in the markup.
  *
+ * ── The department rail on top ───────────────────────────────────────────
+ * Above the grid sits a rail of department tiles (their card artwork, from
+ * the navigation payload every page already carries) and, once a department
+ * is chosen, a row of its subcategories. It is a real filter, not a set of
+ * exits: it sets ?category=<path> and the listing switches to that category's
+ * products and facets while the buyer stays on this page. Choosing a category
+ * drops the attribute filters, because facets differ per category and a
+ * filter that no longer exists would silently match nothing.
+ *
  * ── Noindex, and not reluctantly ─────────────────────────────────────────
  * An unfiltered listing of the whole catalogue competes directly with the
  * category pages that carry the intro copy, and every filter combination is
@@ -54,7 +65,7 @@ import { ProductCard } from '../../shared/product-card';
   selector: 'ol-shop-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, FacetRail, FilterSheet, Pagination, ProductCard],
+  imports: [RouterLink, FacetRail, FilterSheet, Pagination, ProductCard, Icon, ResponsiveImage],
   template: `
     <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-6 sm:py-8">
       <!-- Page header: a quiet breadcrumb, a title that steps down a size on a
@@ -76,13 +87,90 @@ import { ProductCard } from '../../shared/product-card';
         and we supply far more than appears here.
       </p>
 
-      <div class="mt-6 grid gap-8 sm:mt-8 lg:grid-cols-[18rem_1fr]">
+      @if (departments().length) {
+        <nav aria-label="Filter by department" class="mt-6 rounded-3xl border border-ink-100 bg-ink-50 p-4 sm:mt-8 sm:p-5">
+          <div class="flex items-baseline justify-between gap-3">
+            <p class="ol-eyebrow">Shop by department</p>
+            @if (activeDepartment(); as active) {
+              <a [routerLink]="active.url" class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-sm font-semibold text-brand-600 hover:underline">
+                {{ active.name }} page
+                <ol-icon name="arrow-right" [size]="14" />
+              </a>
+            }
+          </div>
+
+          <ul class="ol-shop-rail mt-3 flex gap-3 overflow-x-auto pb-1 sm:gap-4">
+            <li class="w-24 shrink-0 sm:w-28">
+              <a
+                routerLink="/shop/"
+                [queryParams]="preservedSort()"
+                [attr.aria-current]="activeDepartment() ? null : 'true'"
+                [class]="tileClass(!activeDepartment())"
+              >
+                <span class="flex aspect-square w-full items-center justify-center rounded-xl bg-brand-600 text-white">
+                  <ol-icon name="layers" [size]="28" />
+                </span>
+                <span class="mt-2 block text-xs font-semibold leading-tight sm:text-sm">All products</span>
+              </a>
+            </li>
+
+            @for (department of departments(); track department.slug) {
+              <li class="w-24 shrink-0 sm:w-28">
+                <a
+                  routerLink="/shop/"
+                  [queryParams]="categoryParams(department.url)"
+                  [attr.aria-current]="activeDepartment()?.slug === department.slug ? 'true' : null"
+                  [class]="tileClass(activeDepartment()?.slug === department.slug)"
+                >
+                  <span class="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl bg-[#f6f3ee] text-brand-600">
+                    @if (department.card ?? department.hero; as image) {
+                      <ol-image
+                        class="block h-full w-full [&>picture]:block [&>picture]:h-full [&>picture]:w-full"
+                        [image]="image"
+                        sizes="112px"
+                        imgClass="h-full w-full object-cover"
+                      />
+                    } @else {
+                      <ol-icon name="layers" [size]="26" />
+                    }
+                  </span>
+                  <span class="mt-2 block text-xs font-semibold leading-tight sm:text-sm">{{ department.name }}</span>
+                </a>
+              </li>
+            }
+          </ul>
+
+          <!-- The chosen department's subcategories. -->
+          @if (activeDepartment(); as active) {
+            @if (active.children.length) {
+              <ul class="mt-4 flex flex-wrap gap-2 border-t border-ink-100 pt-4">
+                <li>
+                  <a routerLink="/shop/" [queryParams]="categoryParams(active.url)" [class]="pillClass(activeCategory() === pathOf(active.url))">
+                    All {{ active.name }}
+                  </a>
+                </li>
+                @for (child of active.children; track child.slug) {
+                  <li>
+                    <a routerLink="/shop/" [queryParams]="categoryParams(child.url)" [class]="pillClass(activeCategory() === pathOf(child.url))">
+                      {{ child.name }}
+                    </a>
+                  </li>
+                }
+              </ul>
+            }
+          }
+        </nav>
+      }
+
+      <!-- The rail column exists only when there is something to filter by;
+           otherwise the grid takes the full width instead of sitting beside a blank. -->
+      <div [class]="listing().facets.length ? 'mt-6 grid gap-8 sm:mt-8 lg:grid-cols-[18rem_1fr]' : 'mt-6 grid gap-8 sm:mt-8'">
         <!--
           Desktop: an always-open rail in the left column. Mobile: the rail is
           hidden and the filter+sort sheet (above the grid) takes its place, so
           the products still lead on a phone.
         -->
-        <div class="hidden lg:order-1 lg:block">
+        <div [class]="listing().facets.length ? 'hidden lg:order-1 lg:block' : 'hidden'">
           <ol-facet-rail
             [facets]="listing().facets"
             [selected]="selectedFilters()"
@@ -105,7 +193,7 @@ import { ProductCard } from '../../shared/product-card';
 
           <div class="flex flex-wrap items-baseline justify-between gap-3 border-b border-ink-100 pb-3">
             <h2 id="products-heading" class="font-heading text-lg font-semibold">
-              Products
+              {{ activeLabel() ?? 'Products' }}
               <span class="ml-1 font-normal text-ink-600">({{ listing().meta.total }})</span>
             </h2>
             <p class="text-sm text-ink-600">{{ rangeLabel() }}</p>
@@ -144,6 +232,16 @@ import { ProductCard } from '../../shared/product-card';
       </div>
     </div>
   `,
+  styles: `
+    /* The scroll stays, the bar goes - same as every other rail on the site. */
+    .ol-shop-rail {
+      scrollbar-width: none;
+    }
+
+    .ol-shop-rail::-webkit-scrollbar {
+      display: none;
+    }
+  `,
 })
 export class ShopPage {
   private readonly route = inject(ActivatedRoute);
@@ -169,17 +267,52 @@ export class ShopPage {
 
   protected readonly hasFilters = computed(() => this.filterCount() > 0);
 
+  /** Departments with their card artwork, from the navigation payload. */
+  private readonly navigation = toSignal(this.api.navigation().pipe(catchError(() => of(null))));
+
+  protected readonly departments = computed(() => this.navigation()?.departments ?? []);
+
+  /**
+   * The chosen category as a bare path ("it-products/computers"), or null.
+   * Only lowercase slug paths are accepted, so the value can never be anything
+   * but a category path when it reaches the API URL.
+   */
+  protected readonly activeCategory = computed<string | null>(() =>
+    this.activeCategoryOf(this.queryParams()?.get('category') ?? null),
+  );
+
+  protected readonly activeDepartment = computed(() => {
+    const slug = this.activeCategory()?.split('/')[0];
+
+    return slug ? (this.departments().find((d) => d.slug === slug) ?? null) : null;
+  });
+
+  /** "IT Products" or "IT Products · Computers" for the grid heading. */
+  protected readonly activeLabel = computed<string | null>(() => {
+    const department = this.activeDepartment();
+    if (!department) return null;
+
+    const child = department.children.find((c) => this.pathOf(c.url) === this.activeCategory());
+
+    return child ? `${department.name} · ${child.name}` : department.name;
+  });
+
   protected readonly listing = toSignal(
     this.route.queryParamMap.pipe(
-      switchMap((params) =>
-        this.api
-          .catalogue({
-            page: Number(params.get('page') ?? 1) || 1,
-            sort: params.get('sort') ?? undefined,
-            filters: readFilters(params),
-          })
-          .pipe(catchError(() => of(EMPTY_LISTING))),
-      ),
+      switchMap((params) => {
+        const listingParams = {
+          page: Number(params.get('page') ?? 1) || 1,
+          sort: params.get('sort') ?? undefined,
+          filters: readFilters(params),
+        };
+        const category = this.activeCategoryOf(params.get('category'));
+
+        return (
+          category
+            ? this.api.categoryProducts(`/${category}/`, listingParams)
+            : this.api.catalogue(listingParams)
+        ).pipe(catchError(() => of(EMPTY_LISTING)));
+      }),
     ),
     { initialValue: EMPTY_LISTING },
   );
@@ -197,24 +330,58 @@ export class ShopPage {
     return `Showing ${first}–${last} of ${meta.total}`;
   });
 
-  /** Carried across facet changes; page deliberately is not. */
-  protected readonly preservedParams = computed<Record<string, string>>(() => {
+  /** The sort alone: what survives a change of category. */
+  protected readonly preservedSort = computed<Record<string, string>>(() => {
     const sort = this.queryParams()?.get('sort');
 
     return sort ? { sort } : ({} as Record<string, string>);
   });
 
-  protected readonly paginationParams = computed<Record<string, string>>(() => {
-    const params: Record<string, string> = { ...this.preservedParams() };
+  /** Carried across facet changes (sort and category); page deliberately is not. */
+  protected readonly preservedParams = computed<Record<string, string>>(() => {
+    const category = this.activeCategory();
 
-    for (const [code, values] of Object.entries(this.selectedFilters())) {
-      if (values.length > 0) {
-        params[code] = values.join(',');
-      }
-    }
-
-    return params;
+    return category ? { ...this.preservedSort(), category } : this.preservedSort();
   });
+
+  protected readonly paginationParams = computed<Record<string, string>>(() => ({
+    ...this.preservedParams(),
+    ...filterParams(this.selectedFilters()),
+  }));
+
+  /** "/c/it-products/computers/" -> "it-products/computers". */
+  protected pathOf(url: string): string {
+    return url.replace(/^\/c\//, '').replace(/\/+$/, '');
+  }
+
+  /** Query params that select a category: the sort survives, filters and page do not. */
+  protected categoryParams(url: string): Record<string, string> {
+    return { ...this.preservedSort(), category: this.pathOf(url) };
+  }
+
+  protected tileClass(active: boolean): string {
+    return (
+      'group block rounded-2xl border bg-white p-2 text-center transition-colors ' +
+      (active
+        ? 'border-brand-600 text-brand-700 shadow-sm ring-2 ring-brand-600/25'
+        : 'border-ink-100 text-ink-800 hover:border-brand-600 hover:text-brand-700')
+    );
+  }
+
+  protected pillClass(active: boolean): string {
+    return (
+      'inline-block rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ' +
+      (active
+        ? 'border-brand-600 bg-brand-600 text-white'
+        : 'border-ink-100 bg-white text-ink-600 hover:border-brand-600 hover:text-brand-700')
+    );
+  }
+
+  private activeCategoryOf(raw: string | null): string | null {
+    const path = (raw ?? '').replace(/^\/+|\/+$/g, '');
+
+    return /^[a-z0-9-]+(\/[a-z0-9-]+){0,2}$/.test(path) ? path : null;
+  }
 
   constructor() {
     effect(() => {
