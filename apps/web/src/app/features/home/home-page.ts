@@ -936,6 +936,49 @@ const MAJOR_CATEGORY_SOURCES: readonly {
           }
         </ul>
 
+        <!--
+          Where it goes. The properties above are the argument; these are the
+          proof - the material installed in the jobs it is actually bought for,
+          including formwork on site, which no MDF or plywood range can claim.
+          Each photo is a real anchor into its subcategory. Self-hosted WebP at
+          4:3 with intrinsic size set, so the grid reserves its space (no CLS).
+        -->
+        <ul class="mt-12 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+          @for (useCase of pvcGallery; track useCase.img; let i = $index) {
+            <li olReveal="scale" [olRevealDelay]="i * 70">
+              <a
+                [routerLink]="useCase.url"
+                class="ol-zoom-frame group relative block overflow-hidden rounded-2xl ring-1 ring-white/10"
+              >
+                <img
+                  [src]="useCase.img"
+                  [alt]="useCase.alt"
+                  width="960"
+                  height="720"
+                  loading="lazy"
+                  decoding="async"
+                  class="aspect-[4/3] w-full object-cover"
+                />
+                <span
+                  aria-hidden="true"
+                  class="absolute inset-0 bg-gradient-to-t from-ink-900/85 via-ink-900/10 to-transparent"
+                ></span>
+                <span class="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3 sm:p-5">
+                  <span>
+                    <span class="block font-heading text-sm font-semibold text-white sm:text-lg">{{ useCase.name }}</span>
+                    <span class="hidden text-sm text-white/70 sm:block">{{ useCase.detail }}</span>
+                  </span>
+                  <ol-icon
+                    name="arrow-right"
+                    [size]="18"
+                    class="shrink-0 text-accent-400 transition-transform group-hover:translate-x-0.5"
+                  />
+                </span>
+              </a>
+            </li>
+          }
+        </ul>
+
         <div olReveal="fade" class="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
           <a
             routerLink="/quote/"
@@ -944,7 +987,7 @@ const MAJOR_CATEGORY_SOURCES: readonly {
             Request a PVC quote
           </a>
           <p class="text-sm text-white/60">
-            Kitchens &middot; Wardrobes &middot; Furniture &middot; Interiors
+            Doors &middot; Kitchens &middot; Wardrobes &middot; Cladding &middot; Ceilings &middot; Formwork
           </p>
         </div>
       </div>
@@ -1628,6 +1671,21 @@ export class HomePage {
       alt: 'HP monitors and workstations - power your productivity',
       url: '/c/it-products/',
     },
+  ] as const;
+
+  /**
+   * The PVC band's use-case gallery: the material installed where it is bought
+   * for. Commissioned photography, self-hosted (img-src 'self'), each linking to
+   * the subcategory that sells it. Formwork has no subcategory of its own - it
+   * is bought as boards and sheets - so it routes there.
+   */
+  protected readonly pvcGallery = [
+    { img: '/images/pvc/pvc-doors.webp', name: 'Doors', detail: 'Flush and framed internal doors.', url: '/c/pvc-doors-interiors/pvc-doors/', alt: 'White PVC flush doors along a bright hallway' },
+    { img: '/images/pvc/pvc-kitchen.webp', name: 'Kitchens', detail: 'Waterproof cabinetry and islands.', url: '/c/pvc-doors-interiors/pvc-kitchens/', alt: 'Modern kitchen built from high-gloss PVC board cabinets with an island' },
+    { img: '/images/pvc/pvc-cladding.webp', name: 'Wall cladding', detail: 'Fluted feature walls and panelling.', url: '/c/pvc-doors-interiors/pvc-interiors/wall-panels/', alt: 'Living-room feature wall clad in fluted wood-grain PVC panels' },
+    { img: '/images/pvc/pvc-formwork.webp', name: 'Construction formwork', detail: 'Reusable boards for casting concrete.', url: '/c/pvc-doors-interiors/pvc-boards/', alt: 'White PVC formwork panels assembled for casting concrete columns on a building site' },
+    { img: '/images/pvc/pvc-wardrobe.webp', name: 'Wardrobes', detail: 'Fitted and sliding-door wardrobes.', url: '/c/pvc-doors-interiors/pvc-wardrobes/', alt: 'Floor-to-ceiling PVC sliding wardrobe in a bedroom, one door open' },
+    { img: '/images/pvc/pvc-ceiling.webp', name: 'Ceilings', detail: 'Clean, moisture-proof ceiling panels.', url: '/c/pvc-doors-interiors/pvc-interiors/ceiling-panels/', alt: 'White PVC ceiling panels with a recessed tray and downlights in a reception' },
   ] as const;
 
   protected readonly promises = [
