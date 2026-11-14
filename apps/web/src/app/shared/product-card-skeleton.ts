@@ -21,11 +21,11 @@ import { Skeleton } from './skeleton';
   template: `
     <div class="flex h-full flex-col rounded-lg border border-ink-100 bg-white p-4">
       <ol-skeleton shape="mb-3 aspect-square w-full rounded-md bg-ink-100" />
-      <ol-skeleton shape="h-4 w-5/6 rounded bg-ink-100" />
-      <ol-skeleton shape="mt-2 h-4 w-2/3 rounded bg-ink-100" />
+      <ol-skeleton shape="h-4 w-5/6 rounded-sm bg-ink-100" />
+      <ol-skeleton shape="mt-2 h-4 w-2/3 rounded-sm bg-ink-100" />
       <div class="mt-3 flex gap-1.5">
-        <ol-skeleton shape="h-5 w-14 rounded bg-ink-100" />
-        <ol-skeleton shape="h-5 w-16 rounded bg-ink-100" />
+        <ol-skeleton shape="h-5 w-14 rounded-sm bg-ink-100" />
+        <ol-skeleton shape="h-5 w-16 rounded-sm bg-ink-100" />
       </div>
       <div class="mt-auto pt-3">
         <ol-skeleton shape="h-10 w-full rounded-lg bg-ink-100" />

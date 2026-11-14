@@ -55,7 +55,7 @@ import { ResponsiveImage } from './responsive-image';
               <li>
                 <button
                   type="button"
-                  class="block h-16 w-16 overflow-hidden rounded border p-1"
+                  class="block h-16 w-16 overflow-hidden rounded-sm border p-1"
                   [class.border-brand-600]="i === activeIndex()"
                   [class.border-ink-200]="i !== activeIndex()"
                   [attr.aria-pressed]="i === activeIndex()"

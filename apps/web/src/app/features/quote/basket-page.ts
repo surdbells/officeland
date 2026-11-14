@@ -70,7 +70,7 @@ import type { BasketLine } from '../../core/api/catalogue-api';
                   <a [routerLink]="line.url" class="font-medium hover:text-brand-600">{{ line.name }}</a>
                 } @else {
                   <span class="font-medium">{{ line.name }}</span>
-                  <span class="ml-2 rounded bg-ink-100 px-2 py-0.5 text-xs text-ink-600">Not in catalogue</span>
+                  <span class="ml-2 rounded-sm bg-ink-100 px-2 py-0.5 text-xs text-ink-600">Not in catalogue</span>
                 }
 
                 <div class="mt-1 text-xs text-ink-400">
@@ -88,7 +88,7 @@ import type { BasketLine } from '../../core/api/catalogue-api';
                   [id]="'qty-' + line.id"
                   type="number"
                   inputmode="numeric"
-                  class="w-24 rounded border border-ink-200 px-3 py-2"
+                  class="w-24 rounded-sm border border-ink-200 px-3 py-2"
                   [value]="line.qty"
                   [attr.min]="line.min_order_qty ?? 1"
                   [attr.step]="line.qty_step ?? 1"
@@ -109,7 +109,7 @@ import type { BasketLine } from '../../core/api/catalogue-api';
                   type="text"
                   maxlength="500"
                   placeholder="Colour, finish, delivery&hellip;"
-                  class="w-full rounded border border-ink-200 px-3 py-2"
+                  class="w-full rounded-sm border border-ink-200 px-3 py-2"
                   [value]="line.note ?? ''"
                   [attr.aria-label]="'Note for ' + line.name"
                   (change)="onNote(line, $event)"
@@ -173,7 +173,7 @@ import type { BasketLine } from '../../core/api/catalogue-api';
               type="text"
               required
               maxlength="500"
-              class="mt-1 w-full rounded border border-ink-200 px-3 py-2"
+              class="mt-1 w-full rounded-sm border border-ink-200 px-3 py-2"
               placeholder="Whiteboard 1200x900, magnetic"
               [value]="freeText()"
               (input)="freeText.set($any($event.target).value)"
@@ -187,7 +187,7 @@ import type { BasketLine } from '../../core/api/catalogue-api';
               name="qty"
               type="number"
               min="1"
-              class="mt-1 w-24 rounded border border-ink-200 px-3 py-2"
+              class="mt-1 w-24 rounded-sm border border-ink-200 px-3 py-2"
               [value]="freeTextQty()"
               (input)="freeTextQty.set(+$any($event.target).value || 1)"
             />

@@ -64,7 +64,7 @@ import type { Announcement, Navigation, NavigationNode } from '../api/catalogue-
           </p>
           <button
             type="button"
-            class="shrink-0 rounded px-2 py-1 opacity-70 hover:opacity-100"
+            class="shrink-0 rounded-sm px-2 py-1 opacity-70 hover:opacity-100"
             aria-label="Dismiss announcement"
             (click)="dismissAnnouncement()"
           >&times;</button>
@@ -728,7 +728,7 @@ import type { Announcement, Navigation, NavigationNode } from '../api/catalogue-
       display: flex;
       flex-direction: column;
       max-height: 80vh;
-      border-radius: 1rem 1rem 0 0;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
       background: #fff;
       padding-bottom: env(safe-area-inset-bottom, 0);
       box-shadow: 0 -8px 32px rgb(15 23 42 / 18%);
@@ -801,7 +801,7 @@ import type { Announcement, Navigation, NavigationNode } from '../api/catalogue-
       bottom: auto;
       padding-top: env(safe-area-inset-top, 0);
       padding-bottom: 0;
-      border-radius: 0 0 1rem 1rem;
+      border-radius: 0 0 var(--radius-sm) var(--radius-sm);
       animation: ol-sheet-down 0.26s var(--ease-out-soft, cubic-bezier(0.22, 1, 0.36, 1));
     }
 

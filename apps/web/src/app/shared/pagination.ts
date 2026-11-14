@@ -34,7 +34,7 @@ import { RouterLink } from '@angular/router';
                 [routerLink]="pathForPage(page() - 1)"
                 [queryParams]="paramsForPage(page() - 1)"
                 rel="prev"
-                class="rounded border border-ink-200 px-3 py-2 hover:border-brand-600"
+                class="rounded-sm border border-ink-200 px-3 py-2 hover:border-brand-600"
               >Previous</a>
             </li>
           }
@@ -46,7 +46,7 @@ import { RouterLink } from '@angular/router';
               <li>
                 <span
                   aria-current="page"
-                  class="rounded border border-brand-600 bg-brand-600 px-3 py-2 font-semibold text-white"
+                  class="rounded-sm border border-brand-600 bg-brand-600 px-3 py-2 font-semibold text-white"
                 >{{ entry.page }}</span>
               </li>
             } @else {
@@ -55,7 +55,7 @@ import { RouterLink } from '@angular/router';
                   [routerLink]="pathForPage(entry.page)"
                   [queryParams]="paramsForPage(entry.page)"
                   [attr.aria-label]="'Page ' + entry.page"
-                  class="rounded border border-ink-200 px-3 py-2 hover:border-brand-600"
+                  class="rounded-sm border border-ink-200 px-3 py-2 hover:border-brand-600"
                 >{{ entry.page }}</a>
               </li>
             }
@@ -67,7 +67,7 @@ import { RouterLink } from '@angular/router';
                 [routerLink]="pathForPage(page() + 1)"
                 [queryParams]="paramsForPage(page() + 1)"
                 rel="next"
-                class="rounded border border-ink-200 px-3 py-2 hover:border-brand-600"
+                class="rounded-sm border border-ink-200 px-3 py-2 hover:border-brand-600"
               >Next</a>
             </li>
           }

@@ -35,9 +35,9 @@ import { ProductCardSkeleton } from '../../shared/product-card-skeleton';
         aria-busy="true"
         aria-label="Loading brand"
       >
-        <ol-skeleton shape="h-3 w-64 max-w-full rounded bg-ink-100" />
-        <ol-skeleton shape="mt-5 h-9 w-72 max-w-full rounded bg-ink-100" />
-        <ol-skeleton shape="mt-3 h-4 w-full max-w-2xl rounded bg-ink-100" />
+        <ol-skeleton shape="h-3 w-64 max-w-full rounded-sm bg-ink-100" />
+        <ol-skeleton shape="mt-5 h-9 w-72 max-w-full rounded-sm bg-ink-100" />
+        <ol-skeleton shape="mt-3 h-4 w-full max-w-2xl rounded-sm bg-ink-100" />
         <ul class="mt-10 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           @for (card of skeletonCards; track card) {
             <li class="h-full"><ol-product-card-skeleton /></li>

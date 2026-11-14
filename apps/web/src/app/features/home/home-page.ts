@@ -602,15 +602,15 @@ const MAJOR_CATEGORY_SOURCES: readonly {
            hold the rail's height until the navigation request resolves. -->
       <section aria-busy="true" aria-label="Loading departments" class="border-b border-ink-100">
         <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-10">
-          <ol-skeleton shape="h-3 w-40 rounded bg-ink-100" />
-          <ol-skeleton shape="mt-3 h-7 w-64 rounded bg-ink-100" />
+          <ol-skeleton shape="h-3 w-40 rounded-sm bg-ink-100" />
+          <ol-skeleton shape="mt-3 h-7 w-64 rounded-sm bg-ink-100" />
           <ul class="mt-6 flex gap-4 overflow-hidden pb-2">
             @for (placeholder of [0, 1, 2, 3, 4, 5]; track placeholder) {
               <li class="w-48 shrink-0 sm:w-52">
                 <div class="rounded-2xl border border-ink-100 bg-[#f6f3ee] p-2.5">
                   <ol-skeleton shape="aspect-square w-full rounded-xl bg-ink-100" />
-                  <ol-skeleton shape="mx-1.5 mt-3 h-4 w-3/4 rounded bg-ink-100" />
-                  <ol-skeleton shape="mx-1.5 mb-1.5 mt-2 h-3 w-1/2 rounded bg-ink-100" />
+                  <ol-skeleton shape="mx-1.5 mt-3 h-4 w-3/4 rounded-sm bg-ink-100" />
+                  <ol-skeleton shape="mx-1.5 mb-1.5 mt-2 h-3 w-1/2 rounded-sm bg-ink-100" />
                 </div>
               </li>
             }
@@ -746,15 +746,15 @@ const MAJOR_CATEGORY_SOURCES: readonly {
            band holds its height until the per-category requests resolve. -->
       <section aria-busy="true" aria-label="Loading categories" class="border-b border-ink-100 bg-white">
         <div class="mx-auto max-w-(--container-page) px-(--spacing-gutter) py-12">
-          <ol-skeleton shape="h-3 w-40 rounded bg-ink-100" />
-          <ol-skeleton shape="mt-2 h-7 w-56 rounded bg-ink-100" />
+          <ol-skeleton shape="h-3 w-40 rounded-sm bg-ink-100" />
+          <ol-skeleton shape="mt-2 h-7 w-56 rounded-sm bg-ink-100" />
           <ul class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
             @for (placeholder of [0, 1, 2, 3, 4, 5, 6]; track placeholder) {
               <li>
                 <div class="rounded-2xl border border-ink-100 bg-[#f6f3ee] p-2.5">
                   <ol-skeleton shape="aspect-square w-full rounded-xl bg-ink-100" />
-                  <ol-skeleton shape="mx-1.5 mt-3 h-4 w-3/4 rounded bg-ink-100" />
-                  <ol-skeleton shape="mx-1.5 mb-1.5 mt-2 h-3 w-1/2 rounded bg-ink-100" />
+                  <ol-skeleton shape="mx-1.5 mt-3 h-4 w-3/4 rounded-sm bg-ink-100" />
+                  <ol-skeleton shape="mx-1.5 mb-1.5 mt-2 h-3 w-1/2 rounded-sm bg-ink-100" />
                 </div>
               </li>
             }
@@ -838,15 +838,15 @@ const MAJOR_CATEGORY_SOURCES: readonly {
       <section aria-busy="true" aria-label="Loading best sellers" class="relative isolate overflow-hidden bg-ink-900 text-white">
         <span aria-hidden="true" class="ol-bestsellers-glow absolute"></span>
         <div class="relative mx-auto max-w-(--container-page) px-(--spacing-gutter) py-14">
-          <ol-skeleton shape="h-3 w-36 rounded bg-white/10" />
-          <ol-skeleton shape="mt-2 h-7 w-72 rounded bg-white/10" />
+          <ol-skeleton shape="h-3 w-36 rounded-sm bg-white/10" />
+          <ol-skeleton shape="mt-2 h-7 w-72 rounded-sm bg-white/10" />
           <ul class="ol-rail mt-8 flex gap-4 overflow-hidden pb-2">
             @for (placeholder of [0, 1, 2, 3, 4, 5]; track placeholder) {
               <li class="w-56 shrink-0 sm:w-60">
                 <div class="rounded-lg border border-white/10 bg-white/[0.03] p-4">
                   <ol-skeleton shape="mb-3 aspect-square w-full rounded-md bg-white/10" />
-                  <ol-skeleton shape="h-4 w-5/6 rounded bg-white/10" />
-                  <ol-skeleton shape="mt-2 h-4 w-2/3 rounded bg-white/10" />
+                  <ol-skeleton shape="h-4 w-5/6 rounded-sm bg-white/10" />
+                  <ol-skeleton shape="mt-2 h-4 w-2/3 rounded-sm bg-white/10" />
                   <ol-skeleton shape="mt-4 h-10 w-full rounded-lg bg-white/10" />
                 </div>
               </li>

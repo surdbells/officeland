@@ -115,7 +115,7 @@ export class ToastService {
       align-items: center;
       gap: 0.625rem;
       padding: 0.75rem 0.5rem 0.75rem 0.875rem;
-      border-radius: 0.75rem;
+      border-radius: var(--radius-sm);
       background: var(--color-ink-900, #0f172a);
       color: #fff;
       box-shadow: 0 10px 30px rgb(15 23 42 / 25%);
@@ -135,7 +135,7 @@ export class ToastService {
     .ol-toast__action {
       flex-shrink: 0;
       padding: 0.25rem 0.5rem;
-      border-radius: 0.5rem;
+      border-radius: var(--radius-sm);
       font-size: 0.8125rem;
       font-weight: 700;
       color: #93c5fd;

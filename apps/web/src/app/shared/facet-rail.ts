@@ -88,7 +88,7 @@ import type { FacetGroup } from '../core/api/catalogue-api';
                         [routerLink]="basePath()"
                         [queryParams]="paramsToggling(group.code, value.value)"
                         [attr.aria-current]="isSelected(group.code, value.value) ? 'true' : null"
-                        class="flex items-center justify-between gap-2 rounded px-2 py-1.5 hover:bg-brand-50 hover:text-brand-600"
+                        class="flex items-center justify-between gap-2 rounded-sm px-2 py-1.5 hover:bg-brand-50 hover:text-brand-600"
                         [class.font-semibold]="isSelected(group.code, value.value)"
                         [class.text-brand-700]="isSelected(group.code, value.value)"
                       >
@@ -131,7 +131,7 @@ import type { FacetGroup } from '../core/api/catalogue-api';
                       [routerLink]="basePath()"
                       [queryParams]="paramsToggling(group.code, value.value)"
                       [attr.aria-current]="isSelected(group.code, value.value) ? 'true' : null"
-                      class="flex items-center justify-between gap-2 rounded px-1 py-0.5 hover:text-brand-600"
+                      class="flex items-center justify-between gap-2 rounded-sm px-1 py-0.5 hover:text-brand-600"
                       [class.font-semibold]="isSelected(group.code, value.value)"
                       [class.text-brand-700]="isSelected(group.code, value.value)"
                     >

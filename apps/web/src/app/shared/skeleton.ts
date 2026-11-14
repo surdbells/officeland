@@ -32,7 +32,7 @@ export class Skeleton {
    * `h-4 w-2/3 rounded bg-ink-100` for a text line, or
    * `aspect-square w-full rounded-xl bg-ink-100` for an image well.
    */
-  readonly shape = input<string>('h-4 w-full rounded bg-ink-100');
+  readonly shape = input<string>('h-4 w-full rounded-sm bg-ink-100');
 
   // Composed rather than a static host class plus a [class] binding: that pair
   // can clobber in either direction, and this guarantees `ol-shimmer` survives

@@ -108,7 +108,7 @@ export interface SortOption {
                       [routerLink]="basePath()"
                       [queryParams]="sortParams(option.value)"
                       [attr.aria-current]="isActiveSort(option.value) ? 'true' : null"
-                      class="flex items-center justify-between gap-2 rounded px-1 py-1.5 hover:text-brand-600"
+                      class="flex items-center justify-between gap-2 rounded-sm px-1 py-1.5 hover:text-brand-600"
                       [class.font-semibold]="isActiveSort(option.value)"
                       [class.text-brand-700]="isActiveSort(option.value)"
                       (click)="close()"

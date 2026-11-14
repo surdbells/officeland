@@ -61,9 +61,9 @@ import { ProductCardSkeleton } from '../../shared/product-card-skeleton';
         aria-busy="true"
         aria-label="Loading category"
       >
-        <ol-skeleton shape="h-3 w-72 max-w-full rounded bg-ink-100" />
-        <ol-skeleton shape="mt-5 h-9 w-80 max-w-full rounded bg-ink-100" />
-        <ol-skeleton shape="mt-3 h-4 w-full max-w-2xl rounded bg-ink-100" />
+        <ol-skeleton shape="h-3 w-72 max-w-full rounded-sm bg-ink-100" />
+        <ol-skeleton shape="mt-5 h-9 w-80 max-w-full rounded-sm bg-ink-100" />
+        <ol-skeleton shape="mt-3 h-4 w-full max-w-2xl rounded-sm bg-ink-100" />
         <div class="mt-10 flex flex-wrap gap-2.5">
           @for (chip of [0, 1, 2, 3, 4]; track chip) {
             <ol-skeleton shape="h-8 w-28 rounded-full bg-ink-100" />

@@ -78,16 +78,16 @@ import { BasketStore } from '../core/quotes/basket-store';
                   <a
                     [routerLink]="brand.url"
                     (click)="close()"
-                    class="inline-block rounded border border-ink-200 px-2 py-0.5 text-[0.6875rem] font-medium text-ink-700 hover:border-brand-600 hover:text-brand-600"
+                    class="inline-block rounded-sm border border-ink-200 px-2 py-0.5 text-[0.6875rem] font-medium text-ink-700 hover:border-brand-600 hover:text-brand-600"
                   >{{ brand.name }}</a>
                 }
                 @if (modelCode(); as code) {
-                  <span class="inline-block rounded border border-ink-200 px-2 py-0.5 font-mono text-[0.6875rem] tracking-tight text-ink-600">
+                  <span class="inline-block rounded-sm border border-ink-200 px-2 py-0.5 font-mono text-[0.6875rem] tracking-tight text-ink-600">
                     {{ code }}
                   </span>
                 }
                 <span
-                  class="inline-block rounded border px-2 py-0.5 text-[0.6875rem] font-medium"
+                  class="inline-block rounded-sm border px-2 py-0.5 text-[0.6875rem] font-medium"
                   [class]="inStock()
                     ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
                     : 'border-amber-200 bg-amber-50 text-amber-800'"

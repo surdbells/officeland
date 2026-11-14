@@ -45,16 +45,16 @@ import { breadcrumbSchema, productSchema } from '../../core/seo/structured-data'
         aria-busy="true"
         aria-label="Loading product"
       >
-        <ol-skeleton shape="h-3 w-72 max-w-full rounded bg-ink-100" />
-        <ol-skeleton shape="mt-5 h-9 w-2/3 rounded bg-ink-100" />
-        <ol-skeleton shape="mt-3 h-4 w-48 rounded bg-ink-100" />
+        <ol-skeleton shape="h-3 w-72 max-w-full rounded-sm bg-ink-100" />
+        <ol-skeleton shape="mt-5 h-9 w-2/3 rounded-sm bg-ink-100" />
+        <ol-skeleton shape="mt-3 h-4 w-48 rounded-sm bg-ink-100" />
         <div class="mt-6 grid gap-8 lg:grid-cols-2">
           <ol-skeleton shape="aspect-square w-full rounded-2xl bg-ink-100" />
           <div class="space-y-4">
-            <ol-skeleton shape="h-6 w-40 rounded bg-ink-100" />
-            <ol-skeleton shape="h-4 w-full rounded bg-ink-100" />
-            <ol-skeleton shape="h-4 w-5/6 rounded bg-ink-100" />
-            <ol-skeleton shape="h-4 w-3/4 rounded bg-ink-100" />
+            <ol-skeleton shape="h-6 w-40 rounded-sm bg-ink-100" />
+            <ol-skeleton shape="h-4 w-full rounded-sm bg-ink-100" />
+            <ol-skeleton shape="h-4 w-5/6 rounded-sm bg-ink-100" />
+            <ol-skeleton shape="h-4 w-3/4 rounded-sm bg-ink-100" />
             <ol-skeleton shape="h-12 w-full rounded-full bg-ink-100" />
             <ol-skeleton shape="h-24 w-full rounded-xl bg-ink-100" />
           </div>
