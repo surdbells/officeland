@@ -14,6 +14,7 @@ import { EMPTY_LISTING, filterParams, readFilters, splitPagedPath } from '../../
 import { FacetRail } from '../../shared/facet-rail';
 import { CategoryChips } from '../../shared/category-chips';
 import { ResponsiveImage } from '../../shared/responsive-image';
+import { Icon } from '../../shared/icon';
 import { Pagination } from '../../shared/pagination';
 import { ProductCard } from '../../shared/product-card';
 import { Skeleton } from '../../shared/skeleton';
@@ -44,6 +45,7 @@ import { ProductCardSkeleton } from '../../shared/product-card-skeleton';
     FacetRail,
     Pagination,
     ResponsiveImage,
+    Icon,
     CategoryChips,
     Skeleton,
     ProductCardSkeleton,
@@ -211,25 +213,57 @@ import { ProductCardSkeleton } from '../../shared/product-card-skeleton';
             can see, which is the better habit: the name cannot drift away
             from the heading because it IS the heading.
           -->
-          <nav aria-labelledby="category-index-heading" class="mt-8">
-            <h2 id="category-index-heading" class="font-heading text-sm font-semibold uppercase tracking-wide">Browse by category</h2>
-            <ul class="mt-3 grid gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+          <nav aria-labelledby="category-index-heading" class="mt-10">
+            <p class="ol-eyebrow">Explore the range</p>
+            <h2 id="category-index-heading" class="mt-1 font-heading text-xl font-semibold sm:text-2xl">Browse by category</h2>
+
+            <!--
+              One card per subcategory: a header that is the link to it (tile,
+              name, count, arrow) and its own children as pill links beneath, so
+              the deepest pages are one click from here. The card lifts and its
+              tile fills with brand on hover; all of it is plain anchors, so it
+              reads the same to a crawler as the list it replaced.
+            -->
+            <ul class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               @for (child of cat.children; track child.slug) {
-                <li class="rounded-xl border border-ink-100 px-4 py-3">
-                  <a [routerLink]="child.url" class="block font-medium hover:text-brand-600">
-                    {{ child.name }}
-                    @if (child.product_count) {
-                      <span class="ml-1 text-sm font-normal text-ink-400">({{ child.product_count }})</span>
-                    }
+                <li class="ol-lift group flex flex-col rounded-2xl border border-ink-100 bg-white p-5 shadow-xs hover:border-brand-600">
+                  <a [routerLink]="child.url" class="flex items-center gap-3.5">
+                    <span class="flex transition-colors group-hover:bg-brand-600 group-hover:text-white h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-brand-50 text-brand-600">
+                      @if (child.hero) {
+                        <ol-image
+                          class="block h-full w-full [&>picture]:block [&>picture]:h-full [&>picture]:w-full"
+                          [image]="child.hero"
+                          sizes="48px"
+                          imgClass="h-full w-full object-cover"
+                        />
+                      } @else {
+                        <ol-icon name="layers" [size]="22" />
+                      }
+                    </span>
+                    <span class="min-w-0 flex-1">
+                      <span class="block truncate font-heading text-base font-semibold text-ink-900 group-hover:text-brand-700">{{ child.name }}</span>
+                      <span class="block text-xs text-ink-400">
+                        @if (child.product_count) {
+                          {{ child.product_count }} {{ child.product_count === 1 ? 'product' : 'products' }}
+                        } @else if (child.children?.length) {
+                          {{ child.children?.length }} {{ child.children?.length === 1 ? 'range' : 'ranges' }}
+                        } @else {
+                          Made to order
+                        }
+                      </span>
+                    </span>
+                    <span class="flex transition-all group-hover:translate-x-0.5 group-hover:bg-brand-600 group-hover:text-white h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink-50 text-ink-600">
+                      <ol-icon name="arrow-right" [size]="16" />
+                    </span>
                   </a>
 
                   @if (child.children?.length) {
-                    <ul class="mt-2 space-y-1">
+                    <ul class="mt-4 flex flex-wrap gap-2 border-t border-ink-100 pt-4">
                       @for (leaf of child.children; track leaf.slug) {
                         <li>
                           <a
                             [routerLink]="leaf.url"
-                            class="text-sm text-ink-600 hover:text-brand-600"
+                            class="inline-block rounded-full border border-ink-100 bg-ink-50 px-3 py-1 text-sm text-ink-600 transition-colors hover:border-brand-600 hover:bg-brand-50 hover:text-brand-700"
                           >{{ leaf.name }}</a>
                         </li>
                       }
