@@ -84,7 +84,7 @@ export type ShowcaseStyle = 'grid' | 'feature' | 'rail';
                   </div>
                 }
 
-                <ul class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                <ul class="ol-showcase-under grid grid-cols-2 gap-4 lg:grid-cols-5">
                   @for (product of rest(); track product.uuid; let i = $index) {
                     <li class="h-full" olReveal [olRevealDelay]="i * 70">
                       <ol-product-card [product]="product" [headingLevel]="3" />
@@ -148,6 +148,17 @@ export type ShowcaseStyle = 'grid' | 'feature' | 'rail';
       }
     }
 
+    /*
+     * Spotlight layout: one product above, five in a row beneath from lg up.
+     * Below lg the row is two columns, where a fifth card would sit alone, so
+     * it is hidden (not sliced) for the same reason as above.
+     */
+    @media (max-width: 1023px) {
+      .ol-showcase-under > li:nth-child(n + 5) {
+        display: none;
+      }
+    }
+
     /* Same treatment as every other rail here: the scroll stays, the bar goes. */
     .ol-showcase-rail {
       scrollbar-width: none;
@@ -175,6 +186,6 @@ export class DepartmentShowcase {
 
   protected readonly rest = computed(() => {
     const lead = this.lead();
-    return this.products().filter((p) => p !== lead).slice(0, 4);
+    return this.products().filter((p) => p !== lead).slice(0, 5);
   });
 }
