@@ -72,7 +72,7 @@ final class IcecatIndex
      * @param  bool  $fullOnly  skip Limited="Yes" entries (not fetchable at this tier)
      * @return Generator<int, array{
      *   product_id: int, mpn: ?string, supplier_id: int, catid: ?int,
-     *   model_name: ?string, ean: ?string, date_added: ?int
+     *   model_name: ?string, ean: ?string, date_added: ?int, limited: bool, on_market: bool
      * }>
      */
     public static function stream(
@@ -125,6 +125,8 @@ final class IcecatIndex
                             // When Icecat first catalogued the product, as YYYYMMDD -
                             // a workable proxy for product age / recency.
                             'date_added' => self::ymd($reader->getAttribute('Date_Added')),
+                            'limited' => strtolower((string) $reader->getAttribute('Limited')) === 'yes',
+                            'on_market' => $reader->getAttribute('On_Market') === '1',
                         ];
                     }
                 }

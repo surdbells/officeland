@@ -57,14 +57,14 @@ final class ImportLauncher
                 $run->update([
                     'status' => $batch->cancelled() ? 'cancelled' : 'completed',
                     'finished_at' => now(),
-                    'message' => $run->message ?? sprintf(
+                    'message' => $run->message ?? trim(sprintf(
                         '%s: %d created, %d skipped, %d failed of %d.',
                         $batch->cancelled() ? 'Cancelled' : 'Done',
                         $run->created,
                         $run->skipped,
                         $run->failed,
                         $run->total,
-                    ),
+                    ).' '.($run->options['coverage_note'] ?? '')),
                 ]);
 
                 // Imported products change what brands and categories contain, so

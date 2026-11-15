@@ -97,14 +97,29 @@ final class PrepareIcecatImport implements ShouldQueue
         $queued = 0;
         $chunk = [];
 
+        // Per-brand tallies, so a brand that yields nothing says why instead
+        // of vanishing from the totals.
+        $queuedBy = array_fill_keys(array_keys($suppliers), 0);
+        $limitedBy = array_fill_keys(array_keys($suppliers), 0);
+
         try {
-            foreach (IcecatIndex::stream('compress.zlib://'.$indexPath, array_values($suppliers)) as $entry) {
+            foreach (IcecatIndex::stream('compress.zlib://'.$indexPath, array_values($suppliers), fullOnly: false) as $entry) {
                 if ($this->batch()?->cancelled()) {
                     break;
                 }
 
                 if ($limit > 0 && $queued >= $limit) {
                     break;
+                }
+
+                $brandKey = $bySupplier[$entry['supplier_id']] ?? 'unknown';
+
+                // Limited data-sheets belong to brands that do not sponsor Open
+                // Icecat; this tier cannot fetch them in full. Counted, not queued.
+                if ($entry['limited']) {
+                    $limitedBy[$brandKey] = ($limitedBy[$brandKey] ?? 0) + 1;
+
+                    continue;
                 }
 
                 // Never import warranties, care packs or software licences.
@@ -126,12 +141,13 @@ final class PrepareIcecatImport implements ShouldQueue
 
                 $chunk[] = new ImportIcecatProduct(
                     entry: $entry,
-                    brandKey: $bySupplier[$entry['supplier_id']] ?? 'unknown',
+                    brandKey: $brandKey,
                     maxImages: $maxImages,
                     queueDerivatives: true,
                     importRunId: $run->id,
                 );
                 $queued++;
+                $queuedBy[$brandKey] = ($queuedBy[$brandKey] ?? 0) + 1;
 
                 if (count($chunk) >= self::CHUNK) {
                     $this->batch()?->add($chunk);
@@ -151,11 +167,14 @@ final class PrepareIcecatImport implements ShouldQueue
             return;
         }
 
+        $note = $this->coverageNote($queuedBy, $limitedBy);
+        $run->update(['options' => [...($run->options ?? []), 'coverage_note' => $note]]);
+
         // Nothing new to import: finish cleanly rather than sit "running" forever
         // (the finally callback only fires when there are product jobs to wait on
         // beyond this one, so close it out here).
         if ($queued === 0) {
-            $run->update(['status' => 'completed', 'message' => 'Nothing new to import.', 'finished_at' => now()]);
+            $run->update(['status' => 'completed', 'message' => trim('Nothing new to import. '.$note), 'finished_at' => now()]);
         }
 
         Log::info('icecat import prepared', ['run' => $run->uuid, 'queued' => $queued]);
@@ -181,6 +200,33 @@ final class PrepareIcecatImport implements ShouldQueue
         }
 
         return $out;
+    }
+
+    /**
+     * "Queued: apc 7885, casio 0. Limited on this Icecat tier (skipped): casio 412."
+     *
+     * @param  array<string, int>  $queuedBy
+     * @param  array<string, int>  $limitedBy
+     */
+    private function coverageNote(array $queuedBy, array $limitedBy): string
+    {
+        $queued = [];
+        $limited = [];
+
+        foreach ($queuedBy as $brand => $count) {
+            $queued[] = "{$brand} {$count}";
+            if (($limitedBy[$brand] ?? 0) > 0) {
+                $limited[] = "{$brand} {$limitedBy[$brand]}";
+            }
+        }
+
+        $note = 'Queued: '.implode(', ', $queued).'.';
+
+        if ($limited !== []) {
+            $note .= ' Limited on this Icecat tier, not importable: '.implode(', ', $limited).'.';
+        }
+
+        return $note;
     }
 
     /** "2023", "2023-05" or "2023-05-10" → YYYYMMDD int, or null. */
