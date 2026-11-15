@@ -46,6 +46,9 @@ final class FinaliseProducts extends Command
 
     private int $metaFilled = 0;
 
+    /** Drafts this run moved to active (the rest of $indexed were already live). */
+    private int $newlyPublished = 0;
+
     private int $indexed = 0;
 
     /** @var array<string, int> */
@@ -114,14 +117,15 @@ final class FinaliseProducts extends Command
         $this->table(['Outcome', 'Products'], [
             [$apply ? 'Descriptions written' : 'Would describe', $this->described],
             [$apply ? 'Meta filled' : 'Would fill meta', $this->metaFilled],
-            [$index ? 'Published + indexed' : 'Would index', $this->indexed],
+            [$index ? 'Live after this run (passes the bar)' : 'Would index', $this->indexed],
+            ...($index ? [[$apply ? '  of which newly published' : '  of which would be newly published', $this->newlyPublished]] : []),
             ['Seen', $seen],
         ]);
 
         if ($index && $this->blocked !== []) {
             arsort($this->blocked);
             $this->newLine();
-            $this->warn('Not indexed - why (fix the data, then re-run):');
+            $this->warn('Below the bar - why (drafts stay in draft; already-live products stay live). Fix the data, then re-run:');
             $rows = [];
             foreach ($this->blocked as $reason => $count) {
                 $rows[] = [$reason, $count];
@@ -129,13 +133,13 @@ final class FinaliseProducts extends Command
             $this->table(['Blocker', 'Products'], $rows);
         }
 
-        if ($apply && $index && $this->indexed > 0) {
+        if ($apply && $index && $this->newlyPublished > 0) {
             $this->newLine();
             $this->warn(sprintf(
-                'Published %d product(s). Their static pages are NOT rendered yet - render '.
+                'Published %d new product(s). Their static pages are NOT rendered yet - render '.
                 'invalidation is suppressed during bulk finalise so the render queue is not '.
                 'flooded. Rebuild deliberately (throttled by --chunk):',
-                $this->indexed,
+                $this->newlyPublished,
             ));
             $this->line('  php artisan render:full');
         }
@@ -215,6 +219,9 @@ final class FinaliseProducts extends Command
         }
 
         $this->indexed++;
+        if ($product->status !== 'active') {
+            $this->newlyPublished++;
+        }
 
         if ($apply) {
             // Accept the generated copy now that the product clears the bar - the
