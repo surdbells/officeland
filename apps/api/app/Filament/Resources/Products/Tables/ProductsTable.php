@@ -26,7 +26,7 @@ use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Enumerable;
 use Illuminate\Support\Facades\DB;
 
 final class ProductsTable
@@ -188,8 +188,8 @@ final class ProductsTable
                                 'archived' => 'Archived',
                             ])->required(),
                         ])
-                        ->action(function (Collection $records, array $data): void {
-                            $ids = $records->pluck('id');
+                        ->action(function (Enumerable $records, array $data): void {
+                            $ids = $records->pluck('id')->all();
                             Product::query()->whereKey($ids)->update(['status' => $data['status']]);
                             if ($data['status'] === 'active') {
                                 Product::query()->whereKey($ids)->whereNull('published_at')->update(['published_at' => now()]);
@@ -208,8 +208,8 @@ final class ProductsTable
                                 0 => 'Do not index',
                             ])->required(),
                         ])
-                        ->action(function (Collection $records, array $data): void {
-                            Product::query()->whereKey($records->pluck('id'))->update(['is_indexable' => (bool) $data['is_indexable']]);
+                        ->action(function (Enumerable $records, array $data): void {
+                            Product::query()->whereKey($records->pluck('id')->all())->update(['is_indexable' => (bool) $data['is_indexable']]);
                             self::done($records->count(), 'indexing updated');
                         })
                         ->chunkSelectedRecords(1000)
@@ -222,12 +222,12 @@ final class ProductsTable
                             Select::make('brand_id')->label('Brand')
                                 ->relationship('brand', 'name')->searchable()->preload()->required(),
                         ])
-                        ->action(function (Collection $records, array $data): void {
+                        ->action(function (Enumerable $records, array $data): void {
                             $brand = Brand::find($data['brand_id']);
                             if ($brand === null) {
                                 return;
                             }
-                            Product::query()->whereKey($records->pluck('id'))
+                            Product::query()->whereKey($records->pluck('id')->all())
                                 ->update(['brand_id' => $brand->id, 'brand_name_cached' => $brand->name]);
                             self::done($records->count(), 'brand assigned');
                         })
@@ -241,7 +241,7 @@ final class ProductsTable
                             Select::make('category_id')->label('Category')
                                 ->relationship('primaryCategory', 'path')->searchable()->preload()->required(),
                         ])
-                        ->action(function (Collection $records, array $data): void {
+                        ->action(function (Enumerable $records, array $data): void {
                             $rows = $records->pluck('id')
                                 ->map(fn ($id): array => ['product_id' => $id, 'category_id' => (int) $data['category_id'], 'sort_order' => 0])
                                 ->all();
