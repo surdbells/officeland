@@ -6,6 +6,7 @@ namespace App\Filament\Resources\Products\Tables;
 
 use App\Models\Brand;
 use App\Models\Product;
+use App\Support\PlaceholderMedia;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
@@ -115,6 +116,25 @@ final class ProductsTable
                 Filter::make('no_images')
                     ->label('No images')
                     ->query(fn (Builder $query): Builder => $query->whereDoesntHave('media')),
+
+                /*
+                 * Brand-logo stand-ins: an image shared by 20+ products is a
+                 * supplier's logo, not a photograph (PlaceholderMedia). The same
+                 * rule keeps these products off the homepage and the megamenu.
+                 */
+                Filter::make('logo_as_image')
+                    ->label('Brand logo as product image')
+                    ->query(function (Builder $query): Builder {
+                        $ids = PlaceholderMedia::ids();
+
+                        return $ids === []
+                            ? $query->whereRaw('false')
+                            : $query->whereHas('media', fn (Builder $m): Builder => $m->whereIn('media.id', $ids));
+                    }),
+
+                Filter::make('no_category')
+                    ->label('No category set')
+                    ->query(fn (Builder $query): Builder => $query->whereNull('primary_category_id')),
 
                 /*
                  * The thin-content queue (MASTER BUILD PROMPT section 14.7): live
